@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [dev, main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: pos
+          POSTGRES_PASSWORD: pos
+          POSTGRES_DB: pos
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U pos -d pos"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgres://pos:pos@localhost:5432/pos
+      TEST_DATABASE_URL: postgres://pos:pos@localhost:5432/pos_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Crear base de pruebas
+        run: psql postgres://pos:pos@localhost:5432/pos -c 'CREATE DATABASE pos_test'
+      - name: Lint y formato
+        run: npm run lint && npm run format:check
+      - name: Tipos
+        run: npm run typecheck
+      - name: Pruebas unitarias
+        run: npm test
+      - name: Migraciones desde cero
+        run: npm run db:migrate
+      - name: Los tipos de la base están al día
+        run: npm run db:types && git diff --exit-code -- apps/api/src/db/types.ts
+      - name: Pruebas de integración
+        run: npm run test:integration
+      - name: Construcción
+        run: npm run build
+
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      # Dependencias de producción; las de desarrollo se revisan con Dependabot.
+      - run: npm audit --omit=dev --audit-level=high

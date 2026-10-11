@@ -10,7 +10,7 @@ Registro vivo del trabajo. Se revisa antes de empezar cualquier tarea y se actua
 | Fase | Descripción | Estatus |
 |---|---|---|
 | Planeación | Análisis, decisiones y documentación | Terminado |
-| Fase 0 | Fundaciones | Pendiente |
+| Fase 0 | Fundaciones | Terminado (PR #3 pendiente de fusión) |
 | Fase 1 | Identidad, tenant y auditoría base | Pendiente |
 | Fase 2 | Catálogo de productos | Pendiente |
 | Fase 3 | Jornada y disponibilidad diaria | Pendiente |
@@ -28,16 +28,16 @@ Registro vivo del trabajo. Se revisa antes de empezar cualquier tarea y se actua
 | T-001 | Análisis de los requerimientos | Terminado | Lectura completa del documento; se identificaron huecos y ambigüedades que originaron las decisiones B1 a B15. | `docs/decisiones.md` | (sin código) |
 | T-002 | Creación de `main` y `dev` | Terminado | Commit inicial con README y `.gitignore`; `dev` creada desde `main`. | `README.md`, `.gitignore` | `main`, `dev` |
 | T-003 | Documentación inicial | Terminado | Requerimientos, decisiones (con política de migraciones), dominio (modelo, flujos, métricas) y plan por fases con trazabilidad. Decisiones D1 a D5 y B1 a B15 aprobadas. | `docs/requerimientos.md`, `docs/decisiones.md`, `docs/dominio.md`, `docs/plan.md`, `README.md` | `docs/documentacion-inicial-20261011`, PR #1 fusionado en `dev` |
-| T-004 | `CLAUDE.md` y documento de progreso | En curso | Reglas del proyecto para el asistente y este registro; T3 a T11 marcadas como aprobadas y regla W7 agregada. | `CLAUDE.md`, `docs/progreso.md`, `docs/decisiones.md` | `docs/claude-md-progreso-20261011` (PR pendiente de aprobación) |
+| T-004 | `CLAUDE.md` y documento de progreso | Terminado | Reglas del proyecto para el asistente y este registro; T3 a T11 marcadas como aprobadas y regla W7 agregada. | `CLAUDE.md`, `docs/progreso.md`, `docs/decisiones.md` | `docs/claude-md-progreso-20261011`, PR #2 abierto (pendiente de fusión) |
+| T-010 | Monorepo y tooling | Terminado | npm workspaces (`apps/api`, `apps/web`, `packages/shared`), TypeScript estricto, ESLint (con reglas de React Hooks), Prettier, Vitest, `.editorconfig`, `.nvmrc`. `npm run check` pasa. | `package.json`, `tsconfig.base.json`, `eslint.config.js`, `.prettierrc.json`, `.prettierignore`, `.editorconfig`, `.nvmrc`, `package-lock.json` | `feat/fundaciones-20261011`, PR #3 abierto |
+| T-011 | Base de datos local y migraciones | Terminado | PostgreSQL 16 vía `docker-compose.yml` (con base de pruebas), `node-pg-migrate` con SQL puro, migración `baseline` (función `set_updated_at`), tipos de Kysely generados. Migración aplicada y verificada contra PostgreSQL 16 local. | `docker-compose.yml`, `docker/init/01-create-test-db.sql`, `.env.example`, `apps/api/migrations/1760140800000_baseline.sql`, `apps/api/src/db/types.ts`, `apps/api/src/db/client.ts` | `feat/fundaciones-20261011`, PR #3 abierto |
+| T-012 | Esqueleto de API y web | Terminado | API Fastify con `buildApp` separado del servidor, rutas `/api/health` y `/api/health/ready`, configuración validada, `x-request-id` y manejo central de errores sin detalles internos. Web React + Tailwind con indicador de conexión y `/api` reenviado en desarrollo (verificado). Esquemas de salud compartidos. 12 pruebas unitarias y 3 de integración en verde. | `apps/api/src/*`, `apps/api/test/*`, `apps/web/src/*`, `apps/web/vite.config.ts`, `packages/shared/src/*` | `feat/fundaciones-20261011`, PR #3 abierto |
+| T-013 | CI y plantillas | Terminado | Flujo de GitHub Actions (lint, formato, tipos, pruebas, migraciones desde cero, tipos al día, integración, build y auditoría de dependencias de producción), Dependabot, plantilla de PR, comandos en README y `CLAUDE.md`. La CI corrió en verde en GitHub (`checks`, `audit` y GitGuardian) en el PR #3. | `.github/workflows/ci.yml`, `.github/dependabot.yml`, `.github/pull_request_template.md`, `README.md`, `CLAUDE.md` | `feat/fundaciones-20261011`, PR #3 abierto |
 
 ## Tareas por hacer
 
 | ID | Tarea | Estatus | Alcance previsto |
 |---|---|---|---|
-| T-010 | Monorepo y tooling | Pendiente | Estructura `apps/web`, `apps/api`, `packages/shared`; TypeScript, lint, formato, Vitest. |
-| T-011 | Base de datos local y migraciones | Pendiente | PostgreSQL en contenedor, `node-pg-migrate`, migración inicial, generación de tipos con Kysely. |
-| T-012 | Esqueleto de API y web | Pendiente | Fastify con ruta de salud, app React mínima, reenvío de `/api` en desarrollo. |
-| T-013 | CI | Pendiente | GitHub Actions: instalación, lint, tipos, pruebas y migraciones desde cero; plantilla de PR; actualizar comandos en `CLAUDE.md`. |
 | T-020 | Fase 1: identidad, tenant, auditoría, configuración de tienda | Pendiente | Ver `docs/plan.md`. |
 | T-030 | Fase 2: catálogo | Pendiente | Ver `docs/plan.md`. |
 | T-040 | Fase 3: jornada y disponibilidad diaria | Pendiente | Ver `docs/plan.md`. |
@@ -50,4 +50,7 @@ Registro vivo del trabajo. Se revisa antes de empezar cualquier tarea y se actua
 
 ## Correcciones y observaciones
 
-Ninguna por ahora.
+- Docker no está disponible en el entorno de desarrollo de esta sesión; `docker-compose.yml` solo se validó como YAML. La base de pruebas se probó con PostgreSQL 16 local.
+- La API aún no tiene paso de construcción (`build`): el empaquetado para Lambda se hace en la fase 9. La CI valida la API con `typecheck` y pruebas.
+- `npm audit` completo reporta 3 avisos altos en `braces` (dependencia de desarrollo de `kysely-codegen`); no afecta al código de producción y `npm audit --omit=dev` está limpio.
+- Versiones fijadas por compatibilidad (T14): TypeScript `~6.0` y jsdom 29.

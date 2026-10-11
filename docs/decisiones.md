@@ -75,6 +75,9 @@ Política propuesta (M1), válida sea cual sea la herramienta:
 | D4 | Acceso a datos. | Kysely con tipos generados desde el esquema. | Aprobada |
 | D5 | Infraestructura como código. | AWS SAM, usado en la fase 9. | Aprobada |
 | T11 | Desarrollo local sin dominio: el servidor de desarrollo del frontend reenvía `/api` a la API, de modo que navegador y API comparten origen en `localhost` y las cookies `HttpOnly` funcionan igual que en producción. El proveedor de identidad local reemplaza a Cognito detrás de la misma interfaz. | Aprobada |
+| T12 | Gestor de paquetes: npm con workspaces (sin herramientas adicionales). Reversible. | Propuesta |
+| T13 | Las pruebas de integración usan `TEST_DATABASE_URL`: PostgreSQL en contenedor (`docker-compose.yml`) en local y como servicio en la CI. Equivale a T9 sin añadir Testcontainers. | Propuesta |
+| T14 | Versiones fijadas por compatibilidad: TypeScript `~6.0` (typescript-eslint no admite 6.1 o superior) y jsdom 29 (jsdom 30 exige Node 22.22.2 o superior). | Propuesta |
 
 ## 4. Preguntas abiertas
 

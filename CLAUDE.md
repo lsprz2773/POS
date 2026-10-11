@@ -71,4 +71,11 @@ Arquitectura del backend: rutas → casos de uso → dominio puro → repositori
 
 ## Comandos
 
-Se completan al terminar la fase 0 (instalar dependencias, levantar el entorno local, lint, tipos, pruebas, migraciones). Hasta entonces no hay comandos del proyecto.
+La lista completa está en [README.md](README.md), sección "Desarrollo local". Antes de dar por terminada una tarea:
+
+```
+npm run check             # lint, formato, tipos y pruebas unitarias
+npm run test:integration  # requiere PostgreSQL (TEST_DATABASE_URL)
+```
+
+Un cambio de esquema exige además `npm run db:migrate` y `npm run db:types`, y confirmar los tipos generados en el mismo commit.

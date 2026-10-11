@@ -2,7 +2,7 @@ import { fileURLToPath } from 'node:url';
 import pg from 'pg';
 import { runner } from 'node-pg-migrate';
 
-const DEFAULT_URL = 'postgres://pos:pos@localhost:5432/pos_test';
+const DEFAULT_URL = 'postgres://pos@localhost:5432/pos_test';
 
 /** Recrea el esquema de la base de pruebas y aplica todas las migraciones desde cero. */
 export default async function setup() {

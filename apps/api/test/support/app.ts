@@ -1,16 +1,18 @@
+import { randomBytes, randomUUID } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { createDb, type Database } from '../../src/db/client';
 import { buildApp } from '../../src/app';
 import { createLocalIdentityProvider } from '../../src/modules/auth/local-identity-provider';
 import { provisionTenant } from '../../src/modules/tenancy/provision';
 
-export const TEST_SECRET = 'secreto-solo-para-pruebas-0123456789abcdef';
+// Valores aleatorios por ejecución: no hay credenciales escritas en el código.
+export const TEST_SECRET = randomBytes(32).toString('hex');
 export const APP_ORIGIN = 'http://localhost:5173';
 
 export const TEST_USERS = [
-  { email: 'ana@tienda-a.test', password: 'clave-ana-123' },
-  { email: 'beto@tienda-b.test', password: 'clave-beto-123' },
-  { email: 'sin-tienda@test.test', password: 'clave-sin-tienda' },
+  { email: 'ana@tienda-a.test', password: randomUUID() },
+  { email: 'beto@tienda-b.test', password: randomUUID() },
+  { email: 'sin-tienda@test.test', password: randomUUID() },
 ];
 
 export function makeIdentity(overrides: { accessTtlSeconds?: number } = {}) {
@@ -23,7 +25,7 @@ export function makeIdentity(overrides: { accessTtlSeconds?: number } = {}) {
 }
 
 /** Base que no abre conexiones hasta que alguien la consulta (para pruebas sin PostgreSQL). */
-export const lazyDb = (): Database => createDb('postgres://pos:pos@127.0.0.1:1/ninguna');
+export const lazyDb = (): Database => createDb('postgres://pos@127.0.0.1:1/ninguna');
 
 export function makeApp(
   db: Database,

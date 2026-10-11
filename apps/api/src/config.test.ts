@@ -5,7 +5,7 @@ const base = { AUTH_SECRET: 'x'.repeat(32) };
 
 describe('loadConfig', () => {
   it('usa el puerto por omisión', () => {
-    const config = loadConfig({ ...base, DATABASE_URL: 'postgres://u:p@h/db' });
+    const config = loadConfig({ ...base, DATABASE_URL: 'postgres://u@h/db' });
     expect(config.PORT).toBe(3000);
   });
 

@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { SignJWT } from 'jose';
 import { describe, expect, it } from 'vitest';
 import { TEST_SECRET, TEST_USERS, makeIdentity } from '../../../test/support/app';
@@ -50,7 +51,7 @@ describe('proveedor de identidad local', () => {
     const token = await forgeToken(
       { email: ana!.email, use: 'access' },
       future(),
-      'otro-secreto-distinto-de-32-caracteres-o-mas',
+      randomBytes(32).toString('hex'),
     );
     await expect(makeIdentity().verifyAccessToken(token)).rejects.toBeInstanceOf(InvalidTokenError);
   });

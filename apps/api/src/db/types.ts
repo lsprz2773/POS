@@ -3,4 +3,77 @@
  * Please do not edit it manually.
  */
 
-export interface DB {}
+import type { ColumnType } from "kysely";
+
+export type Generated<T> = T extends ColumnType<infer S, infer I, infer U>
+  ? ColumnType<S, I | undefined, U>
+  : ColumnType<T, T | undefined, T>;
+
+export type Int8 = ColumnType<string, bigint | number | string, bigint | number | string>;
+
+export type Json = JsonValue;
+
+export type JsonArray = JsonValue[];
+
+export type JsonObject = {
+  [x: string]: JsonValue | undefined;
+};
+
+export type JsonPrimitive = boolean | number | string | null;
+
+export type JsonValue = JsonArray | JsonObject | JsonPrimitive;
+
+export type Timestamp = ColumnType<Date, Date | string, Date | string>;
+
+export interface AuditEvents {
+  action: string;
+  actor_user_id: string | null;
+  data: Generated<Json>;
+  entity: string;
+  entity_id: string | null;
+  id: Generated<Int8>;
+  occurred_at: Generated<Timestamp>;
+  tenant_id: string;
+}
+
+export interface Memberships {
+  created_at: Generated<Timestamp>;
+  role: string;
+  tenant_id: string;
+  user_id: string;
+}
+
+export interface StoreSettings {
+  created_at: Generated<Timestamp>;
+  currency: Generated<string>;
+  operating_days: Generated<number[]>;
+  tenant_id: string;
+  timezone: Generated<string>;
+  updated_at: Generated<Timestamp>;
+  workday_end: Generated<string>;
+  workday_start: Generated<string>;
+}
+
+export interface Tenants {
+  created_at: Generated<Timestamp>;
+  id: Generated<string>;
+  name: string;
+  status: Generated<string>;
+  updated_at: Generated<Timestamp>;
+}
+
+export interface Users {
+  created_at: Generated<Timestamp>;
+  email: string;
+  id: Generated<string>;
+  identity_subject: string;
+  updated_at: Generated<Timestamp>;
+}
+
+export interface DB {
+  audit_events: AuditEvents;
+  memberships: Memberships;
+  store_settings: StoreSettings;
+  tenants: Tenants;
+  users: Users;
+}

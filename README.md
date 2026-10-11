@@ -12,15 +12,18 @@ Estado: planeación inicial. La documentación y el código se agregarán por fa
 
 ## Desarrollo local
 
-Requisitos: Node 22 (`.nvmrc`), npm y Docker (o un PostgreSQL 16 propio).
+Requisitos: Node 22 (`.nvmrc`), npm y Docker (o un PostgreSQL 16 propio). El frontend aún no existe: se desarrollará cuando se cuente con el diseño.
 
 ```
 npm install
-cp .env.example .env
-npm run db:up        # PostgreSQL 16 en contenedor (crea también la base de pruebas)
-npm run db:migrate   # aplica las migraciones
-npm run dev          # API en :3000 y web en :5173 (la web reenvía /api a la API)
+cp .env.example .env     # completa AUTH_SECRET (openssl rand -hex 32) y LOCAL_AUTH_USERS
+npm run db:up            # PostgreSQL 16 en contenedor, solo accesible desde tu máquina
+npm run db:migrate       # aplica las migraciones
+npm run provision -w @pos/api -- --name "Mi tienda" --email dueno@ejemplo.test
+npm run dev              # API en :3000
 ```
+
+Para iniciar sesión se usa `POST /api/auth/login` con un usuario de `LOCAL_AUTH_USERS`; su correo debe coincidir con el del `provision`.
 
 | Comando | Qué hace |
 |---|---|
@@ -28,7 +31,7 @@ npm run dev          # API en :3000 y web en :5173 (la web reenvía /api a la AP
 | `npm run test:integration` | Pruebas contra PostgreSQL (recrea la base `pos_test`) |
 | `npm run db:migrate` | Aplica las migraciones pendientes |
 | `npm run db:types` | Regenera los tipos de Kysely desde la base migrada |
-| `npm run build` | Construye la web |
+| `npm run provision -w @pos/api -- --name "Tienda" --email dueno@correo.com` | Alta manual de una tienda y su propietario |
 | `npm run -w @pos/api migrate:create -- nombre` | Crea una migración nueva |
 
 ## Documentación

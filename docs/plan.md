@@ -1,6 +1,6 @@
 # Plan de implementación
 
-Plan incremental. Cada fase entrega funcionalidad de punta a punta (backend, migración y pantalla móvil) y vive en su propia rama `feat/<descripcion>-AAAAMMDD` creada desde `dev`. Una fase se da por terminada cuando cumple su criterio de aceptación y la definición de terminado; después se abre un PR hacia `main` con tu aprobación.
+Plan incremental. Cada fase entrega funcionalidad de backend (API, migración y pruebas); las pantallas quedan en pausa hasta contar con el diseño del propietario (W8) y se construirán en la fase 8 y vive en su propia rama `feat/<descripcion>-AAAAMMDD` creada desde `dev`. Una fase se da por terminada cuando cumple su criterio de aceptación y la definición de terminado; después se abre un PR hacia `main` con tu aprobación.
 
 Ninguna fase comienza sin que el propietario apruebe este plan y las decisiones pendientes de [decisiones.md](decisiones.md).
 
@@ -16,7 +16,7 @@ Ninguna fase comienza sin que el propietario apruebe este plan y las decisiones 
 ## Fases
 
 ### Fase 0. Fundaciones
-Monorepo, TypeScript, lint y formato, Vitest, PostgreSQL local en contenedor, herramienta de migraciones (D3) con la migración inicial, CI y esqueleto mínimo de web y API con una ruta de salud.
+Monorepo, TypeScript, lint y formato, Vitest, PostgreSQL local en contenedor, herramienta de migraciones (D3) con la migración inicial, CI y esqueleto mínimo de API con una ruta de salud (el esqueleto de web se retiró: W8).
 **Aceptación:** `npm install` y un solo comando levantan el entorno local; la CI pasa lint, tipos, pruebas y aplica las migraciones desde cero.
 
 ### Fase 1. Identidad, tenant y auditoría base (F-01, F-02, F-16, F-17)
@@ -25,7 +25,7 @@ Interfaz de autenticación con proveedor local de desarrollo (D2), contexto de t
 - Una ruta privada sin token o con token vencido devuelve `401`.
 - Un identificador de tenant enviado por el cliente no cambia el tenant autorizado.
 - Un usuario sin tienda recibe un estado de configuración incompleta; un tenant desactivado no puede operar.
-- El inicio de sesión funciona en `localhost` sin dominio, con cookie `HttpOnly` (T11).
+- La sesión viaja en cookies `HttpOnly` y funciona en `localhost` sin dominio (verificado con pruebas de API).
 - La utilidad de prueba con dos tenants queda disponible para las demás fases.
 
 ### Fase 2. Catálogo de productos (F-03)
@@ -75,8 +75,8 @@ Historial paginado y detalle de ventas, dashboard del día, reportes diario, sem
 - Rangos inválidos o invertidos se rechazan; un periodo sin datos muestra ceros.
 - Un reporte nunca incluye datos de otro tenant.
 
-### Fase 8. Móvil, accesibilidad y pruebas de extremo a extremo
-Pulido responsive desde 360 px, accesibilidad WCAG 2.2 AA en los flujos principales, estados de error de red y las pruebas E2E del documento. El prompt para obtener el diseño está en [diseno/prompt-diseno.md](diseno/prompt-diseno.md).
+### Fase 8. Frontend, accesibilidad y pruebas de extremo a extremo
+Construcción de las pantallas de todas las fases anteriores a partir del diseño del propietario, responsive desde 360 px, accesibilidad WCAG 2.2 AA en los flujos principales, estados de error de red y las pruebas E2E del documento. El prompt con el que se obtuvo el diseño y el enlace al diseño aprobado están en [diseno/prompt-diseno.md](diseno/prompt-diseno.md).
 **Aceptación:** pasan los 15 flujos E2E de la sección 10.4 de [requerimientos.md](requerimientos.md) en móvil y escritorio, y los flujos de nueva venta, pago mixto y pendientes se usan con una mano en 360 px.
 
 ### Fase 9. Despliegue (requiere aprobación explícita)

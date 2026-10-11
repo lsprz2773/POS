@@ -43,7 +43,7 @@ Si algo del código contradice estos documentos, se corrige el código o se preg
 
 ## Stack aprobado
 
-React + TypeScript + Vite + Tailwind en `apps/web`; Node LTS + TypeScript + Fastify en `apps/api`; tipos y esquemas compartidos en `packages/shared`. PostgreSQL con el driver `pg`, consultas con Kysely (tipos generados desde el esquema) y migraciones con `node-pg-migrate`. Pruebas con Vitest, PostgreSQL real en contenedor y Playwright. Despliegue final en AWS (Lambda, API Gateway, Cognito, SAM) y Neon.
+Frontend previsto: React + TypeScript + Vite + Tailwind en `apps/web` (**en pausa: no desarrollar frontend hasta que el propietario entregue el diseño**). Backend: Node LTS + TypeScript + Fastify en `apps/api`; tipos y esquemas compartidos en `packages/shared`. PostgreSQL con el driver `pg`, consultas con Kysely (tipos generados desde el esquema) y migraciones con `node-pg-migrate`. Pruebas con Vitest, PostgreSQL real en contenedor y Playwright. Despliegue final en AWS (Lambda, API Gateway, Cognito, SAM) y Neon.
 
 Arquitectura del backend: rutas → casos de uso → dominio puro → repositorios. El dominio no importa Fastify, el driver ni AWS.
 
@@ -59,14 +59,15 @@ Arquitectura del backend: rutas → casos de uso → dominio puro → repositori
 
 - No crear, desplegar ni configurar recursos en la nube (AWS, Neon, dominios) sin aprobación explícita y topes de costo. Hasta la fase 9, todo corre en local.
 - Nunca versionar secretos, tokens ni archivos `.env` reales; usar `.env.example`.
-- El desarrollo local debe funcionar sin dominio ni servicios pagados (proveedor de identidad local; `/api` reenviado desde el servidor de desarrollo para compartir origen).
+- El desarrollo local debe funcionar sin dominio ni servicios pagados (proveedor de identidad local; cuando exista el frontend, `/api` se reenviará desde su servidor de desarrollo para compartir origen).
+- No escribir contraseñas ni secretos en el código, pruebas, CI ni `.env.example`, ni siquiera de ejemplo: las pruebas generan valores aleatorios y la base local usa autenticación `trust` solo en `127.0.0.1`. Así se evitan alertas de GitGuardian.
 
 ## Estilo y convenciones
 
-- Interfaz y documentación en español de México; formato monetario MXN.
+- Mensajes al usuario y documentación en español de México; formato monetario MXN.
 - Identificadores de código en inglés, siguiendo los nombres de [docs/dominio.md](docs/dominio.md).
 - Comentarios solo donde el código no se explique solo; sin documentación redundante: si algo ya está en un documento, se enlaza.
-- Mobile-first (desde 360 px) y accesibilidad WCAG 2.2 AA en los flujos principales.
+- Cuando se desarrolle el frontend: mobile-first (desde 360 px) y accesibilidad WCAG 2.2 AA en los flujos principales.
 - Validar toda entrada en el backend; errores sin stack traces ni secretos.
 
 ## Comandos

@@ -14,6 +14,7 @@ Registro único de decisiones. La fuente de requisitos es [requerimientos.md](re
 | W4 | Los PR (hacia `dev` y hacia `main`) se abren solo cuando el propietario lo aprueba. | Aprobada |
 | W5 | No se despliegan ni configuran recursos en la nube sin aprobación explícita y topes de costo. | Aprobada |
 | W7 | Cada tarea se registra en [progreso.md](progreso.md): se revisa antes de empezar y se actualiza al terminar o corregir. | Aprobada |
+| W8 | El frontend queda en pausa hasta que el propietario entregue el diseño. Mientras tanto cada fase entrega API, migraciones y pruebas; se retiró todo el código de `apps/web`. | Aprobada |
 
 ## 2. Decisiones de negocio
 
@@ -74,10 +75,15 @@ Política propuesta (M1), válida sea cual sea la herramienta:
 | D3 | Herramienta de migraciones. | `node-pg-migrate`, con migraciones en SQL puro independientes del acceso a datos. | Aprobada |
 | D4 | Acceso a datos. | Kysely con tipos generados desde el esquema. | Aprobada |
 | D5 | Infraestructura como código. | AWS SAM, usado en la fase 9. | Aprobada |
-| T11 | Desarrollo local sin dominio: el servidor de desarrollo del frontend reenvía `/api` a la API, de modo que navegador y API comparten origen en `localhost` y las cookies `HttpOnly` funcionan igual que en producción. El proveedor de identidad local reemplaza a Cognito detrás de la misma interfaz. | Aprobada |
-| T12 | Gestor de paquetes: npm con workspaces (sin herramientas adicionales). Reversible. | Propuesta |
-| T13 | Las pruebas de integración usan `TEST_DATABASE_URL`: PostgreSQL en contenedor (`docker-compose.yml`) en local y como servicio en la CI. Equivale a T9 sin añadir Testcontainers. | Propuesta |
-| T14 | Versiones fijadas por compatibilidad: TypeScript `~6.0` (typescript-eslint no admite 6.1 o superior) y jsdom 29 (jsdom 30 exige Node 22.22.2 o superior). | Propuesta |
+| T11 | Desarrollo local sin dominio (se aplica cuando exista el frontend): el servidor de desarrollo del frontend reenvía `/api` a la API, de modo que navegador y API comparten origen en `localhost` y las cookies `HttpOnly` funcionan igual que en producción. El proveedor de identidad local reemplaza a Cognito detrás de la misma interfaz. | Aprobada |
+| T12 | Gestor de paquetes: npm con workspaces (sin herramientas adicionales). Reversible. | Aprobada (delegada por el propietario) |
+| T13 | Las pruebas de integración usan `TEST_DATABASE_URL`: PostgreSQL en contenedor (`docker-compose.yml`) en local y como servicio en la CI. Equivale a T9 sin añadir Testcontainers. | Aprobada (delegada por el propietario) |
+| T14 | Versiones fijadas por compatibilidad: TypeScript `~6.0` (typescript-eslint no admite 6.1 o superior). | Aprobada (delegada por el propietario) |
+| T15 | Sesión: cookies `HttpOnly` y `SameSite=Strict` (`Secure` en producción); acceso de 15 minutos y renovación de 7 días en una cookie limitada a `/api/auth`. Sin CORS (web y API comparten origen); las solicitudes que modifican datos desde otro origen se rechazan. | Propuesta |
+| T16 | Proveedor de identidad local para desarrollo: JWT HS256, usuarios definidos en una variable de entorno (no hay contraseñas en tablas) y prohibido en producción. Cerrar sesión borra las cookies; el token de renovación local no se puede revocar (Cognito sí, en la fase 9). | Propuesta |
+| T17 | Un usuario pertenece a una sola tienda (restricción única) hasta que haga falta elegir tienda. El alta manual vincula el usuario con su `identity_subject` de forma explícita; no se enlaza por correo. | Propuesta |
+| T18 | Row Level Security: no se usa por ahora. El aislamiento se garantiza con repositorios acotados al tenant y pruebas entre dos tiendas. Se reevalúa antes de incorporar tiendas de terceros (exigiría `SET LOCAL` por transacción con el pooler de Neon). | Propuesta |
+| T19 | Auditoría: tabla `audit_events` solo de inserción, escrita en la misma transacción que el cambio. Se audita el inicio de sesión exitoso; los intentos fallidos solo van a los logs técnicos. | Propuesta |
 
 ## 4. Preguntas abiertas
 

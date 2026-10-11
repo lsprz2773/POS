@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { healthResponseSchema, readyResponseSchema } from '@pos/shared';
-import { buildApp } from '../app';
+import { lazyDb, makeApp } from '../../test/support/app';
 
 describe('rutas de salud', () => {
   it('GET /api/health responde ok sin tocar la base', async () => {
-    const app = buildApp({
+    const app = makeApp(lazyDb(), {
       checkDatabase: async () => {
         throw new Error('no debería llamarse');
       },
@@ -16,7 +16,7 @@ describe('rutas de salud', () => {
   });
 
   it('GET /api/health/ready responde ok si la base responde', async () => {
-    const app = buildApp({ checkDatabase: async () => {} });
+    const app = makeApp(lazyDb(), { checkDatabase: async () => {} });
     const response = await app.inject({ method: 'GET', url: '/api/health/ready' });
     expect(response.statusCode).toBe(200);
     expect(readyResponseSchema.parse(response.json()).status).toBe('ok');
@@ -24,7 +24,7 @@ describe('rutas de salud', () => {
   });
 
   it('GET /api/health/ready responde 503 sin detalles si la base falla', async () => {
-    const app = buildApp({
+    const app = makeApp(lazyDb(), {
       checkDatabase: async () => {
         throw new Error('password authentication failed for user "pos"');
       },
@@ -36,7 +36,7 @@ describe('rutas de salud', () => {
   });
 
   it('devuelve un identificador de solicitud para diagnóstico', async () => {
-    const app = buildApp({ checkDatabase: async () => {} });
+    const app = makeApp(lazyDb(), { checkDatabase: async () => {} });
     const response = await app.inject({
       method: 'GET',
       url: '/api/health',
@@ -47,7 +47,7 @@ describe('rutas de salud', () => {
   });
 
   it('oculta los errores internos', async () => {
-    const app = buildApp({ checkDatabase: async () => {} });
+    const app = makeApp(lazyDb(), { checkDatabase: async () => {} });
     app.get('/boom', async () => {
       throw new Error('detalle interno con secreto');
     });

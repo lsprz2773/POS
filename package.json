@@ -11,16 +11,13 @@
     "apps/*"
   ],
   "scripts": {
-    "dev": "npm-run-all --parallel dev:api dev:web",
-    "dev:api": "npm run dev -w @pos/api",
-    "dev:web": "npm run dev -w @pos/web",
+    "dev": "npm run dev -w @pos/api",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "test:integration": "npm run test:integration -w @pos/api",
-    "build": "npm run build -w @pos/web",
     "db:up": "docker compose up -d --wait db",
     "db:down": "docker compose down",
     "db:migrate": "npm run migrate -w @pos/api",
@@ -31,9 +28,7 @@
     "@eslint/js": "^10.0.1",
     "eslint": "^10.12.0",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.13.0",
-    "npm-run-all2": "^8.0.0",
     "prettier": "^3.9.10",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.71.1"

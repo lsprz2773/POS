@@ -20,7 +20,7 @@ Monorepo, TypeScript, lint y formato, Vitest, PostgreSQL local en contenedor, he
 **Aceptación:** `npm install` y un solo comando levantan el entorno local; la CI pasa lint, tipos, pruebas y aplica las migraciones desde cero.
 
 ### Fase 1. Identidad, tenant y auditoría base (F-01, F-02, F-16, F-17)
-Interfaz de autenticación con proveedor local de desarrollo (D2), contexto de tenant en cada solicitud, tablas de tenant, usuario, membresía y configuración de tienda, guion de alta manual, edición de la configuración de la tienda y servicio de auditoría.
+Interfaz de autenticación con proveedor local de desarrollo (D2), contexto de tenant en cada solicitud, tablas de tenant, usuario, membresía y configuración de tienda (moneda, zona horaria, horario de jornada y días de operación), guion de alta manual, edición de la configuración de la tienda y servicio de auditoría.
 **Aceptación:**
 - Una ruta privada sin token o con token vencido devuelve `401`.
 - Un identificador de tenant enviado por el cliente no cambia el tenant autorizado.
@@ -34,10 +34,10 @@ Crear, consultar, editar, activar y desactivar productos, con búsqueda por nomb
 - Desactivar no afecta ventas existentes.
 - Un usuario no puede leer ni editar productos de otro tenant.
 
-### Fase 3. Disponibilidad diaria (F-04, F-05)
-Seleccionar productos activos de un día con su cantidad inicial, ver inicial, vendido y disponible, aumentar con ajustes y consultar días anteriores.
+### Fase 3. Jornada y disponibilidad diaria (F-04, F-05)
+Crear la jornada de una fecha con el horario de la tienda, seleccionar productos activos con su cantidad inicial, ver inicial, vendido y disponible, aumentar con ajustes y consultar jornadas anteriores.
 **Aceptación:**
-- No hay duplicados por (fecha, producto); cantidades negativas se rechazan.
+- Una sola jornada por fecha y tenant; no hay duplicados por (jornada, producto); cantidades negativas se rechazan.
 - La cantidad no baja de lo vendido; los ajustes quedan registrados.
 - Configurar un día no modifica otro.
 

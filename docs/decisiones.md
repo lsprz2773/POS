@@ -26,13 +26,15 @@ Registro único de decisiones. La fuente de requisitos es [requerimientos.md](re
 | B6 | El costo del producto es obligatorio al crearlo (puede ser 0). | Aprobada |
 | B7 | Sin sobrepago: el pago no puede exceder el saldo. El cambio en efectivo no se modela; una calculadora visual de cambio es opcional y está fuera del documento de requerimientos. | Aprobada |
 | B9 | La cantidad inicial de un día solo puede aumentarse (ajuste registrado) y nunca bajar de lo ya vendido. | Aprobada |
-| B10 | Reportes semanales: lunes a viernes (días escolares). | Aprobada; falta definir el caso de fin de semana (P2) |
+| B10 | El sistema admite los 7 días de la semana. Los días de operación son una configuración de la tienda (por omisión lunes a viernes, que es como la usará el propietario); sábado y domingo se pueden usar sin restricción. Las semanas de los reportes van de lunes a domingo, de modo que ningún total se pierde. | Aprobada |
 | B11 | El usuario y la tienda se dan de alta manualmente; no hay autoregistro público. | Aprobada |
 | B13 | Al cancelar una venta de un día anterior no se restituye inventario (ese día ya terminó); solo se registra. Si es del mismo día, sí se restituye. | Aprobada |
 
-**B8 (jornada), reinterpretación a confirmar (P1).** El propietario indicó que no necesita "jornadas". Pero el documento exige, como prioridad crítica, elegir qué productos se venden cada fecha y con qué cantidad (F-04, F-05, RF-028 a RF-038). Se resuelve así: **no existe una entidad Jornada con apertura y cierre**. Existe una *disponibilidad diaria* por `(fecha, producto)` que lleva la cantidad inicial, y la fecha es la única noción de "día". Con esto se cumple el documento sin añadir ceremonia.
+**B8 (jornada). Aprobada.** Existe la entidad *Jornada*: una por tienda y fecha, que se crea al preparar el día. Guarda el horario de esa jornada, tomado de la configuración de la tienda (por omisión 08:00 a 16:00). La disponibilidad diaria de cada producto cuelga de la jornada y las ventas pertenecen a ella. No hay cierre ni arqueo de jornada: el documento pide expresamente evitar un cierre contable complejo. Qué ocurre con una venta fuera del horario queda como pregunta abierta (P5).
 
-**B12 (conectividad), a confirmar (P4).** Se usará desde el teléfono. El documento deja fuera la venta sin conexión con sincronización posterior, así que no se construye una cola offline. Sí se exige reintento seguro (idempotencia), estados de error claros y que nunca se dé por registrada una operación sin confirmación del servidor (RNF-054, RNF-055).
+**B12 (conectividad). Aprobada.** La aplicación se usa siempre en línea; el documento deja fuera la venta sin conexión con sincronización posterior, así que no se construye una cola offline. Sí se exige reintento seguro (idempotencia), estados de error claros y que nunca se dé por registrada una operación sin confirmación del servidor (RNF-054, RNF-055).
+
+**W6. Aprobada.** La documentación no se integra en `dev` (es documentación, no código por probar). Dónde se integra queda como pregunta abierta (P6).
 
 ## 3. Decisiones técnicas
 
@@ -72,8 +74,7 @@ Política propuesta (M1), válida sea cual sea la herramienta:
 
 ## 4. Preguntas abiertas
 
-- **P1.** ¿Confirmas que no hay "jornada" como entidad, y que la disponibilidad diaria por fecha (con cantidad inicial) se mantiene porque el documento la exige?
-- **P2.** Fines de semana: ¿se impide registrar disponibilidad y ventas en sábado y domingo? Propuesta: no se impide. Esas ventas cuentan en el reporte mensual y en el rango personalizado, y en el semanal se asignan a la semana lunes a domingo para no perder totales.
-- **P3.** Pagos de ventas canceladas: propuesta de excluirlos de "cobrado" y mostrarlos aparte como "por reembolsar fuera del sistema".
-- **P4.** ¿Confirmas que no hace falta una cola offline y basta el reintento seguro?
+- **P3.** Si una venta con pagos se cancela, el dinero ya cobrado se conserva en el registro. Propuesta: no contarlo como "cobrado" en los reportes y mostrarlo aparte como "por devolver fuera del sistema".
+- **P5.** Horario de la jornada (08:00 a 16:00): propuesta de que sea informativo. Una venta fuera de horario se permite con un aviso, para no perder una venta real. La alternativa es bloquearla.
+- **P6.** Dónde se integra la documentación, ya que no va a `dev`: propuesta de PR directo a `main`, y que `dev` reciba después un merge de `main` para que las ramas de trabajo vean los documentos.
 - **D1 a D5.** Decisiones técnicas de la tabla anterior.

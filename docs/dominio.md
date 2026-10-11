@@ -17,8 +17,11 @@ erDiagram
   TENANT ||--o{ MEMBERSHIP : tiene
   USER ||--o{ MEMBERSHIP : pertenece
   TENANT ||--o{ PRODUCT : tiene
+  TENANT ||--o{ WORKDAY : tiene
+  WORKDAY ||--o{ DAILY_OFFER : incluye
   PRODUCT ||--o{ DAILY_OFFER : "se ofrece en"
   DAILY_OFFER ||--o{ STOCK_ADJUSTMENT : ajusta
+  WORKDAY ||--o{ SALE : agrupa
   TENANT ||--o{ SALE : tiene
   SALE ||--|{ SALE_ITEM : contiene
   DAILY_OFFER ||--o{ SALE_ITEM : descuenta
@@ -32,13 +35,14 @@ erDiagram
 | Entidad | Campos de negocio | Notas |
 |---|---|---|
 | Tenant | nombre, estado (activo/desactivado) | Una tienda. |
-| StoreSettings | moneda, zona horaria | 1 a 1 con Tenant. Editable por el propietario. |
+| StoreSettings | moneda, zona horaria, horario de jornada (por omisión 08:00 a 16:00), días de operación (por omisión lunes a viernes) | 1 a 1 con Tenant. Editable por el propietario. |
 | User | identificador de identidad externa, correo | La contraseña la gestiona el proveedor de identidad. |
 | Membership | tenant, usuario, rol (`owner`) | Permite agregar cajeros después sin cambiar el modelo. |
 | Product | nombre, descripción, categoría, código interno, unidad (por omisión `pieza`), admite fracciones (falso), precio de venta, costo, activo | Desactivar no borra historial. |
-| DailyOffer | fecha de negocio, producto, cantidad inicial | Único por (tenant, fecha, producto). Sustituye a la "jornada". |
+| Workday (jornada) | fecha de negocio, hora de inicio, hora de fin | Única por (tenant, fecha). Copia el horario de la configuración al crearse. Sin cierre. |
+| DailyOffer | jornada, producto, cantidad inicial | Único por (jornada, producto). |
 | StockAdjustment | disponibilidad diaria, incremento, motivo, usuario, fecha | Solo incrementos (B9). |
-| Sale | folio consecutivo por tenant, fecha de negocio, cliente/referencia, nota, estado (`active`/`cancelled`), total, creada el, creada por, llave de idempotencia, liquidada el | El folio es legible (RF-049). |
+| Sale | folio consecutivo por tenant, jornada, cliente/referencia, nota, estado (`active`/`cancelled`), total, creada el, creada por, llave de idempotencia, liquidada el | El folio es legible (RF-049). |
 | SaleItem | venta, disponibilidad diaria, producto, nombre del producto en ese momento, cantidad, precio unitario, costo unitario, subtotal | Congela precio, costo y nombre (RF-044, RF-045). |
 | Payment | venta, método (`cash`/`transfer`), monto, fecha, llave de operación, estado (`valid`/`voided`), motivo y fecha de anulación, usuario | Un pago mixto son varios renglones con la misma llave de operación. |
 | SaleCancellation | venta, motivo, fecha, usuario, inventario restituido (sí/no) | Se conserva siempre. |
@@ -68,7 +72,7 @@ erDiagram
 
 ### Preparar el día
 1. El propietario elige la fecha (por omisión hoy) y selecciona productos activos con su cantidad inicial (≥ 0).
-2. Se guarda una `DailyOffer` por producto. Un producto ya agregado se edita, no se duplica.
+2. Si no existe, se crea la `Workday` de esa fecha con el horario de la tienda. Se guarda una `DailyOffer` por producto; un producto ya agregado se edita, no se duplica.
 3. Para aumentar la cantidad se crea un `StockAdjustment`. Quitar un producto del día solo es posible si no tiene ventas.
 
 ### Crear venta
@@ -113,4 +117,6 @@ La utilidad bruta no incluye gastos ni impuestos y no es utilidad neta; así se 
 
 ## Semanas y periodos
 
-Los cortes diarios, mensuales y de rango usan la zona horaria de la tienda. La semana va de lunes a viernes (B10); el tratamiento de sábado y domingo está pendiente (P2).
+Los cortes diarios, mensuales y de rango usan la zona horaria de la tienda. La semana va de lunes a domingo y los días de operación configurados solo determinan qué días se muestran destacados (B10); cualquier día admite jornada y ventas.
+
+El horario de la jornada es informativo en esta versión; una venta fuera de horario se trata según P5.

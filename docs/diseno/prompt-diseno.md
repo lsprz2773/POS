@@ -4,6 +4,10 @@ Prompt para generar el diseño de la interfaz con una herramienta de diseño. El
 
 **Cómo usarlo:** pega el bloque de la sección 3 completo. La sección 2 solo indica de dónde sale cada vista, para revisar que no falte ni sobre nada respecto a [requerimientos.md](../requerimientos.md) (sección 8.1) y [dominio.md](../dominio.md).
 
+## Diseño resultante
+
+El propietario aprobó el diseño generado con este prompt: [lienzo en claude.ai](https://claude.ai/artifact/YNnZiLekSbMpcmrbJfocrU) (enlace privado). Contiene el sistema de diseño, las 16 vistas en móvil y escritorio, los 8 modales, el catálogo de estados, un prototipo de nueva venta, los flujos clave y las notas de accesibilidad y textos. Es la referencia visual de la fase 8 ([plan.md](../plan.md)).
+
 ## 1. Resumen
 
 16 vistas, 8 modales u hojas, 8 familias de estados y un estilo visual de vidrio translúcido (Liquid Glass) con reglas de legibilidad. Está fuera de alcance todo lo que el documento de requerimientos deja fuera del MVP.

@@ -102,6 +102,15 @@ Política propuesta (M1), válida sea cual sea la herramienta:
 | T34 | Ventas: el subtotal de cada renglón se redondea a centavos con la mitad hacia arriba (solo importa con cantidades fraccionarias); el total es la suma de los subtotales. La aritmética se hace en centavos y milésimas exactas, sin `number`. | Aprobada |
 | T35 | Ventas: fuera del horario de la jornada la venta se registra igual y la respuesta trae `outsideWorkdayHours: true` (B15). | Aprobada |
 | T36 | Ventas confirmadas: la base impide borrarlas o editarlas (disparadores). Solo puede cambiar el estado a cancelada (fase 6). Un producto del día que tuvo ventas, aunque estén canceladas, no se puede quitar: el historial se conserva. | Propuesta |
+| T37 | Pagos: se pueden registrar al crear la venta (campo opcional `payments`, en la misma operación) o después (`POST /api/sales/:id/payments`). Un pago mixto es una operación con un renglón de efectivo y otro de transferencia (máximo uno por método). Ambos exigen `Idempotency-Key`: misma llave y mismo contenido devuelven el resultado original (`200`); otro contenido, `409`. | Aprobada |
+| T38 | Pagos: solo efectivo y transferencia, como define el documento, y solo como información (B16). No se agrega "tarjeta" ni pasarelas; sumar un método informativo después es un cambio de una migración pequeña. | Aprobada |
+| T39 | Pagos: sin sobrepago (B7). El importe es mayor que cero y no excede lo que falta; el mensaje dice cuánto falta ("No puedes cobrar más de $75.00."). Una venta sin saldo responde `409`. No se modela cambio en efectivo. | Aprobada |
+| T40 | Pagos: `recibido`, `falta por pagar` y el estado de cobro (`pending`, `partial`, `paid`, `cancelled`) se derivan siempre de los pagos vigentes en el backend. La venta guarda además la fecha en que quedó pagada (`settled_at`), que se borra si una anulación deja saldo. Una venta sin saldo (también una de total cero) cuenta como pagada. | Aprobada |
+| T41 | Pagos: cada renglón de pago se anula por separado (`POST /api/payments/:id/void`), con motivo de 1 a 200 caracteres. El pago se conserva marcado como anulado y la venta debe estar activa. Se bloquea primero la venta y luego el pago, y los pagos de una venta se registran de uno en uno. | Aprobada |
+| T42 | Pagos: se pueden cobrar ventas de días anteriores; la fecha del pago es la del servidor. Una venta cancelada no admite pagos nuevos ni anulaciones. | Aprobada |
+| T43 | Pendientes: `GET /api/sales/pending` devuelve las ventas activas con saldo mayor que cero, de cualquier día, con filtro por rango de fecha de venta, paginación, la cuenta y el total pendiente de todas las que cumplen el filtro. | Aprobada |
+| T44 | Pagos: el detalle de la venta (`GET /api/sales/:id`) incluye el historial de pagos con método, importe, fecha, estado y motivo de anulación. | Aprobada |
+| T45 | Pagos: la base impide borrar o editar un pago; solo puede pasar de vigente a anulado, con motivo, una vez. Un pago de una tienda no puede apuntar a una venta de otra. | Aprobada |
 
 ## 4. Preguntas abiertas
 

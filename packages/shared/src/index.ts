@@ -7,6 +7,7 @@ z.config(es());
 export * from './auth';
 export * from './errors';
 export * from './health';
+export * from './payments';
 export * from './products';
 export * from './sales';
 export * from './store';

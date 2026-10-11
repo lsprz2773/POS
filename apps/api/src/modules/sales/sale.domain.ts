@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import type { CreateSaleInput } from '@pos/shared';
+import type { CreateSaleInput, PaymentLinesInput } from '@pos/shared';
 import { toMilli } from '../workdays/workday.domain';
 
 const CENTS = 100n;
@@ -44,8 +44,50 @@ export function hashSaleRequest(input: CreateSaleInput): string {
       .sort((a, b) => a.productId.localeCompare(b.productId)),
     customerReference: input.customerReference ?? null,
     note: input.note ?? null,
+    // Solo si hay pagos: así las ventas sin pago conservan la misma huella que antes.
+    ...(input.payments?.length ? { payments: canonicalLines(input.payments) } : {}),
   };
   return createHash('sha256').update(JSON.stringify(canonical)).digest('hex');
+}
+
+/** Huella de un pago sobre una venta: la misma llave con otro contenido es un conflicto. */
+export function hashPaymentRequest(saleId: string, lines: PaymentLinesInput): string {
+  const canonical = { saleId, lines: canonicalLines(lines) };
+  return createHash('sha256').update(JSON.stringify(canonical)).digest('hex');
+}
+
+const canonicalLines = (lines: PaymentLinesInput) =>
+  lines
+    .map((line) => ({ method: line.method, amount: line.amount }))
+    .sort((a, b) => a.method.localeCompare(b.method));
+
+export type CollectionStatus = 'pending' | 'partial' | 'paid' | 'cancelled';
+
+/** Falta por pagar = total − pagado (regla 19). */
+export function balanceOf(total: string, paid: string): string {
+  return fromCents(toCents(total) - toCents(paid));
+}
+
+/**
+ * Estado de cobro derivado de los pagos (RF-063 a RF-066, RF-071). Pagada solo cuando no falta nada;
+ * una venta con saldo mayor que cero nunca es pagada.
+ */
+export function collectionStatus(sale: {
+  status: 'active' | 'cancelled';
+  total: string;
+  paid: string;
+}): CollectionStatus {
+  if (sale.status === 'cancelled') return 'cancelled';
+  const paid = toCents(sale.paid);
+  if (paid >= toCents(sale.total)) return 'paid';
+  return paid > 0n ? 'partial' : 'pending';
+}
+
+/** Importe con formato de moneda de la tienda, para mensajes: "$1,285.00". */
+export function formatMoney(amount: string, currency: string): string {
+  return new Intl.NumberFormat('es-MX', { style: 'currency', currency }).format(
+    amount as unknown as number,
+  );
 }
 
 /** Hora local de la tienda (HH:MM) en el instante dado. */

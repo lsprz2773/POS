@@ -1,0 +1,9 @@
+node_modules
+dist
+coverage
+package-lock.json
+apps/api/src/db/types.ts
+docs/requerimientos.md
+
+# Documentación: se mantiene a mano
+*.md

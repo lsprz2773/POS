@@ -16,3 +16,6 @@ Estado: planeación inicial. La documentación y el código se agregarán por fa
 - [`docs/decisiones.md`](docs/decisiones.md): decisiones aprobadas, propuestas y preguntas abiertas.
 - [`docs/dominio.md`](docs/dominio.md): modelo conceptual, reglas, flujos y definición de métricas.
 - [`docs/plan.md`](docs/plan.md): fases, criterios de aceptación y trazabilidad con los requisitos.
+- [`docs/progreso.md`](docs/progreso.md): registro de tareas realizadas y por hacer.
+
+Las reglas de trabajo para el asistente están en [`CLAUDE.md`](CLAUDE.md).

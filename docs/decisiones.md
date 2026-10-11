@@ -13,6 +13,7 @@ Registro único de decisiones. La fuente de requisitos es [requerimientos.md](re
 | W3 | Una rama por fase o tarea, creada desde `dev`: `<caso>/<descripcion-breve-AAAAMMDD>` (`feat`, `fix`, `docs`, `chore`, `test`, `refactor`). | Aprobada |
 | W4 | Los PR (hacia `dev` y hacia `main`) se abren solo cuando el propietario lo aprueba. | Aprobada |
 | W5 | No se despliegan ni configuran recursos en la nube sin aprobación explícita y topes de costo. | Aprobada |
+| W7 | Cada tarea se registra en [progreso.md](progreso.md): se revisa antes de empezar y se actualiza al terminar o corregir. | Aprobada |
 
 ## 2. Decisiones de negocio
 
@@ -44,14 +45,14 @@ Registro único de decisiones. La fuente de requisitos es [requerimientos.md](re
 |---|---|---|
 | T1 | Stack: React + TypeScript + Vite + Tailwind; Node LTS + TypeScript + Fastify; PostgreSQL; Cognito; Lambda + API Gateway; REST/JSON. | En requerimientos |
 | T2 | Multitenant con base compartida y aislamiento lógico. El tenant sale de la identidad autenticada, nunca del cliente. | En requerimientos |
-| T3 | Monorepo: `apps/web`, `apps/api`, `packages/shared` (tipos y esquemas de validación). | Propuesta |
-| T4 | Backend en capas: rutas, casos de uso, dominio puro (totales, saldos, estados) y repositorios. El dominio no importa Fastify, el driver de base de datos ni AWS. | Propuesta |
-| T5 | La API corre como servidor Fastify normal en local y detrás de un adaptador en Lambda. Todo se desarrolla y prueba sin AWS. | Propuesta |
-| T6 | Dinero: `NUMERIC(12,2)` y librería decimal en código, nunca `number`. Cantidades: `NUMERIC(12,3)`. Fechas: `timestamptz` generadas por el backend; la fecha de negocio se calcula en la zona horaria de la tienda. | Propuesta |
-| T7 | Idempotencia en crear venta y registrar pago mediante `Idempotency-Key` único por tenant. Misma llave y mismo cuerpo devuelve el resultado original; misma llave y distinto cuerpo da `409`. | Propuesta |
-| T8 | Concurrencia: venta, descuento de inventario y pago en una sola transacción; el inventario se descuenta con una actualización atómica condicionada a que haya existencias. | Propuesta |
-| T9 | Pruebas: Vitest (unitarias), PostgreSQL real en contenedor para integración y Playwright para E2E. Una utilidad de prueba crea dos tenants y verifica el aislamiento en cada fase. | Propuesta |
-| T10 | Row Level Security de PostgreSQL: no se usa al inicio. Se evalúa como defensa adicional en el diseño técnico de la fase 1. | Propuesta |
+| T3 | Monorepo: `apps/web`, `apps/api`, `packages/shared` (tipos y esquemas de validación). | Aprobada |
+| T4 | Backend en capas: rutas, casos de uso, dominio puro (totales, saldos, estados) y repositorios. El dominio no importa Fastify, el driver de base de datos ni AWS. | Aprobada |
+| T5 | La API corre como servidor Fastify normal en local y detrás de un adaptador en Lambda. Todo se desarrolla y prueba sin AWS. | Aprobada |
+| T6 | Dinero: `NUMERIC(12,2)` y librería decimal en código, nunca `number`. Cantidades: `NUMERIC(12,3)`. Fechas: `timestamptz` generadas por el backend; la fecha de negocio se calcula en la zona horaria de la tienda. | Aprobada |
+| T7 | Idempotencia en crear venta y registrar pago mediante `Idempotency-Key` único por tenant. Misma llave y mismo cuerpo devuelve el resultado original; misma llave y distinto cuerpo da `409`. | Aprobada |
+| T8 | Concurrencia: venta, descuento de inventario y pago en una sola transacción; el inventario se descuenta con una actualización atómica condicionada a que haya existencias. | Aprobada |
+| T9 | Pruebas: Vitest (unitarias), PostgreSQL real en contenedor para integración y Playwright para E2E. Una utilidad de prueba crea dos tenants y verifica el aislamiento en cada fase. | Aprobada |
+| T10 | Row Level Security de PostgreSQL: no se usa al inicio. Se evalúa como defensa adicional en el diseño técnico de la fase 1. | Aprobada |
 
 ### Migraciones de base de datos
 
@@ -73,8 +74,8 @@ Política propuesta (M1), válida sea cual sea la herramienta:
 | D3 | Herramienta de migraciones. | `node-pg-migrate`, con migraciones en SQL puro independientes del acceso a datos. | Aprobada |
 | D4 | Acceso a datos. | Kysely con tipos generados desde el esquema. | Aprobada |
 | D5 | Infraestructura como código. | AWS SAM, usado en la fase 9. | Aprobada |
-| T11 | Desarrollo local sin dominio: el servidor de desarrollo del frontend reenvía `/api` a la API, de modo que navegador y API comparten origen en `localhost` y las cookies `HttpOnly` funcionan igual que en producción. El proveedor de identidad local reemplaza a Cognito detrás de la misma interfaz. | Propuesta |
+| T11 | Desarrollo local sin dominio: el servidor de desarrollo del frontend reenvía `/api` a la API, de modo que navegador y API comparten origen en `localhost` y las cookies `HttpOnly` funcionan igual que en producción. El proveedor de identidad local reemplaza a Cognito detrás de la misma interfaz. | Aprobada |
 
 ## 4. Preguntas abiertas
 
-Ninguna sobre negocio. Falta la aprobación explícita del plan ([plan.md](plan.md)) y de las decisiones técnicas marcadas como `Propuesta` (T3 a T11) antes de comenzar la fase 0.
+Ninguna. El plan ([plan.md](plan.md)) y las decisiones T3 a T11 están aprobados; la fase 0 puede comenzar.

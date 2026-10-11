@@ -1,11 +1,18 @@
-import { ApiStatus } from './components/ApiStatus';
-import { es } from './i18n/es';
+import { Navigate, Route, Routes } from 'react-router';
+import { RequireAuth } from './auth/RequireAuth';
+import { HomePage } from './pages/HomePage';
+import { LoginPage } from './pages/LoginPage';
+import { StoreSettingsPage } from './pages/StoreSettingsPage';
 
 export function App() {
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-4 p-4">
-      <h1 className="text-2xl font-semibold">{es.appName}</h1>
-      <ApiStatus />
-    </main>
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route element={<RequireAuth />}>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/tienda" element={<StoreSettingsPage />} />
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }

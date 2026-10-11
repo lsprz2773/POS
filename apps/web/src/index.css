@@ -1,1 +1,13 @@
 @import 'tailwindcss';
+
+@layer components {
+  .field {
+    @apply min-h-11 w-full rounded-md border border-gray-400 bg-white px-3 py-2 text-base;
+  }
+  .btn-primary {
+    @apply min-h-11 rounded-md bg-blue-700 px-4 py-2 font-medium text-white disabled:opacity-60;
+  }
+  .btn-secondary {
+    @apply min-h-11 rounded-md border border-gray-400 bg-white px-4 py-2 font-medium text-gray-900 disabled:opacity-60;
+  }
+}

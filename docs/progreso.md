@@ -13,7 +13,7 @@ Registro vivo del trabajo. Se revisa antes de empezar cualquier tarea y se actua
 | Fase 0 | Fundaciones | Terminado |
 | Fase 1 | Identidad, tenant y auditoría base (solo API) | Terminado (PR #4 fusionado en `dev`) |
 | Fase 2 | Catálogo de productos (solo API) | Terminado (PR pendiente de aprobación) |
-| Fase 3 | Jornada y disponibilidad diaria | Pendiente |
+| Fase 3 | Jornada y disponibilidad diaria (solo API) | Terminado (PR pendiente de aprobación) |
 | Fase 4 | Ventas | Pendiente |
 | Fase 5 | Pagos y pendientes | Pendiente |
 | Fase 6 | Cancelación de ventas | Pendiente |
@@ -42,13 +42,13 @@ Registro vivo del trabajo. Se revisa antes de empezar cualquier tarea y se actua
 | T-026 | Prompt de diseño del frontend | Terminado | Inventario de 16 vistas, 8 modales u hojas, 8 familias de estados (carga con spinners y skeletons, vacío, error, conectividad, éxito, avisos, sesión, interacción), reglas UI/UX estrictas y estilo glassmorphism (Liquid Glass) con reglas de legibilidad WCAG AA. Sin código; el frontend sigue en pausa (W8) hasta recibir el diseño. | `docs/diseno/prompt-diseno.md`, `docs/plan.md`, `docs/progreso.md` | `docs/prompt-diseno-frontend-20261011`, PR #5 |
 | T-027 | Diseño del frontend aprobado | Terminado | El propietario aprobó el diseño (vidrio translúcido, 16 vistas móvil y escritorio, 8 modales, estados, prototipo y notas de accesibilidad). Queda guardado como lienzo en claude.ai y enlazado en la documentación. El frontend sigue en pausa hasta la fase 8. | `docs/diseno/prompt-diseno.md`, `docs/progreso.md` | `docs/prompt-diseno-frontend-20261011`, PR #5 |
 | T-030 | Fase 2: catálogo de productos (API) | Terminado | Migración `products` (importes `NUMERIC(12,2)`, costo obligatorio, `allows_fractions` y `unit` preparados, código único por tienda, `UNIQUE (tenant_id, id)` para las referencias de fases siguientes, versión para edición simultánea). `GET`/`POST /api/products` y `GET`/`PATCH /api/products/:id` (crear, consultar, editar, activar y desactivar; sin `DELETE`), búsqueda por nombre o código, filtro por estado y paginación. Repositorio acotado al tenant y auditoría en la misma transacción (`create`, `update`, `activate`, `deactivate`). Esquemas compartidos con importes como texto y error `conflict`. 20 pruebas unitarias nuevas (`shared` y dominio) y 33 de integración, con aislamiento entre dos tiendas, versiones vencidas, ediciones simultáneas y reversión si falla la auditoría. | `apps/api/migrations/1791800000000_products.sql`, `apps/api/src/modules/products/*`, `apps/api/src/app.ts`, `apps/api/src/db/types.ts`, `apps/api/test/products*.int.test.ts`, `apps/api/test/support/app.ts`, `packages/shared/src/products.ts`, `packages/shared/src/errors.ts`, `docs/decisiones.md`, `docs/dominio.md` | `feat/catalogo-productos-20261011` |
+| T-040 | Fase 3: jornada y disponibilidad diaria (API) | Terminado | Migración con `workdays` (una por tienda y fecha), `daily_offers` (única por jornada y producto) y `stock_adjustments`, con llaves compuestas por tenant para que la base impida mezclar tiendas. `GET /api/workdays` (jornadas anteriores, con rango y paginación), `GET`/`PATCH /api/workdays/:date` (`today` o AAAA-MM-DD; horario por día), `POST /api/workdays/:date/offers` (agregar producto activo con cantidad inicial; crea la jornada), `DELETE …/offers/:offerId` y `POST …/offers/:offerId/adjustments` (solo aumentos con motivo). Ve inicial, aumentos, vendido y disponible por producto. "Hoy" según la zona horaria de la tienda (reloj inyectable en pruebas). Auditoría en la misma transacción. 10 pruebas unitarias de dominio, 8 de esquemas y 38 de integración (aislamiento entre tiendas, duplicados, cantidades negativas, jornadas pasadas, zona horaria, concurrencia y reversión si falla la auditoría). | `apps/api/migrations/1791900000000_workdays_daily_offers.sql`, `apps/api/src/modules/workdays/*`, `apps/api/src/app.ts`, `apps/api/src/db/types.ts`, `apps/api/test/workdays*.int.test.ts`, `apps/api/test/support/app.ts`, `packages/shared/src/workdays.ts`, `docs/decisiones.md`, `docs/dominio.md` | `feat/jornada-disponibilidad-20261011` |
 
 ## Tareas por hacer
 
 | ID | Tarea | Estatus | Alcance previsto |
 |---|---|---|---|
 | T-028 | Cerrar los incidentes de GitGuardian | Corrección | El propietario marcó como ignorados los 3 incidentes (38094535, 38094536 y 38094537) en el panel de GitGuardian. Falta confirmar que el chequeo pase en el próximo PR (el de `dev` a `main` vuelve a escanear esos commits); no se puede volver a ejecutar sobre el PR #4, que ya está fusionado. | (panel de GitGuardian) | PR #4 |
-| T-040 | Fase 3: jornada y disponibilidad diaria | Pendiente | Ver `docs/plan.md`. |
 | T-050 | Fase 4: ventas | Pendiente | Ver `docs/plan.md`. |
 | T-060 | Fase 5: pagos y pendientes | Pendiente | Ver `docs/plan.md`. |
 | T-070 | Fase 6: cancelación de ventas | Pendiente | Ver `docs/plan.md`. |
@@ -58,6 +58,7 @@ Registro vivo del trabajo. Se revisa antes de empezar cualquier tarea y se actua
 
 ## Correcciones y observaciones
 
+- Fase 3, pendiente para la fase 4: "vendido" es 0 hasta que existan las ventas (`soldByOffer` en `workday.repository.ts`). Al crearlas hay que sumar los renglones de ventas no canceladas, y probar de extremo a extremo que el disponible baja con cada venta y que un producto con ventas no se puede quitar del día.
 - Docker no está disponible en el entorno de desarrollo de esta sesión; `docker-compose.yml` solo se validó como YAML. La base de pruebas se probó con PostgreSQL 16 local.
 - La API aún no tiene paso de construcción (`build`): el empaquetado para Lambda se hace en la fase 9. La CI valida la API con `typecheck` y pruebas.
 - `npm audit` completo reporta 3 avisos altos en `braces` (dependencia de desarrollo de `kysely-codegen`); no afecta al código de producción y `npm audit --omit=dev` está limpio.

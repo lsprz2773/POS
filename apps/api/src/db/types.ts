@@ -38,6 +38,16 @@ export interface AuditEvents {
   tenant_id: string;
 }
 
+export interface DailyOffers {
+  created_at: Generated<Timestamp>;
+  id: Generated<string>;
+  initial_quantity: Numeric;
+  product_id: string;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+  workday_id: string;
+}
+
 export interface Memberships {
   created_at: Generated<Timestamp>;
   role: string;
@@ -61,6 +71,16 @@ export interface Products {
   unit: Generated<string>;
   updated_at: Generated<Timestamp>;
   version: Generated<number>;
+}
+
+export interface StockAdjustments {
+  created_at: Generated<Timestamp>;
+  daily_offer_id: string;
+  id: Generated<string>;
+  increment: Numeric;
+  reason: string;
+  tenant_id: string;
+  user_id: string;
 }
 
 export interface StoreSettings {
@@ -90,11 +110,24 @@ export interface Users {
   updated_at: Generated<Timestamp>;
 }
 
+export interface Workdays {
+  business_date: Timestamp;
+  created_at: Generated<Timestamp>;
+  end_time: string;
+  id: Generated<string>;
+  start_time: string;
+  tenant_id: string;
+  updated_at: Generated<Timestamp>;
+}
+
 export interface DB {
   audit_events: AuditEvents;
+  daily_offers: DailyOffers;
   memberships: Memberships;
   products: Products;
+  stock_adjustments: StockAdjustments;
   store_settings: StoreSettings;
   tenants: Tenants;
   users: Users;
+  workdays: Workdays;
 }

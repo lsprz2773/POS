@@ -9,3 +9,4 @@ export * from './errors';
 export * from './health';
 export * from './products';
 export * from './store';
+export * from './workdays';

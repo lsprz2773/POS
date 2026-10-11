@@ -10,6 +10,7 @@ import type { IdentityProvider } from './modules/auth/identity-provider';
 import { authPlugin } from './modules/auth/plugin';
 import { productRoutes } from './modules/products/product.routes';
 import { storeRoutes } from './modules/store/store.routes';
+import { workdayRoutes } from './modules/workdays/workday.routes';
 import { healthRoutes } from './routes/health';
 
 export interface AppOptions {
@@ -17,6 +18,8 @@ export interface AppOptions {
   identity: IdentityProvider;
   config: Pick<Config, 'APP_ORIGIN' | 'NODE_ENV'>;
   logger?: FastifyServerOptions['logger'];
+  /** Reloj del servidor; las pruebas lo fijan para controlar "hoy". */
+  clock?: () => Date;
   /** Para pruebas: sustituye la verificación de la base de datos. */
   checkDatabase?: () => Promise<void>;
 }
@@ -92,6 +95,7 @@ export function buildApp(options: AppOptions): FastifyInstance {
       });
       await api.register(storeRoutes, { db });
       await api.register(productRoutes, { db });
+      await api.register(workdayRoutes, { db, clock: options.clock ?? (() => new Date()) });
     },
     { prefix: '/api' },
   );

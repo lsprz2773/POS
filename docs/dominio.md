@@ -111,7 +111,7 @@ erDiagram
 | Utilidad bruta | Ventas − costo de productos vendidos. Si es negativa, se muestra como pérdida bruta. |
 | Margen bruto | Utilidad bruta ÷ ventas, cuando ventas > 0. |
 | Ventas canceladas | Se muestran aparte y no entran en ninguna métrica anterior. |
-| Por reembolsar fuera del sistema | Pagos vigentes de ventas canceladas (propuesta P3). |
+| Por devolver fuera del sistema | Pagos vigentes de ventas canceladas (B14). |
 
 La utilidad bruta no incluye gastos ni impuestos y no es utilidad neta; así se etiqueta en la interfaz.
 
@@ -119,4 +119,4 @@ La utilidad bruta no incluye gastos ni impuestos y no es utilidad neta; así se 
 
 Los cortes diarios, mensuales y de rango usan la zona horaria de la tienda. La semana va de lunes a domingo y los días de operación configurados solo determinan qué días se muestran destacados (B10); cualquier día admite jornada y ventas.
 
-El horario de la jornada es informativo en esta versión; una venta fuera de horario se trata según P5.
+El horario de la jornada es informativo: una venta fuera de horario se permite con un aviso (B15). El horario sale de la configuración de cada tienda y puede ajustarse en una jornada concreta.

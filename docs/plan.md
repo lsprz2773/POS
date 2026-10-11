@@ -25,6 +25,7 @@ Interfaz de autenticación con proveedor local de desarrollo (D2), contexto de t
 - Una ruta privada sin token o con token vencido devuelve `401`.
 - Un identificador de tenant enviado por el cliente no cambia el tenant autorizado.
 - Un usuario sin tienda recibe un estado de configuración incompleta; un tenant desactivado no puede operar.
+- El inicio de sesión funciona en `localhost` sin dominio, con cookie `HttpOnly` (T11).
 - La utilidad de prueba con dos tenants queda disponible para las demás fases.
 
 ### Fase 2. Catálogo de productos (F-03)
@@ -70,7 +71,7 @@ Cancelación con confirmación y motivo, restitución de inventario del mismo d�
 Historial paginado y detalle de ventas, dashboard del día, reportes diario, semanal, mensual y por rango, desglose por método de pago, productos más vendidos y utilidad bruta.
 **Aceptación:**
 - Todas las cifras cumplen las definiciones de [dominio.md](dominio.md) y cuadran con los datos de prueba, incluido un caso con pagos de ventas de días anteriores.
-- Las ventas canceladas quedan excluidas y se muestran aparte.
+- Las ventas canceladas quedan excluidas y se muestran aparte; sus pagos aparecen como "por devolver fuera del sistema" y no como cobrado.
 - Rangos inválidos o invertidos se rechazan; un periodo sin datos muestra ceros.
 - Un reporte nunca incluye datos de otro tenant.
 

@@ -29,12 +29,14 @@ Registro único de decisiones. La fuente de requisitos es [requerimientos.md](re
 | B10 | El sistema admite los 7 días de la semana. Los días de operación son una configuración de la tienda (por omisión lunes a viernes, que es como la usará el propietario); sábado y domingo se pueden usar sin restricción. Las semanas de los reportes van de lunes a domingo, de modo que ningún total se pierde. | Aprobada |
 | B11 | El usuario y la tienda se dan de alta manualmente; no hay autoregistro público. | Aprobada |
 | B13 | Al cancelar una venta de un día anterior no se restituye inventario (ese día ya terminó); solo se registra. Si es del mismo día, sí se restituye. | Aprobada |
+| B14 | Los pagos de ventas canceladas no cuentan como "cobrado"; se muestran aparte como "por devolver fuera del sistema". | Aprobada |
+| B15 | El horario de la jornada es informativo: una venta fuera de horario se permite con un aviso. El horario es configuración de cada tienda (08:00 a 16:00 es solo el valor inicial) y también se puede ajustar en una jornada concreta; nada del horario va fijo en el código. | Aprobada |
 
-**B8 (jornada). Aprobada.** Existe la entidad *Jornada*: una por tienda y fecha, que se crea al preparar el día. Guarda el horario de esa jornada, tomado de la configuración de la tienda (por omisión 08:00 a 16:00). La disponibilidad diaria de cada producto cuelga de la jornada y las ventas pertenecen a ella. No hay cierre ni arqueo de jornada: el documento pide expresamente evitar un cierre contable complejo. Qué ocurre con una venta fuera del horario queda como pregunta abierta (P5).
+**B8 (jornada). Aprobada.** Existe la entidad *Jornada*: una por tienda y fecha, que se crea al preparar el día. Guarda el horario de esa jornada, tomado de la configuración de la tienda (por omisión 08:00 a 16:00). La disponibilidad diaria de cada producto cuelga de la jornada y las ventas pertenecen a ella. No hay cierre ni arqueo de jornada: el documento pide expresamente evitar un cierre contable complejo. El horario no bloquea ventas (B15).
 
 **B12 (conectividad). Aprobada.** La aplicación se usa siempre en línea; el documento deja fuera la venta sin conexión con sincronización posterior, así que no se construye una cola offline. Sí se exige reintento seguro (idempotencia), estados de error claros y que nunca se dé por registrada una operación sin confirmación del servidor (RNF-054, RNF-055).
 
-**W6. Aprobada.** La documentación no se integra en `dev` (es documentación, no código por probar). Dónde se integra queda como pregunta abierta (P6).
+**W6. Aprobada (delegada al criterio del desarrollador).** La documentación sigue el mismo flujo que el código: rama `docs/...`, PR hacia `dev` y llegada a `main` con la siguiente fase validada. Así las ramas de trabajo siempre ven los documentos vigentes y existe una sola ruta de integración.
 
 ## 3. Decisiones técnicas
 
@@ -66,15 +68,13 @@ Política propuesta (M1), válida sea cual sea la herramienta:
 
 | ID | Decisión pendiente | Recomendación | Estado |
 |---|---|---|---|
-| D1 | Cómo conectarse a Neon desde Lambda. | `pg` sobre el endpoint con pooler de Neon: permite transacciones interactivas y es portable a RDS. | Propuesta |
-| D2 | Autenticación y sesión. | Cognito con frontend y API bajo un mismo dominio para cookies `HttpOnly`. En desarrollo, un proveedor local detrás de la misma interfaz. Se decide el dominio al llegar al despliegue. | Propuesta |
-| D3 | Herramienta de migraciones. | Migraciones en SQL puro con `node-pg-migrate` (alternativa: `dbmate`), independientes del acceso a datos. Se valida en la fase 0. | Propuesta |
-| D4 | Acceso a datos. | Kysely con tipos generados desde el esquema (más control de SQL para reportes que un ORM completo). | Propuesta |
-| D5 | Infraestructura como código (SAM o CDK). | Se decide al planear el despliegue (fase 9). | Propuesta |
+| D1 | Cómo conectarse a Neon desde Lambda. | `pg` sobre el endpoint con pooler de Neon: permite transacciones interactivas y es portable a RDS. | Aprobada |
+| D2 | Autenticación y sesión. | Cognito con frontend y API bajo un mismo dominio para cookies `HttpOnly`. El dominio se compra al final; hasta entonces el desarrollo local funciona sin él (T11). | Aprobada |
+| D3 | Herramienta de migraciones. | `node-pg-migrate`, con migraciones en SQL puro independientes del acceso a datos. | Aprobada |
+| D4 | Acceso a datos. | Kysely con tipos generados desde el esquema. | Aprobada |
+| D5 | Infraestructura como código. | AWS SAM, usado en la fase 9. | Aprobada |
+| T11 | Desarrollo local sin dominio: el servidor de desarrollo del frontend reenvía `/api` a la API, de modo que navegador y API comparten origen en `localhost` y las cookies `HttpOnly` funcionan igual que en producción. El proveedor de identidad local reemplaza a Cognito detrás de la misma interfaz. | Propuesta |
 
 ## 4. Preguntas abiertas
 
-- **P3.** Si una venta con pagos se cancela, el dinero ya cobrado se conserva en el registro. Propuesta: no contarlo como "cobrado" en los reportes y mostrarlo aparte como "por devolver fuera del sistema".
-- **P5.** Horario de la jornada (08:00 a 16:00): propuesta de que sea informativo. Una venta fuera de horario se permite con un aviso, para no perder una venta real. La alternativa es bloquearla.
-- **P6.** Dónde se integra la documentación, ya que no va a `dev`: propuesta de PR directo a `main`, y que `dev` reciba después un merge de `main` para que las ramas de trabajo vean los documentos.
-- **D1 a D5.** Decisiones técnicas de la tabla anterior.
+Ninguna sobre negocio. Falta la aprobación explícita del plan ([plan.md](plan.md)) y de las decisiones técnicas marcadas como `Propuesta` (T3 a T11) antes de comenzar la fase 0.

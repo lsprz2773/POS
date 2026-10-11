@@ -1,9 +1,10 @@
 import { z } from 'zod';
+import { es } from 'zod/locales';
 
-/** Respuesta de `GET /api/health`: el proceso está vivo. */
-export const healthResponseSchema = z.object({ status: z.literal('ok') });
-export type HealthResponse = z.infer<typeof healthResponseSchema>;
+// Mensajes de validación en español para toda la aplicación.
+z.config(es());
 
-/** Respuesta de `GET /api/health/ready`: el proceso puede atender solicitudes. */
-export const readyResponseSchema = z.object({ status: z.enum(['ok', 'unavailable']) });
-export type ReadyResponse = z.infer<typeof readyResponseSchema>;
+export * from './auth';
+export * from './errors';
+export * from './health';
+export * from './store';

@@ -39,9 +39,9 @@ erDiagram
 | User | identificador de identidad externa, correo | La contraseña la gestiona el proveedor de identidad. |
 | Membership | tenant, usuario, rol (`owner`) | Permite agregar cajeros después sin cambiar el modelo. |
 | Product | nombre, descripción, categoría, código interno, unidad (por omisión `pieza`), admite fracciones (falso), precio de venta, costo, notas, activo, versión, creado y modificado el | Desactivar no borra historial. El costo es obligatorio (puede ser 0). El código interno es único por tienda. La versión sube en cada cambio y evita ediciones simultáneas (T21). |
-| Workday (jornada) | fecha de negocio, hora de inicio, hora de fin | Única por (tenant, fecha). Copia el horario de la configuración al crearse. Sin cierre. |
-| DailyOffer | jornada, producto, cantidad inicial | Único por (jornada, producto). |
-| StockAdjustment | disponibilidad diaria, incremento, motivo, usuario, fecha | Solo incrementos (B9). |
+| Workday (jornada) | fecha de negocio, hora de inicio, hora de fin | Única por (tenant, fecha). Se crea al agregar el primer producto y copia el horario de la configuración; el horario se puede ajustar por día. Solo se modifican jornadas de hoy en adelante; las pasadas son de consulta. Sin cierre. |
+| DailyOffer | jornada, producto, cantidad inicial | Único por (jornada, producto). La cantidad inicial no se edita; crece solo con ajustes. Solo productos activos de la misma tienda. |
+| StockAdjustment | disponibilidad diaria, incremento (> 0), motivo, usuario, fecha | Solo incrementos (B9). |
 | Sale | folio consecutivo por tenant, jornada, cliente/referencia, nota, estado (`active`/`cancelled`), total, creada el, creada por, llave de idempotencia, liquidada el | El folio es legible (RF-049). |
 | SaleItem | venta, disponibilidad diaria, producto, nombre del producto en ese momento, cantidad, precio unitario, costo unitario, subtotal | Congela precio, costo y nombre (RF-044, RF-045). |
 | Payment | venta, método (`cash`/`transfer`), monto, fecha, llave de operación, estado (`valid`/`voided`), motivo y fecha de anulación, usuario | Un pago mixto son varios renglones con la misma llave de operación. |
@@ -72,8 +72,8 @@ erDiagram
 
 ### Preparar el día
 1. El propietario elige la fecha (por omisión hoy) y selecciona productos activos con su cantidad inicial (≥ 0).
-2. Si no existe, se crea la `Workday` de esa fecha con el horario de la tienda. Se guarda una `DailyOffer` por producto; un producto ya agregado se edita, no se duplica.
-3. Para aumentar la cantidad se crea un `StockAdjustment`. Quitar un producto del día solo es posible si no tiene ventas.
+2. Si no existe, se crea la `Workday` de esa fecha con el horario de la tienda. Se guarda una `DailyOffer` por producto; un producto ya agregado no se duplica (se dirige al registro existente).
+3. Para aumentar la cantidad se crea un `StockAdjustment`; nunca se baja. Quitar un producto del día solo es posible si no tiene ventas (y se vuelve a agregar si hubo un error).
 
 ### Crear venta
 1. Entrada: renglones (producto, cantidad), cliente/referencia y nota opcionales, pago opcional y `Idempotency-Key`.

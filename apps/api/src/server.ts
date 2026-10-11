@@ -1,17 +1,19 @@
-import { sql } from 'kysely';
 import { buildApp } from './app';
 import { loadConfig } from './config';
 import { createDb } from './db/client';
+import { createLocalIdentityProvider } from './modules/auth/local-identity-provider';
 
 const config = loadConfig();
 const db = createDb(config.DATABASE_URL);
 
-const app = buildApp({
-  logger: true,
-  checkDatabase: async () => {
-    await sql`select 1`.execute(db);
-  },
+const identity = createLocalIdentityProvider({
+  secret: config.AUTH_SECRET!,
+  usersJson: config.LOCAL_AUTH_USERS,
+  accessTtlSeconds: config.ACCESS_TTL_SECONDS,
+  refreshTtlSeconds: config.REFRESH_TTL_SECONDS,
 });
+
+const app = buildApp({ db, identity, config, logger: true });
 
 async function shutdown(signal: string) {
   app.log.info({ signal }, 'Cerrando servidor');

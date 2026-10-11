@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { sql } from 'kysely';
-import { buildApp } from '../src/app';
+import { makeApp } from './support/app';
 import { createDb, type Database } from '../src/db/client';
 
 let db: Database;
@@ -30,11 +30,7 @@ describe('base de datos de pruebas', () => {
 
 describe('GET /api/health/ready con base real', () => {
   it('responde ok', async () => {
-    const app = buildApp({
-      checkDatabase: async () => {
-        await sql`select 1`.execute(db);
-      },
-    });
+    const app = makeApp(db);
     const response = await app.inject({ method: 'GET', url: '/api/health/ready' });
     expect(response.statusCode).toBe(200);
     await app.close();

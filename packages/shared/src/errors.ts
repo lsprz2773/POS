@@ -9,6 +9,7 @@ export const errorCodes = [
   'origin_not_allowed',
   'not_found',
   'conflict',
+  'insufficient_stock',
   'internal_error',
 ] as const;
 

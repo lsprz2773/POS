@@ -9,6 +9,7 @@ import { authRoutes } from './modules/auth/auth.routes';
 import type { IdentityProvider } from './modules/auth/identity-provider';
 import { authPlugin } from './modules/auth/plugin';
 import { productRoutes } from './modules/products/product.routes';
+import { saleRoutes } from './modules/sales/sale.routes';
 import { storeRoutes } from './modules/store/store.routes';
 import { workdayRoutes } from './modules/workdays/workday.routes';
 import { healthRoutes } from './routes/health';
@@ -95,7 +96,9 @@ export function buildApp(options: AppOptions): FastifyInstance {
       });
       await api.register(storeRoutes, { db });
       await api.register(productRoutes, { db });
-      await api.register(workdayRoutes, { db, clock: options.clock ?? (() => new Date()) });
+      const clock = options.clock ?? (() => new Date());
+      await api.register(workdayRoutes, { db, clock });
+      await api.register(saleRoutes, { db, clock });
     },
     { prefix: '/api' },
   );

@@ -74,7 +74,7 @@ async function loadView(
   ]);
 
   const items: DailyOffer[] = offers.map((offer) => {
-    const soldQuantity = sold.get(offer.id) ?? '0';
+    const soldQuantity = sumQuantities([sold.get(offer.id) ?? '0']);
     const adjustedQuantity = sumQuantities([offer.adjustedQuantity]);
     const initialQuantity = sumQuantities([offer.initialQuantity]);
     return {
@@ -158,11 +158,11 @@ export async function listWorkdays(
       products: row.products,
       initialQuantity: sumQuantities([row.initialQuantity]),
       adjustedQuantity: sumQuantities([row.adjustedQuantity]),
-      soldQuantity: '0',
+      soldQuantity: sumQuantities([row.soldQuantity]),
       availableQuantity: availableQuantity({
         initial: row.initialQuantity,
         adjusted: row.adjustedQuantity,
-        sold: '0',
+        sold: row.soldQuantity,
       }),
     })),
     total,
@@ -277,8 +277,7 @@ export async function removeOffer(
     const offer = await repository.findOffer(workday.id, offerId, { forUpdate: true });
     if (!offer) throw notFound(OFFER_NOT_FOUND);
 
-    const sold = (await repository.soldByOffer([offer.id])).get(offer.id) ?? '0';
-    if (sold !== '0') {
+    if (await repository.hasSales(offer.id)) {
       throw new AppError(
         409,
         'conflict',

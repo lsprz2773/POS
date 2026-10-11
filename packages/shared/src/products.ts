@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { optionalText, text } from './text';
 
 /** Texto decimal con exactamente 2 decimales ("25.00"). Nunca `number` (RF-021, RNF-016). */
 export function normalizeMoney(value: string): string {
@@ -21,14 +22,6 @@ export const moneySchema = z
     }
   })
   .transform(normalizeMoney);
-
-const text = (max: number) => z.string().trim().max(max, `Máximo ${max} caracteres.`);
-
-/** Texto opcional: la cadena vacía equivale a "sin valor". */
-const optionalText = (max: number) =>
-  text(max)
-    .transform((value) => (value === '' ? null : value))
-    .nullable();
 
 const name = text(100).min(1, 'Escribe el nombre del producto.');
 const unit = text(20).min(1, 'Escribe la unidad, por ejemplo pieza.');

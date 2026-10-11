@@ -35,6 +35,7 @@ export interface WorkdaySummaryRow extends WorkdayRow {
   products: number;
   initialQuantity: string;
   adjustedQuantity: string;
+  soldQuantity: string;
 }
 
 const toWorkday = (row: {
@@ -222,12 +223,35 @@ export function createWorkdayRepository(db: Database, tenantId: string) {
         .executeTakeFirst();
     },
 
-    /**
-     * Cantidad vendida por disponibilidad. Todavía no existen las ventas (fase 4), así que es cero;
-     * al crearlas, este método suma los renglones de ventas no canceladas.
-     */
+    /** Si el producto del día tiene alguna venta, vigente o cancelada: el historial no se pierde. */
+    async hasSales(offerId: string): Promise<boolean> {
+      const row = await db
+        .selectFrom('sale_items')
+        .select('id')
+        .where('tenant_id', '=', tenantId)
+        .where('daily_offer_id', '=', offerId)
+        .limit(1)
+        .executeTakeFirst();
+      return row !== undefined;
+    },
+
+    /** Cantidad vendida por disponibilidad: renglones de ventas no canceladas. */
     async soldByOffer(offerIds: string[]): Promise<Map<string, string>> {
-      return new Map(offerIds.map((id) => [id, '0']));
+      const sold = new Map(offerIds.map((id) => [id, '0']));
+      if (offerIds.length === 0) return sold;
+      const rows = await db
+        .selectFrom('sale_items as si')
+        .innerJoin('sales as s', (join) =>
+          join.onRef('s.id', '=', 'si.sale_id').onRef('s.tenant_id', '=', 'si.tenant_id'),
+        )
+        .select(['si.daily_offer_id as offerId', sql<string>`sum(si.quantity)::text`.as('sold')])
+        .where('si.tenant_id', '=', tenantId)
+        .where('s.status', '=', 'active')
+        .where('si.daily_offer_id', 'in', offerIds)
+        .groupBy('si.daily_offer_id')
+        .execute();
+      for (const row of rows) sold.set(row.offerId, row.sold);
+      return sold;
     },
 
     async list(filter: ListWorkdaysQuery) {
@@ -254,6 +278,10 @@ export function createWorkdayRepository(db: Database, tenantId: string) {
               join daily_offers o on o.id = a.daily_offer_id where o.workday_id = w.id)`.as(
               'adjustedQuantity',
             ),
+            sql<string>`(select coalesce(sum(si.quantity), 0)::text from sale_items si
+              join sales s on s.id = si.sale_id and s.tenant_id = si.tenant_id
+              join daily_offers o on o.id = si.daily_offer_id
+              where o.workday_id = w.id and s.status = 'active')`.as('soldQuantity'),
           ])
           .orderBy('w.business_date', 'desc')
           .limit(filter.limit)
@@ -269,6 +297,7 @@ export function createWorkdayRepository(db: Database, tenantId: string) {
         products: row.products,
         initialQuantity: row.initialQuantity,
         adjustedQuantity: row.adjustedQuantity,
+        soldQuantity: row.soldQuantity,
       }));
       return { items, total: Number(count.total) };
     },

@@ -42,8 +42,8 @@ erDiagram
 | Workday (jornada) | fecha de negocio, hora de inicio, hora de fin | Única por (tenant, fecha). Se crea al agregar el primer producto y copia el horario de la configuración; el horario se puede ajustar por día. Solo se modifican jornadas de hoy en adelante; las pasadas son de consulta. Sin cierre. |
 | DailyOffer | jornada, producto, cantidad inicial | Único por (jornada, producto). La cantidad inicial no se edita; crece solo con ajustes. Solo productos activos de la misma tienda. |
 | StockAdjustment | disponibilidad diaria, incremento (> 0), motivo, usuario, fecha | Solo incrementos (B9). |
-| Sale | folio consecutivo por tenant, jornada, cliente/referencia, nota, estado (`active`/`cancelled`), total, creada el, creada por, llave de idempotencia, liquidada el | El folio es legible (RF-049). |
-| SaleItem | venta, disponibilidad diaria, producto, nombre del producto en ese momento, cantidad, precio unitario, costo unitario, subtotal | Congela precio, costo y nombre (RF-044, RF-045). |
+| Sale | folio consecutivo por tenant, jornada, cliente/referencia, nota, estado (`active`/`cancelled`), total, creada el, creada por, llave de idempotencia, liquidada el | El folio es legible (`V-0043`, RF-049). Nace en la jornada de hoy. Una venta confirmada no se edita ni se borra (la base lo impide). La fecha de liquidación llega con los pagos (fase 5). |
+| SaleItem | venta, posición, disponibilidad diaria, producto, nombre del producto en ese momento, cantidad, precio unitario, costo unitario, subtotal | Congela precio, costo y nombre (RF-044, RF-045). Un producto aparece una sola vez por venta. Subtotal = cantidad × precio, redondeado a centavos. |
 | Payment | venta, método (`cash`/`transfer`), monto, fecha, llave de operación, estado (`valid`/`voided`), motivo y fecha de anulación, usuario | Un pago mixto son varios renglones con la misma llave de operación. |
 | SaleCancellation | venta, motivo, fecha, usuario, inventario restituido (sí/no) | Se conserva siempre. |
 | AuditEvent | entidad, acción, usuario, fecha, datos no sensibles | Se escribe en la misma transacción que el cambio. |
@@ -78,7 +78,7 @@ erDiagram
 ### Crear venta
 1. Entrada: renglones (producto, cantidad), cliente/referencia y nota opcionales, pago opcional y `Idempotency-Key`.
 2. El backend valida el tenant, que cada producto esté en la disponibilidad de hoy y que la cantidad sea válida.
-3. En una transacción: descuenta cada cantidad con una actualización condicionada a que haya existencias; crea la venta con precio, costo y nombre congelados; registra el pago si viene; escribe auditoría.
+3. En una transacción: bloquea los productos del día y comprueba que haya existencias (vendido se calcula con las ventas no canceladas); crea la venta con precio, costo y nombre congelados y el siguiente folio; registra el pago si viene (fase 5); escribe auditoría.
 4. Si falta inventario, se rechaza todo e indica el producto afectado. Un reintento con la misma llave devuelve la venta ya creada.
 
 ### Registrar pago

@@ -73,6 +73,42 @@ export interface Products {
   version: Generated<number>;
 }
 
+export interface SaleCounters {
+  last_folio: Generated<number>;
+  tenant_id: string;
+}
+
+export interface SaleItems {
+  created_at: Generated<Timestamp>;
+  daily_offer_id: string;
+  id: Generated<string>;
+  position: number;
+  product_id: string;
+  product_name: string;
+  quantity: Numeric;
+  sale_id: string;
+  subtotal: Numeric;
+  tenant_id: string;
+  unit_cost: Numeric;
+  unit_price: Numeric;
+}
+
+export interface Sales {
+  created_at: Generated<Timestamp>;
+  created_by: string;
+  customer_reference: string | null;
+  folio: number;
+  id: Generated<string>;
+  idempotency_key: string;
+  note: string | null;
+  request_hash: string;
+  status: Generated<string>;
+  tenant_id: string;
+  total: Numeric;
+  updated_at: Generated<Timestamp>;
+  workday_id: string;
+}
+
 export interface StockAdjustments {
   created_at: Generated<Timestamp>;
   daily_offer_id: string;
@@ -125,6 +161,9 @@ export interface DB {
   daily_offers: DailyOffers;
   memberships: Memberships;
   products: Products;
+  sale_counters: SaleCounters;
+  sale_items: SaleItems;
+  sales: Sales;
   stock_adjustments: StockAdjustments;
   store_settings: StoreSettings;
   tenants: Tenants;

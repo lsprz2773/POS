@@ -38,7 +38,7 @@ erDiagram
 | StoreSettings | moneda, zona horaria, horario de jornada (por omisión 08:00 a 16:00), días de operación (por omisión lunes a viernes) | 1 a 1 con Tenant. Editable por el propietario. |
 | User | identificador de identidad externa, correo | La contraseña la gestiona el proveedor de identidad. |
 | Membership | tenant, usuario, rol (`owner`) | Permite agregar cajeros después sin cambiar el modelo. |
-| Product | nombre, descripción, categoría, código interno, unidad (por omisión `pieza`), admite fracciones (falso), precio de venta, costo, activo | Desactivar no borra historial. |
+| Product | nombre, descripción, categoría, código interno, unidad (por omisión `pieza`), admite fracciones (falso), precio de venta, costo, notas, activo, versión, creado y modificado el | Desactivar no borra historial. El costo es obligatorio (puede ser 0). El código interno es único por tienda. La versión sube en cada cambio y evita ediciones simultáneas (T21). |
 | Workday (jornada) | fecha de negocio, hora de inicio, hora de fin | Única por (tenant, fecha). Copia el horario de la configuración al crearse. Sin cierre. |
 | DailyOffer | jornada, producto, cantidad inicial | Único por (jornada, producto). |
 | StockAdjustment | disponibilidad diaria, incremento, motivo, usuario, fecha | Solo incrementos (B9). |

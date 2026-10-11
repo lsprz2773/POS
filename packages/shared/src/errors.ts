@@ -8,6 +8,7 @@ export const errorCodes = [
   'validation_error',
   'origin_not_allowed',
   'not_found',
+  'conflict',
   'internal_error',
 ] as const;
 

@@ -90,7 +90,7 @@ export async function createTwoTenants(app: FastifyInstance, db: Database) {
 /** Limpia los datos de negocio entre pruebas (conserva el control de migraciones). */
 export async function resetData(db: Database) {
   const { sql } = await import('kysely');
-  await sql`truncate audit_events, memberships, store_settings, users, tenants restart identity cascade`.execute(
+  await sql`truncate audit_events, products, memberships, store_settings, users, tenants restart identity cascade`.execute(
     db,
   );
 }

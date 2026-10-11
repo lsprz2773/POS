@@ -12,7 +12,7 @@ Registro vivo del trabajo. Se revisa antes de empezar cualquier tarea y se actua
 | Planeación | Análisis, decisiones y documentación | Terminado |
 | Fase 0 | Fundaciones | Terminado |
 | Fase 1 | Identidad, tenant y auditoría base (solo API) | Terminado (PR #4 fusionado en `dev`) |
-| Fase 2 | Catálogo de productos | Pendiente |
+| Fase 2 | Catálogo de productos (solo API) | Terminado (PR pendiente de aprobación) |
 | Fase 3 | Jornada y disponibilidad diaria | Pendiente |
 | Fase 4 | Ventas | Pendiente |
 | Fase 5 | Pagos y pendientes | Pendiente |
@@ -41,13 +41,13 @@ Registro vivo del trabajo. Se revisa antes de empezar cualquier tarea y se actua
 | T-025 | Higiene de credenciales (alertas de GitGuardian) | Terminado | Se quitaron contraseñas escritas en el repositorio: PostgreSQL local y de la CI con autenticación `trust` (el puerto local solo en `127.0.0.1`), URLs sin contraseña, `.env.example` sin secretos de ejemplo y pruebas con secretos y contraseñas aleatorias por ejecución. Se verificó que el historial no contiene secretos reales (claves de nube, tokens, llaves privadas). | `docker-compose.yml`, `.github/workflows/ci.yml`, `.env.example`, `apps/api/test/*`, `apps/api/src/config.test.ts`, `CLAUDE.md` | `feat/identidad-tenant-20261011`, PR #4 fusionado en `dev` |
 | T-026 | Prompt de diseño del frontend | Terminado | Inventario de 16 vistas, 8 modales u hojas, 8 familias de estados (carga con spinners y skeletons, vacío, error, conectividad, éxito, avisos, sesión, interacción), reglas UI/UX estrictas y estilo glassmorphism (Liquid Glass) con reglas de legibilidad WCAG AA. Sin código; el frontend sigue en pausa (W8) hasta recibir el diseño. | `docs/diseno/prompt-diseno.md`, `docs/plan.md`, `docs/progreso.md` | `docs/prompt-diseno-frontend-20261011`, PR #5 |
 | T-027 | Diseño del frontend aprobado | Terminado | El propietario aprobó el diseño (vidrio translúcido, 16 vistas móvil y escritorio, 8 modales, estados, prototipo y notas de accesibilidad). Queda guardado como lienzo en claude.ai y enlazado en la documentación. El frontend sigue en pausa hasta la fase 8. | `docs/diseno/prompt-diseno.md`, `docs/progreso.md` | `docs/prompt-diseno-frontend-20261011`, PR #5 |
+| T-030 | Fase 2: catálogo de productos (API) | Terminado | Migración `products` (importes `NUMERIC(12,2)`, costo obligatorio, `allows_fractions` y `unit` preparados, código único por tienda, `UNIQUE (tenant_id, id)` para las referencias de fases siguientes, versión para edición simultánea). `GET`/`POST /api/products` y `GET`/`PATCH /api/products/:id` (crear, consultar, editar, activar y desactivar; sin `DELETE`), búsqueda por nombre o código, filtro por estado y paginación. Repositorio acotado al tenant y auditoría en la misma transacción (`create`, `update`, `activate`, `deactivate`). Esquemas compartidos con importes como texto y error `conflict`. 20 pruebas unitarias nuevas (`shared` y dominio) y 33 de integración, con aislamiento entre dos tiendas, versiones vencidas, ediciones simultáneas y reversión si falla la auditoría. | `apps/api/migrations/1791800000000_products.sql`, `apps/api/src/modules/products/*`, `apps/api/src/app.ts`, `apps/api/src/db/types.ts`, `apps/api/test/products*.int.test.ts`, `apps/api/test/support/app.ts`, `packages/shared/src/products.ts`, `packages/shared/src/errors.ts`, `docs/decisiones.md`, `docs/dominio.md` | `feat/catalogo-productos-20261011` |
 
 ## Tareas por hacer
 
 | ID | Tarea | Estatus | Alcance previsto |
 |---|---|---|---|
-| T-028 | Cerrar los incidentes de GitGuardian | Pendiente (pospuesta por el propietario) | Marcar como falso positivo en el panel de GitGuardian los 3 hallazgos históricos del PR #4 (incidentes 38094535, 38094536 y 38094537) y volver a ejecutar el chequeo. No se reescribe la historia (regla de `CLAUDE.md`). El chequeo `GitGuardian Security Checks` seguirá en rojo hasta entonces; el resto de la CI está en verde. | (panel de GitGuardian) | PR #4 |
-| T-030 | Fase 2: catálogo | Pendiente | Ver `docs/plan.md`. |
+| T-028 | Cerrar los incidentes de GitGuardian | Corrección | El propietario marcó como ignorados los 3 incidentes (38094535, 38094536 y 38094537) en el panel de GitGuardian. Falta confirmar que el chequeo pase en el próximo PR (el de `dev` a `main` vuelve a escanear esos commits); no se puede volver a ejecutar sobre el PR #4, que ya está fusionado. | (panel de GitGuardian) | PR #4 |
 | T-040 | Fase 3: jornada y disponibilidad diaria | Pendiente | Ver `docs/plan.md`. |
 | T-050 | Fase 4: ventas | Pendiente | Ver `docs/plan.md`. |
 | T-060 | Fase 5: pagos y pendientes | Pendiente | Ver `docs/plan.md`. |
@@ -65,4 +65,4 @@ Registro vivo del trabajo. Se revisa antes de empezar cualquier tarea y se actua
 - Fase 1, pendiente para la fase 9: implementar el proveedor de Cognito (la interfaz ya existe), revocar el token de renovación al cerrar sesión y limitar intentos de inicio de sesión (hoy lo haría Cognito).
 - Fase 1: los intentos de inicio de sesión fallidos solo quedan en logs técnicos (T19); RF-008 se cumple para los inicios exitosos.
 - Fase 1: la prueba con navegador real (Playwright) queda para la fase 8, cuando exista el frontend.
-- GitGuardian marca el PR #4 en rojo por 3 hallazgos en commits históricos de la rama (no están en el código actual): 2 contraseñas de prueba inventadas en una prueba del frontend retirado (`apps/web/src/App.test.tsx`, commit `616f477`) y 1 marcador de posición de `AUTH_SECRET` en `.env.example` (commit `c060a1e`). No son secretos reales. La hipótesis anterior (`pos:pos` en `dev`) era incorrecta. Se pospone: ver T-028.
+- GitGuardian marca el PR #4 en rojo por 3 hallazgos en commits históricos de la rama (no están en el código actual): 2 contraseñas de prueba inventadas en una prueba del frontend retirado (`apps/web/src/App.test.tsx`, commit `616f477`) y 1 marcador de posición de `AUTH_SECRET` en `.env.example` (commit `c060a1e`). No son secretos reales. La hipótesis anterior (`pos:pos` en `dev`) era incorrecta. Los incidentes ya se ignoraron en el panel; seguimiento en T-028.

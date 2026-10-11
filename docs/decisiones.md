@@ -84,6 +84,10 @@ Política propuesta (M1), válida sea cual sea la herramienta:
 | T17 | Un usuario pertenece a una sola tienda (restricción única) hasta que haga falta elegir tienda. El alta manual vincula el usuario con su `identity_subject` de forma explícita; no se enlaza por correo. | Propuesta |
 | T18 | Row Level Security: no se usa por ahora. El aislamiento se garantiza con repositorios acotados al tenant y pruebas entre dos tiendas. Se reevalúa antes de incorporar tiendas de terceros (exigiría `SET LOCAL` por transacción con el pooler de Neon). | Propuesta |
 | T19 | Auditoría: tabla `audit_events` solo de inserción, escrita en la misma transacción que el cambio. Se audita el inicio de sesión exitoso; los intentos fallidos solo van a los logs técnicos. | Propuesta |
+| T20 | Catálogo: el importe viaja y se guarda como texto decimal de 2 posiciones (`"25.00"`, `NUMERIC(12,2)`), nunca como número JSON. Sin aritmética en esta fase, así que aún no se agrega una librería decimal (llega con las ventas, fase 4). | Propuesta |
+| T21 | Catálogo: edición con control de versión. `PATCH /api/products/:id` exige la `version` que la persona vio; si cambió, responde `409 conflict` en lugar de sobrescribir (sección 6.3). Una edición que no cambia nada no sube la versión ni deja auditoría. | Propuesta |
+| T22 | Catálogo: el código interno, si existe, es único por tienda sin distinguir mayúsculas (`409 conflict` con error en el campo `code`). El documento no lo pide; se agrega porque la búsqueda por código lo necesita. | Propuesta |
+| T23 | Catálogo: el listado responde por omisión solo productos activos (`status=active`; también `inactive` y `all`), ordenado por nombre, con `limit` (50, máximo 100) y `offset`. No existe `DELETE`: un producto se desactiva. La tabla guarda `allows_fractions` (falso) y `unit` para vender por peso o volumen más adelante sin migrar datos (B1); la API aún no permite cambiarlo. | Propuesta |
 
 ## 4. Preguntas abiertas
 

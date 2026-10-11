@@ -8,6 +8,7 @@ import { AppError } from './errors';
 import { authRoutes } from './modules/auth/auth.routes';
 import type { IdentityProvider } from './modules/auth/identity-provider';
 import { authPlugin } from './modules/auth/plugin';
+import { productRoutes } from './modules/products/product.routes';
 import { storeRoutes } from './modules/store/store.routes';
 import { healthRoutes } from './routes/health';
 
@@ -90,6 +91,7 @@ export function buildApp(options: AppOptions): FastifyInstance {
         cookies: { secure: config.NODE_ENV === 'production' },
       });
       await api.register(storeRoutes, { db });
+      await api.register(productRoutes, { db });
     },
     { prefix: '/api' },
   );

@@ -23,6 +23,8 @@ export type JsonPrimitive = boolean | number | string | null;
 
 export type JsonValue = JsonArray | JsonObject | JsonPrimitive;
 
+export type Numeric = ColumnType<string, number | string, number | string>;
+
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
 export interface AuditEvents {
@@ -41,6 +43,24 @@ export interface Memberships {
   role: string;
   tenant_id: string;
   user_id: string;
+}
+
+export interface Products {
+  active: Generated<boolean>;
+  allows_fractions: Generated<boolean>;
+  category: string | null;
+  code: string | null;
+  cost: Numeric;
+  created_at: Generated<Timestamp>;
+  description: string | null;
+  id: Generated<string>;
+  name: string;
+  notes: string | null;
+  price: Numeric;
+  tenant_id: string;
+  unit: Generated<string>;
+  updated_at: Generated<Timestamp>;
+  version: Generated<number>;
 }
 
 export interface StoreSettings {
@@ -73,6 +93,7 @@ export interface Users {
 export interface DB {
   audit_events: AuditEvents;
   memberships: Memberships;
+  products: Products;
   store_settings: StoreSettings;
   tenants: Tenants;
   users: Users;

@@ -1,29 +1,5 @@
-import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page } from '@playwright/test';
-
-const owner = { email: process.env.E2E_OWNER_EMAIL!, password: process.env.E2E_OWNER_PASSWORD! };
-const orphan = { email: process.env.E2E_ORPHAN_EMAIL!, password: process.env.E2E_ORPHAN_PASSWORD! };
-
-async function signIn(page: Page, user: { email: string; password: string }) {
-  await page.goto('/login');
-  await page.getByLabel('Correo electrónico').fill(user.email);
-  await page.getByLabel('Contraseña').fill(user.password);
-  await page.getByRole('button', { name: 'Iniciar sesión' }).click();
-}
-
-async function expectAccessible(page: Page) {
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
-    .analyze();
-  expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([]);
-}
-
-async function expectNoHorizontalScroll(page: Page) {
-  const overflow = await page.evaluate(
-    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
-  );
-  expect(overflow).toBeLessThanOrEqual(0);
-}
+import { expect, test } from '@playwright/test';
+import { expectAccessible, expectNoHorizontalScroll, orphan, owner, signIn } from './helpers';
 
 test('sin sesión, cualquier pantalla lleva al inicio de sesión', async ({ page }) => {
   await page.goto('/pendientes');

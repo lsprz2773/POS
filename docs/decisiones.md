@@ -111,6 +111,11 @@ Política propuesta (M1), válida sea cual sea la herramienta:
 | T43 | Pendientes: `GET /api/sales/pending` devuelve las ventas activas con saldo mayor que cero, de cualquier día, con filtro por rango de fecha de venta, paginación, la cuenta y el total pendiente de todas las que cumplen el filtro. | Aprobada |
 | T44 | Pagos: el detalle de la venta (`GET /api/sales/:id`) incluye el historial de pagos con método, importe, fecha, estado y motivo de anulación. | Aprobada |
 | T45 | Pagos: la base impide borrar o editar un pago; solo puede pasar de vigente a anulado, con motivo, una vez. Un pago de una tienda no puede apuntar a una venta de otra. | Aprobada |
+| T46 | Cancelación: `POST /api/sales/:id/cancel` con motivo obligatorio (1 a 200 caracteres). La confirmación es asunto de la interfaz; no usa `Idempotency-Key` porque repetirla es seguro: la segunda vez responde 409 "ya estaba cancelada". Cualquier venta vigente (pendiente, parcial o pagada) se puede cancelar. | Aprobada |
+| T47 | Cancelación: si la venta es de hoy (fecha de la tienda), las unidades vuelven a estar disponibles. Si es de un día anterior no se restituye el inventario y ese día conserva su historial: las unidades siguen contando como vendidas (B13). Se registra si se restituyó. | Aprobada |
+| T48 | Cancelación: los pagos se conservan intactos. La venta cancelada muestra lo cobrado como `refundDue` ("por devolver fuera del sistema", B14), su saldo es 0 y no admite pagos nuevos ni anulaciones. No aparece en pendientes. | Aprobada |
+| T49 | Cancelación: motivo, fecha, usuario y si se restituyó el inventario se guardan en `sale_cancellations`, que no se edita ni se borra; la venta pasa a `cancelled` y no se reactiva (la base lo impide). Todo, con su evento de auditoría, en una sola transacción con la venta bloqueada. | Aprobada |
+| T50 | Cancelación: la venta cancelada conserva folio, renglones y pagos, y sigue impidiendo quitar el producto del día. Sale de las métricas de venta efectiva y se mostrará aparte (fase 7). | Aprobada |
 
 ## 4. Preguntas abiertas
 

@@ -51,6 +51,28 @@ export type CreateSaleInput = z.output<typeof createSaleSchema>;
 
 export const saleStatuses = ['active', 'cancelled'] as const;
 
+/** Cancela una venta con motivo; la venta y sus pagos se conservan (B13, B14). */
+export const cancelSaleSchema = z
+  .object({
+    reason: z
+      .string('Escribe el motivo de la cancelación.')
+      .trim()
+      .min(1, 'Escribe el motivo de la cancelación.')
+      .max(200, 'Máximo 200 caracteres.'),
+  })
+  .strict();
+export type CancelSaleInput = z.output<typeof cancelSaleSchema>;
+
+export const saleCancellationSchema = z.object({
+  reason: z.string(),
+  cancelledAt: z.string(),
+  /** Verdadero si las piezas volvieron al inventario (solo ventas de hoy, B13). */
+  inventoryRestored: z.boolean(),
+  /** Lo cobrado y no anulado: se devuelve fuera del sistema (B14). */
+  refundDue: z.string(),
+});
+export type SaleCancellation = z.infer<typeof saleCancellationSchema>;
+
 export const saleItemSchema = z.object({
   id: z.uuid(),
   productId: z.uuid(),
@@ -82,6 +104,8 @@ export const saleSchema = z.object({
   paymentStatus: z.enum(collectionStatuses),
   /** Cuándo quedó pagada por completo; nulo si tiene saldo (RF-068). */
   settledAt: z.string().nullable(),
+  /** Datos de la cancelación; nulo si la venta sigue vigente. */
+  cancellation: saleCancellationSchema.nullable(),
   payments: z.array(paymentSchema),
   items: z.array(saleItemSchema),
 });

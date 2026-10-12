@@ -46,7 +46,7 @@ export async function getSale(db: Database, ctx: AuthContext, id: string): Promi
   const found = await createSaleRepository(db, ctx.tenantId).findById(parsedId.data);
   if (!found) throw SALE_NOT_FOUND();
   const settings = await createStoreRepository(db, ctx.tenantId).get();
-  const { sale, items, payments } = found;
+  const { sale, items, payments, cancellation } = found;
   const paid = sumMoney(
     payments.filter((payment) => payment.status === 'valid').map((payment) => payment.amount),
   );
@@ -63,9 +63,19 @@ export async function getSale(db: Database, ctx: AuthContext, id: string): Promi
     total: sale.total,
     outsideWorkdayHours: isOutsideHours(settings.timezone, sale.createdAt, sale),
     paid,
-    balance: balanceOf(sale.total, paid),
+    // Una venta cancelada ya no se cobra: no le falta nada por pagar.
+    balance: sale.status === 'cancelled' ? '0.00' : balanceOf(sale.total, paid),
     paymentStatus: collectionStatus({ status: sale.status, total: sale.total, paid }),
     settledAt: sale.settledAt?.toISOString() ?? null,
+    cancellation: cancellation
+      ? {
+          reason: cancellation.reason,
+          cancelledAt: cancellation.cancelledAt.toISOString(),
+          inventoryRestored: cancellation.inventoryRestored,
+          // Lo cobrado se devuelve fuera del sistema (B14).
+          refundDue: paid,
+        }
+      : null,
     payments: payments.map((payment) => ({
       id: payment.id,
       operationId: payment.operationId,

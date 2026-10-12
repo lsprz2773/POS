@@ -42,20 +42,22 @@ erDiagram
 | Workday (jornada) | fecha de negocio, hora de inicio, hora de fin | Única por (tenant, fecha). Se crea al agregar el primer producto y copia el horario de la configuración; el horario se puede ajustar por día. Solo se modifican jornadas de hoy en adelante; las pasadas son de consulta. Sin cierre. |
 | DailyOffer | jornada, producto, cantidad inicial | Único por (jornada, producto). La cantidad inicial no se edita; crece solo con ajustes. Solo productos activos de la misma tienda. |
 | StockAdjustment | disponibilidad diaria, incremento (> 0), motivo, usuario, fecha | Solo incrementos (B9). |
-| Sale | folio consecutivo por tenant, jornada, cliente/referencia, nota, estado (`active`/`cancelled`), total, creada el, creada por, llave de idempotencia, liquidada el | El folio es legible (`V-0043`, RF-049). Nace en la jornada de hoy. Una venta confirmada no se edita ni se borra (la base lo impide). La fecha de liquidación llega con los pagos (fase 5). |
+| Sale | folio consecutivo por tenant, jornada, cliente/referencia, nota, estado (`active`/`cancelled`), total, creada el, creada por, llave de idempotencia, liquidada el | El folio es legible (`V-0043`, RF-049). Nace en la jornada de hoy. Una venta confirmada no se edita ni se borra (la base lo impide); solo puede pasar a cancelada. La fecha de liquidación llega con los pagos (fase 5). |
 | SaleItem | venta, posición, disponibilidad diaria, producto, nombre del producto en ese momento, cantidad, precio unitario, costo unitario, subtotal | Congela precio, costo y nombre (RF-044, RF-045). Un producto aparece una sola vez por venta. Subtotal = cantidad × precio, redondeado a centavos. |
 | Payment | venta, método (`cash`/`transfer`), monto, fecha, operación, llave de idempotencia, estado (`valid`/`voided`), motivo, fecha y usuario de la anulación, usuario | Un pago mixto son varios renglones de la misma operación (uno por método). El método es solo informativo (B16). Un pago no se borra ni se edita: solo se anula. |
-| SaleCancellation | venta, motivo, fecha, usuario, inventario restituido (sí/no) | Se conserva siempre. |
+| SaleCancellation | venta, motivo, fecha, usuario, inventario restituido (sí/no) | Se conserva siempre y no se edita ni se borra. Una venta tiene como máximo una. Una venta cancelada no se reactiva. |
 | AuditEvent | entidad, acción, usuario, fecha, datos no sensibles | Se escribe en la misma transacción que el cambio. |
 
 ## Valores derivados
 
 - `total` = suma de subtotales de la venta.
 - `pagado` = suma de pagos `valid`.
-- `saldo` = `total` − `pagado`.
+- `saldo` = `total` − `pagado`; una venta cancelada tiene saldo 0 (ya no se cobra).
 - Estado de cobro: `cancelled` si la venta está cancelada; si no, `paid` si `saldo` = 0 (también una venta de total cero), `partial` si 0 < `pagado` < `total`, y `pending` si `pagado` = 0. La interfaz agrupa `pending` y `partial` como "Pendiente".
 - Fecha de liquidación (`settled_at`): cuándo el saldo llegó a 0; se borra si una anulación vuelve a dejar saldo.
-- Disponible de un producto en un día = cantidad inicial + ajustes − unidades en ventas no canceladas.
+- Vendido de un producto en un día = unidades en ventas vigentes más las de ventas canceladas cuyo inventario no se restituyó (B13).
+- Disponible de un producto en un día = cantidad inicial + ajustes − vendido.
+- Por devolver fuera del sistema de una venta cancelada = pagos `valid` de esa venta (B14).
 
 ## Invariantes (cada una lleva prueba automatizada)
 
@@ -92,9 +94,11 @@ erDiagram
 2. El pago pasa a `voided` y se conserva. El saldo y el estado se recalculan; si la venta estaba pagada, se limpia la fecha de liquidación y el evento queda en auditoría.
 
 ### Cancelar venta
-1. Requiere confirmación y motivo; no se repite sobre una venta ya cancelada.
-2. Si la venta es de hoy, se restituyen las unidades a la disponibilidad. Si es de un día anterior, no se restituye y se registra (B13).
-3. Los pagos se conservan. La interfaz advierte que cualquier devolución de dinero se hace fuera del sistema.
+1. Requiere confirmación (interfaz) y motivo; no se repite sobre una venta ya cancelada (409).
+2. En una transacción: bloquea la venta, la marca `cancelled`, guarda la cancelación y la auditoría.
+3. Si la venta es de hoy, se restituyen las unidades a la disponibilidad. Si es de un día anterior, no se restituye, esas unidades siguen contando como vendidas de su día y se registra (B13).
+4. Los pagos se conservan y se muestran como "por devolver fuera del sistema" (`refundDue`). La interfaz advierte que cualquier devolución de dinero se hace fuera del sistema.
+5. La venta cancelada ya no admite pagos ni anulaciones, y sale de pendientes.
 
 ## Definiciones de métricas
 

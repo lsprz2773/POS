@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createSaleSchema, idempotencyKeySchema } from './index';
+import { cancelSaleSchema, createSaleSchema, idempotencyKeySchema } from './index';
 
 const p1 = '5b2c1a54-7a8e-4a8e-9a55-4b0a1f6d2a10';
 const p2 = '9d8c7b6a-1111-4222-8333-444455556666';
@@ -81,5 +81,19 @@ describe('createSaleSchema', () => {
     expect(createSaleSchema.safeParse({ items: [item], note: 'x'.repeat(501) }).success).toBe(
       false,
     );
+  });
+});
+
+describe('cancelSaleSchema', () => {
+  it('exige un motivo de 1 a 200 caracteres y lo recorta', () => {
+    expect(cancelSaleSchema.parse({ reason: '  Duplicada ' })).toEqual({ reason: 'Duplicada' });
+    for (const reason of [undefined, '', '   ', 'x'.repeat(201), 5]) {
+      expect(cancelSaleSchema.safeParse({ reason }).success).toBe(false);
+    }
+  });
+
+  it('rechaza campos que no son suyos', () => {
+    expect(cancelSaleSchema.safeParse({ reason: 'ok', status: 'active' }).success).toBe(false);
+    expect(cancelSaleSchema.safeParse({ reason: 'ok', tenantId: 'x' }).success).toBe(false);
   });
 });

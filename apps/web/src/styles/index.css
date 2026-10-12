@@ -688,4 +688,26 @@ body {
     background: var(--prim);
     border-radius: 4px;
   }
+
+  /* Barra de acción fija (venta en curso): resumen y botón principal al alcance del pulgar. */
+  .salebar {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: max(12px, env(safe-area-inset-bottom));
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 28px;
+  }
+  @media (min-width: 1024px) {
+    .salebar {
+      left: 292px;
+      max-width: 720px;
+      margin-inline: auto;
+      right: 16px;
+    }
+  }
 }

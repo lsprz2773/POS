@@ -1,30 +1,11 @@
 import { AppError } from '../../errors';
-import { addDays } from '@pos/shared';
+import { monthOf, weekOf, type Period } from '@pos/shared';
 
 /** Un reporte abarca como máximo un año para que la consulta siga siendo rápida. */
 export const MAX_REPORT_DAYS = 366;
 
-export interface Period {
-  from: string;
-  to: string;
-}
-
 const invalid = (field: string, message: string) =>
   new AppError(400, 'validation_error', 'Revisa los datos ingresados.', { [field]: message });
-
-/** Lunes a domingo de la semana que contiene la fecha (B10). */
-export function weekOf(date: string): Period {
-  const weekday = new Date(`${date}T00:00:00Z`).getUTCDay() || 7;
-  const from = addDays(date, 1 - weekday);
-  return { from, to: addDays(from, 6) };
-}
-
-export function monthOf(date: string): Period {
-  const [year, month] = date.split('-').map(Number) as [number, number];
-  const last = new Date(Date.UTC(year, month, 0)).getUTCDate();
-  const prefix = date.slice(0, 7);
-  return { from: `${prefix}-01`, to: `${prefix}-${String(last).padStart(2, '0')}` };
-}
 
 export function daysIn({ from, to }: Period): number {
   const ms = Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`);

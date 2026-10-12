@@ -4,25 +4,10 @@ import {
   daysIn,
   formatSignedCents,
   grossMargin,
-  monthOf,
   resolvePeriod,
-  weekOf,
 } from './report.domain';
 
 describe('periodos', () => {
-  it('la semana va de lunes a domingo', () => {
-    expect(weekOf('2026-10-15')).toEqual({ from: '2026-10-12', to: '2026-10-18' }); // jueves
-    expect(weekOf('2026-10-12')).toEqual({ from: '2026-10-12', to: '2026-10-18' }); // lunes
-    expect(weekOf('2026-10-18')).toEqual({ from: '2026-10-12', to: '2026-10-18' }); // domingo
-    expect(weekOf('2026-01-01')).toEqual({ from: '2025-12-29', to: '2026-01-04' }); // cruza el año
-  });
-
-  it('el mes cubre del día 1 al último, también en febrero y en bisiesto', () => {
-    expect(monthOf('2026-10-15')).toEqual({ from: '2026-10-01', to: '2026-10-31' });
-    expect(monthOf('2026-02-10')).toEqual({ from: '2026-02-01', to: '2026-02-28' });
-    expect(monthOf('2028-02-10')).toEqual({ from: '2028-02-01', to: '2028-02-29' });
-  });
-
   it('resuelve día, semana, mes y rango; hoy por omisión', () => {
     const today = '2026-10-15';
     expect(resolvePeriod({}, today)).toEqual({ from: today, to: today });

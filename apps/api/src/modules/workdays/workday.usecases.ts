@@ -83,6 +83,7 @@ async function loadView(
       productActive: offer.productActive,
       unit: offer.unit,
       allowsFractions: offer.allowsFractions,
+      price: offer.price,
       initialQuantity,
       adjustedQuantity,
       soldQuantity,

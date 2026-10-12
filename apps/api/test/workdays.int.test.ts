@@ -120,6 +120,8 @@ describe('preparar la jornada', () => {
       productName: 'Tamal de rajas',
       productCode: 'TAM-01',
       unit: 'pieza',
+      // Precio vigente del catálogo, para armar la venta; el de cada venta se congela al vender.
+      price: '25.00',
       initialQuantity: '40',
       adjustedQuantity: '0',
       soldQuantity: '0',

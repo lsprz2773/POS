@@ -18,6 +18,8 @@ export interface OfferRow {
   productActive: boolean;
   unit: string;
   allowsFractions: boolean;
+  /** Precio de venta vigente en el catálogo; el de cada venta se congela al vender. */
+  price: string;
   initialQuantity: string;
   adjustedQuantity: string;
 }
@@ -76,6 +78,7 @@ export function createWorkdayRepository(db: Database, tenantId: string) {
         'p.active as productActive',
         'p.unit',
         'p.allows_fractions as allowsFractions',
+        sql<string>`p.price::text`.as('price'),
         sql<string>`o.initial_quantity::text`.as('initialQuantity'),
         sql<string>`(select coalesce(sum(a.increment), 0)::text from stock_adjustments a
           where a.daily_offer_id = o.id and a.tenant_id = o.tenant_id)`.as('adjustedQuantity'),

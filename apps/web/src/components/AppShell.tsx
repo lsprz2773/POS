@@ -25,6 +25,9 @@ export function AppShell() {
   const navigate = useNavigate();
   const main = useRef<HTMLElement>(null);
   const [expired, setExpired] = useState(false);
+  // Vendiendo o viendo una venta, la barra inferior cede su lugar a la barra de acción (como en el diseño).
+  const selling =
+    location.pathname.startsWith('/vender') || location.pathname.startsWith('/ventas/');
 
   useEffect(() => onSessionExpired(() => setExpired(true)), []);
 
@@ -63,13 +66,13 @@ export function AppShell() {
           id="contenido"
           ref={main}
           tabIndex={-1}
-          className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 pb-32 pt-6 outline-none lg:pb-10"
+          className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 pb-32 pt-6 outline-none"
         >
           <Outlet />
         </main>
       </div>
 
-      <nav className="tabbar glass2" aria-label={copy.nav.label}>
+      <nav className="tabbar glass2" aria-label={copy.nav.label} hidden={selling}>
         {TAB_NAV.map(({ to, label, Icon, ...rest }) => (
           <NavLink
             key={to}

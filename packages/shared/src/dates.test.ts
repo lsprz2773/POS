@@ -5,8 +5,10 @@ import {
   isOutsideHours,
   isPastDate,
   isoWeekday,
+  monthOf,
   localTime,
   todayIn,
+  weekOf,
 } from './dates';
 
 describe('fechas de negocio', () => {
@@ -57,5 +59,20 @@ describe('horario de la jornada', () => {
     expect(isOutsideHours('America/Mexico_City', at('13:59'), hours)).toBe(true); // 07:59
     expect(isOutsideHours('America/Mexico_City', at('21:59'), hours)).toBe(false); // 15:59
     expect(isOutsideHours('America/Mexico_City', at('22:00'), hours)).toBe(true); // 16:00
+  });
+});
+
+describe('periodos', () => {
+  it('la semana va de lunes a domingo', () => {
+    expect(weekOf('2026-10-15')).toEqual({ from: '2026-10-12', to: '2026-10-18' }); // jueves
+    expect(weekOf('2026-10-12')).toEqual({ from: '2026-10-12', to: '2026-10-18' }); // lunes
+    expect(weekOf('2026-10-18')).toEqual({ from: '2026-10-12', to: '2026-10-18' }); // domingo
+    expect(weekOf('2026-01-01')).toEqual({ from: '2025-12-29', to: '2026-01-04' }); // cruza el año
+  });
+
+  it('el mes cubre del día 1 al último, también en febrero y en bisiesto', () => {
+    expect(monthOf('2026-10-15')).toEqual({ from: '2026-10-01', to: '2026-10-31' });
+    expect(monthOf('2026-02-10')).toEqual({ from: '2026-02-01', to: '2026-02-28' });
+    expect(monthOf('2028-02-10')).toEqual({ from: '2028-02-01', to: '2028-02-29' });
   });
 });

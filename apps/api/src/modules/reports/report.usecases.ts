@@ -1,4 +1,5 @@
 import {
+  type Period,
   dashboardSchema,
   normalizeQuantity,
   reportQuerySchema,
@@ -14,13 +15,7 @@ import { createStoreRepository } from '../store/store.repository';
 import type { AuthContext } from '../tenancy/context';
 import { createWorkdayRepository } from '../workdays/workday.repository';
 import type { Clock } from '../workdays/workday.usecases';
-import {
-  averageTicketCents,
-  formatSignedCents,
-  grossMargin,
-  resolvePeriod,
-  type Period,
-} from './report.domain';
+import { averageTicketCents, formatSignedCents, grossMargin, resolvePeriod } from './report.domain';
 import { createReportRepository } from './report.repository';
 
 const TOP_PRODUCTS = 10;

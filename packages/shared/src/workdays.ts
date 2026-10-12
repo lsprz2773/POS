@@ -97,6 +97,8 @@ export const dailyOfferSchema = z.object({
   productActive: z.boolean(),
   unit: z.string(),
   allowsFractions: z.boolean(),
+  /** Precio de venta vigente en el catálogo (el de cada venta se congela al vender). */
+  price: z.string(),
   initialQuantity: z.string(),
   adjustedQuantity: z.string(),
   soldQuantity: z.string(),

@@ -52,3 +52,22 @@ export function isOutsideHours(
   const time = localTime(timezone, at);
   return time < hours.startTime || time >= hours.endTime;
 }
+
+export interface Period {
+  from: string;
+  to: string;
+}
+
+/** Lunes a domingo de la semana que contiene la fecha (B10). */
+export function weekOf(date: string): Period {
+  const weekday = new Date(`${date}T00:00:00Z`).getUTCDay() || 7;
+  const from = addDays(date, 1 - weekday);
+  return { from, to: addDays(from, 6) };
+}
+
+export function monthOf(date: string): Period {
+  const [year, month] = date.split('-').map(Number) as [number, number];
+  const last = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const prefix = date.slice(0, 7);
+  return { from: `${prefix}-01`, to: `${prefix}-${String(last).padStart(2, '0')}` };
+}

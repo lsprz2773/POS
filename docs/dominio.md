@@ -44,7 +44,7 @@ erDiagram
 | StockAdjustment | disponibilidad diaria, incremento (> 0), motivo, usuario, fecha | Solo incrementos (B9). |
 | Sale | folio consecutivo por tenant, jornada, cliente/referencia, nota, estado (`active`/`cancelled`), total, creada el, creada por, llave de idempotencia, liquidada el | El folio es legible (`V-0043`, RF-049). Nace en la jornada de hoy. Una venta confirmada no se edita ni se borra (la base lo impide). La fecha de liquidación llega con los pagos (fase 5). |
 | SaleItem | venta, posición, disponibilidad diaria, producto, nombre del producto en ese momento, cantidad, precio unitario, costo unitario, subtotal | Congela precio, costo y nombre (RF-044, RF-045). Un producto aparece una sola vez por venta. Subtotal = cantidad × precio, redondeado a centavos. |
-| Payment | venta, método (`cash`/`transfer`), monto, fecha, llave de operación, estado (`valid`/`voided`), motivo y fecha de anulación, usuario | Un pago mixto son varios renglones con la misma llave de operación. |
+| Payment | venta, método (`cash`/`transfer`), monto, fecha, operación, llave de idempotencia, estado (`valid`/`voided`), motivo, fecha y usuario de la anulación, usuario | Un pago mixto son varios renglones de la misma operación (uno por método). El método es solo informativo (B16). Un pago no se borra ni se edita: solo se anula. |
 | SaleCancellation | venta, motivo, fecha, usuario, inventario restituido (sí/no) | Se conserva siempre. |
 | AuditEvent | entidad, acción, usuario, fecha, datos no sensibles | Se escribe en la misma transacción que el cambio. |
 
@@ -53,7 +53,8 @@ erDiagram
 - `total` = suma de subtotales de la venta.
 - `pagado` = suma de pagos `valid`.
 - `saldo` = `total` − `pagado`.
-- Estado de cobro: `cancelled` si la venta está cancelada; si no, `pending` si `pagado` = 0, `partial` si 0 < `pagado` < `total`, y `paid` si `saldo` = 0. La interfaz agrupa `pending` y `partial` como "Pendiente".
+- Estado de cobro: `cancelled` si la venta está cancelada; si no, `paid` si `saldo` = 0 (también una venta de total cero), `partial` si 0 < `pagado` < `total`, y `pending` si `pagado` = 0. La interfaz agrupa `pending` y `partial` como "Pendiente".
+- Fecha de liquidación (`settled_at`): cuándo el saldo llegó a 0; se borra si una anulación vuelve a dejar saldo.
 - Disponible de un producto en un día = cantidad inicial + ajustes − unidades en ventas no canceladas.
 
 ## Invariantes (cada una lleva prueba automatizada)

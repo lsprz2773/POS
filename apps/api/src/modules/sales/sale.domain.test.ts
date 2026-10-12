@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  balanceOf,
+  collectionStatus,
   formatFolio,
+  formatMoney,
+  hashPaymentRequest,
   fromCents,
   hashSaleRequest,
   isOutsideHours,
@@ -95,5 +99,79 @@ describe('horario de la jornada', () => {
     expect(isOutsideHours('America/Mexico_City', at('13:59'), hours)).toBe(true); // 07:59
     expect(isOutsideHours('America/Mexico_City', at('21:59'), hours)).toBe(false); // 15:59
     expect(isOutsideHours('America/Mexico_City', at('22:00'), hours)).toBe(true); // 16:00
+  });
+});
+
+describe('saldo y estado de cobro', () => {
+  it('saldo = total − pagado, con centavos exactos', () => {
+    expect(balanceOf('75.00', '0.00')).toBe('75.00');
+    expect(balanceOf('75.00', '30.10')).toBe('44.90');
+    expect(balanceOf('75.00', '75.00')).toBe('0.00');
+  });
+
+  it('pendiente sin pagos, parcial con pagos y pagada solo sin saldo', () => {
+    const sale = { status: 'active' as const, total: '100.00' };
+    expect(collectionStatus({ ...sale, paid: '0.00' })).toBe('pending');
+    expect(collectionStatus({ ...sale, paid: '0.01' })).toBe('partial');
+    expect(collectionStatus({ ...sale, paid: '99.99' })).toBe('partial');
+    expect(collectionStatus({ ...sale, paid: '100.00' })).toBe('paid');
+  });
+
+  it('una venta cancelada siempre es cancelada', () => {
+    expect(collectionStatus({ status: 'cancelled', total: '100.00', paid: '100.00' })).toBe(
+      'cancelled',
+    );
+    expect(collectionStatus({ status: 'cancelled', total: '100.00', paid: '0.00' })).toBe(
+      'cancelled',
+    );
+  });
+
+  it('una venta de total cero no tiene saldo: cuenta como pagada y no queda pendiente', () => {
+    expect(collectionStatus({ status: 'active', total: '0.00', paid: '0.00' })).toBe('paid');
+  });
+});
+
+describe('formato de moneda', () => {
+  it('da formato de pesos con miles y 2 decimales', () => {
+    expect(formatMoney('75.00', 'MXN')).toBe('$75.00');
+    expect(formatMoney('1285.5', 'MXN')).toBe('$1,285.50');
+    expect(formatMoney('0.00', 'MXN')).toBe('$0.00');
+  });
+});
+
+describe('huella de un pago', () => {
+  const saleId = '5b2c1a54-7a8e-4a8e-9a55-4b0a1f6d2a10';
+  const mixed = [
+    { method: 'cash' as const, amount: '30.00' },
+    { method: 'transfer' as const, amount: '20.00' },
+  ];
+
+  it('no depende del orden de los renglones', () => {
+    expect(hashPaymentRequest(saleId, mixed)).toBe(
+      hashPaymentRequest(saleId, [...mixed].reverse()),
+    );
+  });
+
+  it('cambia con la venta, el método o el importe', () => {
+    const hash = hashPaymentRequest(saleId, mixed);
+    expect(hashPaymentRequest('9d8c7b6a-1111-4222-8333-444455556666', mixed)).not.toBe(hash);
+    expect(hashPaymentRequest(saleId, [mixed[0]!])).not.toBe(hash);
+    expect(hashPaymentRequest(saleId, [{ method: 'cash', amount: '31.00' }, mixed[1]!])).not.toBe(
+      hash,
+    );
+  });
+});
+
+describe('huella de la venta con pagos', () => {
+  const items = [{ productId: p1, quantity: '2' }];
+
+  it('incluye los pagos solo cuando existen, sin alterar la huella de ventas sin pago', () => {
+    const plain = hashSaleRequest({ items });
+    expect(hashSaleRequest({ items, payments: undefined })).toBe(plain);
+    const withPayment = hashSaleRequest({ items, payments: [{ method: 'cash', amount: '50.00' }] });
+    expect(withPayment).not.toBe(plain);
+    expect(hashSaleRequest({ items, payments: [{ method: 'cash', amount: '40.00' }] })).not.toBe(
+      withPayment,
+    );
   });
 });

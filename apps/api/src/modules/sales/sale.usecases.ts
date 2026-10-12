@@ -10,15 +10,18 @@ import { availableQuantity, isWholeQuantity, toMilli, todayIn } from '../workday
 import { createWorkdayRepository } from '../workdays/workday.repository';
 import type { Clock } from '../workdays/workday.usecases';
 import {
+  balanceOf,
+  collectionStatus,
   formatFolio,
   hashSaleRequest,
   isOutsideHours,
   lineSubtotal,
   sumMoney,
 } from './sale.domain';
+import { applyPayments } from './payment.apply';
 import { createSaleRepository, type NewSaleItem } from './sale.repository';
 
-const KEY_REUSED = new AppError(
+export const KEY_REUSED = new AppError(
   409,
   'conflict',
   'Esa llave de idempotencia ya se usó con otra venta distinta. Genera una nueva para una venta nueva.',
@@ -43,7 +46,10 @@ export async function getSale(db: Database, ctx: AuthContext, id: string): Promi
   const found = await createSaleRepository(db, ctx.tenantId).findById(parsedId.data);
   if (!found) throw SALE_NOT_FOUND();
   const settings = await createStoreRepository(db, ctx.tenantId).get();
-  const { sale, items } = found;
+  const { sale, items, payments } = found;
+  const paid = sumMoney(
+    payments.filter((payment) => payment.status === 'valid').map((payment) => payment.amount),
+  );
 
   return {
     id: sale.id,
@@ -56,6 +62,20 @@ export async function getSale(db: Database, ctx: AuthContext, id: string): Promi
     note: sale.note,
     total: sale.total,
     outsideWorkdayHours: isOutsideHours(settings.timezone, sale.createdAt, sale),
+    paid,
+    balance: balanceOf(sale.total, paid),
+    paymentStatus: collectionStatus({ status: sale.status, total: sale.total, paid }),
+    settledAt: sale.settledAt?.toISOString() ?? null,
+    payments: payments.map((payment) => ({
+      id: payment.id,
+      operationId: payment.operationId,
+      method: payment.method,
+      amount: payment.amount,
+      status: payment.status,
+      createdAt: payment.createdAt.toISOString(),
+      voidedAt: payment.voidedAt?.toISOString() ?? null,
+      voidReason: payment.voidReason,
+    })),
     items: items.map((item) => ({
       id: item.id,
       productId: item.productId,
@@ -203,6 +223,18 @@ export async function createSale(
         action: 'create',
         data: { folio: formatFolio(folio), date: today, total, items: items.length },
       });
+      // El pago opcional viaja en la misma operación: si no se puede cobrar, no hay venta (RF-058).
+      if (data.payments) {
+        await applyPayments(trx, ctx, {
+          sale: { id: saleId, folioNumber: folio, total },
+          lines: data.payments,
+          field: 'payments',
+          currency: settings.currency,
+          idempotencyKey,
+          requestHash,
+          now,
+        });
+      }
       return { saleId, replayed: false };
     });
 

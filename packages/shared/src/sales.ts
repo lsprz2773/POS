@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { collectionStatuses, paymentLinesSchema, paymentSchema } from './payments';
 import { positiveQuantitySchema } from './workdays';
 import { optionalText } from './text';
 
@@ -29,6 +30,8 @@ export const createSaleSchema = z
       .max(50, 'Máximo 50 renglones por venta.'),
     customerReference: optionalText(100).optional(),
     note: optionalText(500).optional(),
+    /** Pago opcional al crear la venta, en la misma operación (RF-058). */
+    payments: paymentLinesSchema.optional(),
   })
   .strict()
   .superRefine((value, ctx) => {
@@ -72,6 +75,14 @@ export const saleSchema = z.object({
   total: z.string(),
   /** Aviso (B15): la venta se hizo fuera del horario de su jornada; no la bloquea. */
   outsideWorkdayHours: z.boolean(),
+  /** Suma de los pagos vigentes (RF-056). */
+  paid: z.string(),
+  /** Falta por pagar = total − pagado (RF-057). */
+  balance: z.string(),
+  paymentStatus: z.enum(collectionStatuses),
+  /** Cuándo quedó pagada por completo; nulo si tiene saldo (RF-068). */
+  settledAt: z.string().nullable(),
+  payments: z.array(paymentSchema),
   items: z.array(saleItemSchema),
 });
 export type Sale = z.infer<typeof saleSchema>;

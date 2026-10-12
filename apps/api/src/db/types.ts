@@ -55,6 +55,23 @@ export interface Memberships {
   user_id: string;
 }
 
+export interface Payments {
+  amount: Numeric;
+  created_at: Generated<Timestamp>;
+  created_by: string;
+  id: Generated<string>;
+  idempotency_key: string;
+  method: string;
+  operation_id: string;
+  request_hash: string;
+  sale_id: string;
+  status: Generated<string>;
+  tenant_id: string;
+  void_reason: string | null;
+  voided_at: Timestamp | null;
+  voided_by: string | null;
+}
+
 export interface Products {
   active: Generated<boolean>;
   allows_fractions: Generated<boolean>;
@@ -102,6 +119,7 @@ export interface Sales {
   idempotency_key: string;
   note: string | null;
   request_hash: string;
+  settled_at: Timestamp | null;
   status: Generated<string>;
   tenant_id: string;
   total: Numeric;
@@ -160,6 +178,7 @@ export interface DB {
   audit_events: AuditEvents;
   daily_offers: DailyOffers;
   memberships: Memberships;
+  payments: Payments;
   products: Products;
   sale_counters: SaleCounters;
   sale_items: SaleItems;

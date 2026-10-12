@@ -36,6 +36,29 @@ export interface SaleRow {
   customerReference: string | null;
   note: string | null;
   total: string;
+  settledAt: Date | null;
+}
+
+export interface PaymentRow {
+  id: string;
+  saleId: string;
+  operationId: string;
+  method: 'cash' | 'transfer';
+  amount: string;
+  status: 'valid' | 'voided';
+  createdAt: Date;
+  voidedAt: Date | null;
+  voidReason: string | null;
+}
+
+export interface PendingSaleRow {
+  id: string;
+  folioNumber: number;
+  date: string;
+  createdAt: Date;
+  customerReference: string | null;
+  total: string;
+  paid: string;
 }
 
 export interface SaleItemRow {
@@ -175,7 +198,9 @@ export function createSaleRepository(db: Database, tenantId: string) {
       return sale.id;
     },
 
-    async findById(id: string): Promise<{ sale: SaleRow; items: SaleItemRow[] } | undefined> {
+    async findById(
+      id: string,
+    ): Promise<{ sale: SaleRow; items: SaleItemRow[]; payments: PaymentRow[] } | undefined> {
       const sale = await db
         .selectFrom('sales as s')
         .innerJoin('workdays as w', (join) =>
@@ -192,6 +217,7 @@ export function createSaleRepository(db: Database, tenantId: string) {
           's.customer_reference as customerReference',
           's.note',
           sql<string>`s.total::text`.as('total'),
+          's.settled_at as settledAt',
         ])
         .where('s.tenant_id', '=', tenantId)
         .where('s.id', '=', id)
@@ -212,7 +238,179 @@ export function createSaleRepository(db: Database, tenantId: string) {
         .where('sale_id', '=', id)
         .orderBy('position')
         .execute();
-      return { sale: sale as SaleRow, items };
+      return { sale: sale as SaleRow, items, payments: await this.paymentsOf(id) };
+    },
+
+    async paymentsOf(saleId: string): Promise<PaymentRow[]> {
+      const rows = await db
+        .selectFrom('payments')
+        .select([
+          'id',
+          'sale_id as saleId',
+          'operation_id as operationId',
+          'method',
+          sql<string>`amount::text`.as('amount'),
+          'status',
+          'created_at as createdAt',
+          'voided_at as voidedAt',
+          'void_reason as voidReason',
+        ])
+        .where('tenant_id', '=', tenantId)
+        .where('sale_id', '=', saleId)
+        .orderBy('created_at')
+        .orderBy('method')
+        .execute();
+      return rows as PaymentRow[];
+    },
+
+    /** Bloquea la venta mientras dure la transacción: los pagos de una venta se registran de uno en uno. */
+    async lockSale(id: string) {
+      return db
+        .selectFrom('sales')
+        .select([
+          'id',
+          'folio as folioNumber',
+          'status',
+          sql<string>`total::text`.as('total'),
+          'settled_at as settledAt',
+        ])
+        .where('tenant_id', '=', tenantId)
+        .where('id', '=', id)
+        .forUpdate()
+        .executeTakeFirst();
+    },
+
+    /** Suma de los pagos vigentes de la venta. */
+    async paidAmount(saleId: string): Promise<string> {
+      const row = await db
+        .selectFrom('payments')
+        .select(sql<string>`coalesce(sum(amount), 0)::text`.as('paid'))
+        .where('tenant_id', '=', tenantId)
+        .where('sale_id', '=', saleId)
+        .where('status', '=', 'valid')
+        .executeTakeFirstOrThrow();
+      return row.paid;
+    },
+
+    /** Renglones de la operación que ya usó esta llave de idempotencia, si existe. */
+    async findPaymentsByKey(key: string) {
+      return db
+        .selectFrom('payments')
+        .select(['sale_id as saleId', 'request_hash as requestHash'])
+        .where('tenant_id', '=', tenantId)
+        .where('idempotency_key', '=', key)
+        .limit(1)
+        .executeTakeFirst();
+    },
+
+    async insertPayments(values: {
+      saleId: string;
+      lines: { method: 'cash' | 'transfer'; amount: string }[];
+      createdBy: string;
+      idempotencyKey: string;
+      requestHash: string;
+      createdAt: Date;
+      operationId: string;
+    }): Promise<void> {
+      await db
+        .insertInto('payments')
+        .values(
+          values.lines.map((line) => ({
+            tenant_id: tenantId,
+            sale_id: values.saleId,
+            operation_id: values.operationId,
+            method: line.method,
+            amount: line.amount,
+            created_by: values.createdBy,
+            idempotency_key: values.idempotencyKey,
+            request_hash: values.requestHash,
+            created_at: values.createdAt,
+          })),
+        )
+        .execute();
+    },
+
+    async findPayment(id: string, options: { forUpdate?: boolean } = {}) {
+      let query = db
+        .selectFrom('payments')
+        .select([
+          'id',
+          'sale_id as saleId',
+          'method',
+          sql<string>`amount::text`.as('amount'),
+          'status',
+        ])
+        .where('tenant_id', '=', tenantId)
+        .where('id', '=', id);
+      if (options.forUpdate) query = query.forUpdate();
+      return query.executeTakeFirst();
+    },
+
+    async voidPayment(id: string, reason: string, userId: string, at: Date): Promise<void> {
+      await db
+        .updateTable('payments')
+        .set({ status: 'voided', void_reason: reason, voided_at: at, voided_by: userId })
+        .where('tenant_id', '=', tenantId)
+        .where('id', '=', id)
+        .execute();
+    },
+
+    async setSettledAt(saleId: string, settledAt: Date | null): Promise<void> {
+      await db
+        .updateTable('sales')
+        .set({ settled_at: settledAt })
+        .where('tenant_id', '=', tenantId)
+        .where('id', '=', saleId)
+        .execute();
+    },
+
+    /** Ventas activas con saldo mayor que cero, de cualquier día (RF-073, RF-080). */
+    async listPending(filter: {
+      from?: string;
+      to?: string;
+      limit: number;
+      offset: number;
+    }): Promise<{ items: PendingSaleRow[]; total: number; totalBalance: string }> {
+      const paid = sql<string>`coalesce((select sum(p.amount) from payments p
+        where p.sale_id = s.id and p.tenant_id = s.tenant_id and p.status = 'valid'), 0)`;
+      const scoped = () => {
+        let query = db
+          .selectFrom('sales as s')
+          .innerJoin('workdays as w', (join) =>
+            join.onRef('w.id', '=', 's.workday_id').onRef('w.tenant_id', '=', 's.tenant_id'),
+          )
+          .where('s.tenant_id', '=', tenantId)
+          .where('s.status', '=', 'active')
+          .where(sql<boolean>`s.total > ${paid}`);
+        if (filter.from) query = query.where(sql<boolean>`w.business_date >= ${filter.from}::date`);
+        if (filter.to) query = query.where(sql<boolean>`w.business_date <= ${filter.to}::date`);
+        return query;
+      };
+
+      const [rows, totals] = await Promise.all([
+        scoped()
+          .select([
+            's.id',
+            's.folio as folioNumber',
+            sql<string>`w.business_date::text`.as('date'),
+            's.created_at as createdAt',
+            's.customer_reference as customerReference',
+            sql<string>`s.total::text`.as('total'),
+            sql<string>`${paid}::text`.as('paid'),
+          ])
+          .orderBy('s.created_at', 'desc')
+          .orderBy('s.id')
+          .limit(filter.limit)
+          .offset(filter.offset)
+          .execute(),
+        scoped()
+          .select([
+            (eb) => eb.fn.countAll<string>().as('total'),
+            sql<string>`coalesce(sum(s.total - ${paid}), 0)::text`.as('totalBalance'),
+          ])
+          .executeTakeFirstOrThrow(),
+      ]);
+      return { items: rows, total: Number(totals.total), totalBalance: totals.totalBalance };
     },
   };
 }

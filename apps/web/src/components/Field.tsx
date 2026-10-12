@@ -1,15 +1,21 @@
 import { AlertCircle } from 'lucide-react';
-import { useId, type ComponentProps } from 'react';
+import { useId, type ComponentProps, type ReactNode } from 'react';
 
-interface Props extends Omit<ComponentProps<'input'>, 'id'> {
+interface Common {
   label: string;
   error?: string;
   hint?: string;
+  className?: string;
 }
 
-/** Campo con etiqueta visible; el error y la ayuda quedan asociados al control (WCAG 2.2). */
-export function Field({ label, error, hint, className = '', ...input }: Props) {
-  const id = useId();
+function Shell({
+  id,
+  label,
+  error,
+  hint,
+  className = '',
+  children,
+}: Common & { id: string; children: (describedBy: string | undefined) => ReactNode }) {
   const errorId = `${id}-error`;
   const hintId = `${id}-hint`;
   const describedBy = [error && errorId, hint && hintId].filter(Boolean).join(' ') || undefined;
@@ -18,13 +24,7 @@ export function Field({ label, error, hint, className = '', ...input }: Props) {
       <label className="lbl" htmlFor={id}>
         {label}
       </label>
-      <input
-        id={id}
-        className="inp"
-        aria-invalid={error ? true : undefined}
-        aria-describedby={describedBy}
-        {...input}
-      />
+      {children(describedBy)}
       {error ? (
         <p id={errorId} className="errt">
           <AlertCircle className="ic" aria-hidden="true" />
@@ -37,5 +37,84 @@ export function Field({ label, error, hint, className = '', ...input }: Props) {
         </p>
       ) : null}
     </div>
+  );
+}
+
+type InputProps = Common & ComponentProps<'input'>;
+
+/** Campo con etiqueta visible; el error y la ayuda quedan asociados al control (WCAG 2.2). */
+export function Field({ label, error, hint, className, id: given, ...input }: InputProps) {
+  const generated = useId();
+  const id = given ?? generated;
+  return (
+    <Shell id={id} label={label} error={error} hint={hint} className={className}>
+      {(describedBy) => (
+        <input
+          id={id}
+          className="inp"
+          aria-invalid={error ? true : undefined}
+          aria-describedby={describedBy}
+          {...input}
+        />
+      )}
+    </Shell>
+  );
+}
+
+type TextAreaProps = Common & ComponentProps<'textarea'>;
+
+export function TextAreaField({
+  label,
+  error,
+  hint,
+  className,
+  id: given,
+  ...area
+}: TextAreaProps) {
+  const generated = useId();
+  const id = given ?? generated;
+  return (
+    <Shell id={id} label={label} error={error} hint={hint} className={className}>
+      {(describedBy) => (
+        <textarea
+          id={id}
+          className="inp"
+          style={{ padding: '12px 14px', minHeight: 84, resize: 'none' }}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={describedBy}
+          {...area}
+        />
+      )}
+    </Shell>
+  );
+}
+
+type SelectProps = Common & ComponentProps<'select'>;
+
+export function SelectField({
+  label,
+  error,
+  hint,
+  className,
+  children,
+  id: given,
+  ...select
+}: SelectProps) {
+  const generated = useId();
+  const id = given ?? generated;
+  return (
+    <Shell id={id} label={label} error={error} hint={hint} className={className}>
+      {(describedBy) => (
+        <select
+          id={id}
+          className="inp"
+          aria-invalid={error ? true : undefined}
+          aria-describedby={describedBy}
+          {...select}
+        >
+          {children}
+        </select>
+      )}
+    </Shell>
   );
 }

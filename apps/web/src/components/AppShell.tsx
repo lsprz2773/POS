@@ -8,13 +8,16 @@ import { OfflineBanner } from './OfflineBanner';
 import { Sheet } from './Sheet';
 import { TopProgress } from './TopProgress';
 
-const NAV = [
-  { to: '/', label: copy.nav.today, Icon: Home, end: true },
-  { to: '/vender', label: copy.nav.sell, Icon: ShoppingCart, sell: true },
-  { to: '/pendientes', label: copy.nav.pending, Icon: ReceiptText },
-  { to: '/dia', label: copy.nav.day, Icon: CalendarDays },
-  { to: '/mas', label: copy.nav.more, Icon: Ellipsis },
-] as const;
+const TODAY = { to: '/', label: copy.nav.today, Icon: Home, end: true } as const;
+const SELL = { to: '/vender', label: copy.nav.sell, Icon: ShoppingCart, sell: true } as const;
+const PENDING = { to: '/pendientes', label: copy.nav.pending, Icon: ReceiptText } as const;
+const DAY = { to: '/dia', label: copy.nav.day, Icon: CalendarDays } as const;
+const MORE = { to: '/mas', label: copy.nav.more, Icon: Ellipsis } as const;
+
+/** Barra lateral de escritorio. */
+const SIDE_NAV = [TODAY, SELL, PENDING, DAY, MORE] as const;
+/** Barra inferior de móvil: Vender queda al centro, como en el diseño. */
+const TAB_NAV = [TODAY, PENDING, SELL, DAY, MORE] as const;
 
 /** Marco de la app: barra inferior en móvil, lateral en escritorio, avisos globales y sesión expirada. */
 export function AppShell() {
@@ -40,7 +43,7 @@ export function AppShell() {
       <aside className="side glass">
         <p className="h2 px-3 pb-3">{copy.app.name}</p>
         <nav aria-label={copy.nav.label} className="flex flex-col gap-2">
-          {NAV.map(({ to, label, Icon, ...rest }) => (
+          {SIDE_NAV.map(({ to, label, Icon, ...rest }) => (
             <NavLink
               key={to}
               to={to}
@@ -67,7 +70,7 @@ export function AppShell() {
       </div>
 
       <nav className="tabbar glass" aria-label={copy.nav.label}>
-        {NAV.map(({ to, label, Icon, ...rest }) => (
+        {TAB_NAV.map(({ to, label, Icon, ...rest }) => (
           <NavLink
             key={to}
             to={to}

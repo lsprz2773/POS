@@ -46,7 +46,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {items.map((item) => {
           const Icon = ICON[item.tone];
           return (
-            <div key={item.id} className={`toast glass2 ban-${item.tone} pointer-events-auto`}>
+            <div key={item.id} className={`toast glass2 toast-${item.tone} pointer-events-auto`}>
               <Icon className="ic" aria-hidden="true" />
               {item.text}
             </div>

@@ -1,8 +1,8 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
-import { MemoryRouter } from 'react-router';
+import { createMemoryRouter, RouterProvider } from 'react-router';
 import { vi } from 'vitest';
-import { AppRoutes, createQueryClient } from '../App';
+import { createQueryClient, routes } from '../App';
 import { ToastProvider } from '../components/Toast';
 
 export interface FakeResponse {
@@ -15,14 +15,16 @@ type Handler = (request: { method: string; body: unknown }) => FakeResponse | Pr
 
 /** Sustituye `fetch` por rutas simuladas; una ruta sin simular hace fallar la prueba. */
 export function stubApi(routes: Record<string, Handler | FakeResponse>) {
-  const calls: { key: string; body: unknown }[] = [];
+  const calls: { key: string; url: string; body: unknown }[] = [];
   const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const method = init?.method ?? 'GET';
-    const key = `${method} ${String(input).replace(/^\/api/, '')}`;
+    const url = String(input).replace(/^\/api/, '');
+    // Una ruta sin consulta (`GET /products`) atiende cualquier consulta (`?q=…&status=…`).
+    const key = `${method} ${url.split('?')[0]}`;
     const body = init?.body ? JSON.parse(String(init.body)) : undefined;
-    calls.push({ key, body });
-    const route = routes[key];
-    if (!route) throw new Error(`Ruta sin simular: ${key}`);
+    calls.push({ key, url, body });
+    const route = routes[`${method} ${url}`] ?? routes[key];
+    if (!route) throw new Error(`Ruta sin simular: ${method} ${url}`);
     const result = typeof route === 'function' ? await route({ method, body }) : route;
     const status = result.status ?? 200;
     return new Response(status === 204 ? null : JSON.stringify(result.body ?? {}), {
@@ -48,12 +50,47 @@ export const apiError = (status: number, code: string, error: string, requestId 
 
 export function renderApp(path = '/') {
   return render(
-    <QueryClientProvider client={createQueryClient()}>
+    <QueryClientProvider client={createQueryClient(false)}>
       <ToastProvider>
-        <MemoryRouter initialEntries={[path]}>
-          <AppRoutes />
-        </MemoryRouter>
+        <RouterProvider router={createMemoryRouter(routes, { initialEntries: [path] })} />
       </ToastProvider>
     </QueryClientProvider>,
   );
 }
+
+let counter = 0;
+
+/** Producto de prueba con los campos que devuelve el API. */
+export function makeProduct(overrides: Record<string, unknown> = {}) {
+  counter += 1;
+  return {
+    id: `00000000-0000-4000-8000-${String(counter).padStart(12, '0')}`,
+    name: 'Tamal de rajas',
+    description: null,
+    category: null,
+    code: 'TAM-01',
+    unit: 'pieza',
+    allowsFractions: false,
+    price: '25.00',
+    cost: '14.00',
+    notes: null,
+    active: true,
+    version: 1,
+    createdAt: '2026-10-12T15:00:00.000Z',
+    updatedAt: '2026-10-12T15:00:00.000Z',
+    ...overrides,
+  };
+}
+
+export const productList = (items: unknown[], total = items.length, offset = 0) => ({
+  body: { items, total, limit: 50, offset },
+});
+
+export const STORE = {
+  name: 'Tamales Ana',
+  currency: 'MXN',
+  timezone: 'America/Mexico_City',
+  workdayStart: '08:00',
+  workdayEnd: '16:00',
+  operatingDays: [1, 2, 3, 4, 5],
+};

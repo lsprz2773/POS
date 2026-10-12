@@ -40,7 +40,7 @@ export function AppShell() {
       </a>
       <TopProgress />
 
-      <aside className="side glass">
+      <aside className="side glass2">
         <p className="h2 px-3 pb-3">{copy.app.name}</p>
         <nav aria-label={copy.nav.label} className="flex flex-col gap-2">
           {SIDE_NAV.map(({ to, label, Icon, ...rest }) => (
@@ -69,7 +69,7 @@ export function AppShell() {
         </main>
       </div>
 
-      <nav className="tabbar glass" aria-label={copy.nav.label}>
+      <nav className="tabbar glass2" aria-label={copy.nav.label}>
         {TAB_NAV.map(({ to, label, Icon, ...rest }) => (
           <NavLink
             key={to}

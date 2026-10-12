@@ -115,6 +115,19 @@ test('la configuración de la tienda se guarda y sobrevive a recargar', async ({
   await expectAccessible(page);
   await expectNoHorizontalScroll(page);
 
+  // El botón principal puede quedar justo detrás de la barra inferior de vidrio: su texto debe seguir
+  // cumpliendo el contraste (en CI la maquetación lo dejó así por unos píxeles).
+  await page.evaluate(() => {
+    const button = [...document.querySelectorAll('button')].find((b) =>
+      b.textContent?.includes('Guardar cambios'),
+    )!;
+    window.scrollTo(
+      0,
+      button.getBoundingClientRect().top + window.scrollY - (window.innerHeight - 90),
+    );
+  });
+  await expectAccessible(page);
+
   // Se invierte el sábado respecto de lo que haya (las pruebas comparten base de datos).
   const saturday = page.getByRole('button', { name: 'sábado' });
   const before = await saturday.getAttribute('aria-pressed');

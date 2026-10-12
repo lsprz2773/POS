@@ -442,7 +442,7 @@ export function createSaleRepository(db: Database, tenantId: string) {
       from?: string;
       to?: string;
       status?: 'active' | 'cancelled';
-      collection?: 'pending' | 'partial' | 'paid';
+      collection?: 'pending' | 'partial' | 'paid' | 'unpaid';
       q?: string;
       limit: number;
       offset: number;
@@ -464,9 +464,11 @@ export function createSaleRepository(db: Database, tenantId: string) {
           query = query.where(
             filter.collection === 'paid'
               ? sql<boolean>`s.total <= ${paid}`
-              : filter.collection === 'partial'
-                ? sql<boolean>`${paid} > 0 and s.total > ${paid}`
-                : sql<boolean>`${paid} = 0 and s.total > 0`,
+              : filter.collection === 'unpaid'
+                ? sql<boolean>`s.total > ${paid}`
+                : filter.collection === 'partial'
+                  ? sql<boolean>`${paid} > 0 and s.total > ${paid}`
+                  : sql<boolean>`${paid} = 0 and s.total > 0`,
           );
         }
         if (filter.q) {

@@ -1,8 +1,5 @@
 import { AppError } from '../../errors';
-import { monthOf, weekOf, type Period } from '@pos/shared';
-
-/** Un reporte abarca como máximo un año para que la consulta siga siendo rápida. */
-export const MAX_REPORT_DAYS = 366;
+import { MAX_REPORT_DAYS, monthOf, weekOf, type Period } from '@pos/shared';
 
 const invalid = (field: string, message: string) =>
   new AppError(400, 'validation_error', 'Revisa los datos ingresados.', { [field]: message });

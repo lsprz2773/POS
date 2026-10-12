@@ -399,6 +399,8 @@ describe('historial de ventas', () => {
     expect(folios(await list('?status=active'))).toEqual(['V-0005', 'V-0003', 'V-0002', 'V-0001']);
     expect(folios(await list('?collection=pending'))).toEqual(['V-0005']);
     expect(folios(await list('?collection=partial'))).toEqual(['V-0003']);
+    // Con saldo = pendientes y parciales; no incluye pagadas ni canceladas.
+    expect(folios(await list('?collection=unpaid'))).toEqual(['V-0005', 'V-0003']);
     expect(folios(await list('?collection=paid'))).toEqual(['V-0002', 'V-0001']);
     expect(folios(await list('?from=2026-10-14&to=2026-10-14'))).toEqual(['V-0001']);
     expect((await list('?from=2026-10-16')).total).toBe(0);

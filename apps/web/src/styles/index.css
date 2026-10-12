@@ -628,8 +628,14 @@ body {
     border-radius: 18px;
     background: var(--hair);
   }
+  .seg {
+    flex-wrap: wrap;
+  }
   .seg .pill {
-    flex: 1;
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 0 8px;
+    font-size: 13px;
     border: 0;
     background: transparent;
     border-radius: 14px;

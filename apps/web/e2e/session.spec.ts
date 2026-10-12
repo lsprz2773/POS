@@ -49,6 +49,9 @@ test('el teclado llega al contenido con el enlace de salto', async ({ page, isMo
   test.skip(isMobile, 'Prueba de teclado: solo en escritorio.');
   await signIn(page, owner);
   await expect(page.getByRole('heading', { name: 'Hoy' })).toBeVisible();
+  // Carga limpia: sin foco previo, la primera parada del teclado es el enlace de salto.
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'Hoy' })).toBeVisible();
   await page.keyboard.press('Tab');
   await expect(page.getByRole('link', { name: 'Saltar al contenido' })).toBeFocused();
 });

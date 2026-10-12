@@ -1,4 +1,4 @@
-import type { StoreSettings } from '@pos/shared';
+import { type StoreSettings } from '@pos/shared';
 
 /** Campos que cambiaron entre dos versiones de la configuración, con su valor anterior y nuevo. */
 export function diffSettings(

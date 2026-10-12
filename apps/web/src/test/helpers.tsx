@@ -94,3 +94,41 @@ export const STORE = {
   workdayEnd: '16:00',
   operatingDays: [1, 2, 3, 4, 5],
 };
+
+let offerCounter = 0;
+
+/** Producto del día con las cantidades que devuelve el API. */
+export function makeOffer(overrides: Record<string, unknown> = {}) {
+  offerCounter += 1;
+  return {
+    id: `10000000-0000-4000-8000-${String(offerCounter).padStart(12, '0')}`,
+    productId: `20000000-0000-4000-8000-${String(offerCounter).padStart(12, '0')}`,
+    productName: 'Tamal de rajas',
+    productCode: 'TAM-01',
+    productActive: true,
+    unit: 'pieza',
+    allowsFractions: false,
+    initialQuantity: '40',
+    adjustedQuantity: '0',
+    soldQuantity: '18',
+    availableQuantity: '22',
+    adjustments: [],
+    ...overrides,
+  };
+}
+
+export function makeWorkday(offers: unknown[] = [], overrides: Record<string, unknown> = {}) {
+  return {
+    id: '30000000-0000-4000-8000-000000000001',
+    date: '2026-10-15',
+    startTime: '08:00',
+    endTime: '16:00',
+    isToday: true,
+    editable: true,
+    isOperatingDay: true,
+    offers,
+    ...overrides,
+  };
+}
+
+export const notPrepared = () => apiError(404, 'not_found', 'Ese día todavía no está preparado.');

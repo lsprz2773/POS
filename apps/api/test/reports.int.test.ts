@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import type { Dashboard, Product, Report, Sale, SalesList } from '@pos/shared';
+import { type Dashboard, type Product, type Report, type Sale, type SalesList } from '@pos/shared';
 import { createDb, type Database } from '../src/db/client';
 import { createTwoTenants, makeApp, resetData, type Session } from './support/app';
 

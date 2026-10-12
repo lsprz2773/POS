@@ -5,6 +5,7 @@ import { es } from 'zod/locales';
 z.config(es());
 
 export * from './auth';
+export * from './dates';
 export * from './errors';
 export * from './health';
 export * from './history';

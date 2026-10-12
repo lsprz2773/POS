@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import type { Product } from '@pos/shared';
+import { type Product } from '@pos/shared';
 import { createDb, type Database } from '../src/db/client';
 import { createTwoTenants, makeApp, resetData, type Session } from './support/app';
 

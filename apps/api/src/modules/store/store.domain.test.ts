@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { StoreSettings } from '@pos/shared';
+import { type StoreSettings } from '@pos/shared';
 import { diffSettings } from './store.domain';
 
 const base: StoreSettings = {

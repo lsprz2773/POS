@@ -1,5 +1,5 @@
 import { sql } from 'kysely';
-import type { StoreSettings } from '@pos/shared';
+import { type StoreSettings } from '@pos/shared';
 import type { Database } from '../../db/client';
 
 const toHHMM = (value: string) => value.slice(0, 5);

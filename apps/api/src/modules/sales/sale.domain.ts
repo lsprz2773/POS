@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import type { CreateSaleInput, PaymentLinesInput } from '@pos/shared';
+import { type CreateSaleInput, type PaymentLinesInput } from '@pos/shared';
 
 /**
  * Huella del contenido de la venta, independiente del orden de los renglones. Con la misma llave de
@@ -28,23 +28,3 @@ const canonicalLines = (lines: PaymentLinesInput) =>
   lines
     .map((line) => ({ method: line.method, amount: line.amount }))
     .sort((a, b) => a.method.localeCompare(b.method));
-
-/** Hora local de la tienda (HH:MM) en el instante dado. */
-export function localTime(timezone: string, at: Date): string {
-  return new Intl.DateTimeFormat('en-GB', {
-    timeZone: timezone,
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23',
-  }).format(at);
-}
-
-/** El horario de la jornada es informativo (B15): solo avisa, nunca bloquea. */
-export function isOutsideHours(
-  timezone: string,
-  at: Date,
-  hours: { startTime: string; endTime: string },
-): boolean {
-  const time = localTime(timezone, at);
-  return time < hours.startTime || time >= hours.endTime;
-}

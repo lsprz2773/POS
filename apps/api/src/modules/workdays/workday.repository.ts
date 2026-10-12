@@ -1,8 +1,7 @@
 import { sql } from 'kysely';
-import type { ListWorkdaysQuery } from '@pos/shared';
+import { toHHMM, type ListWorkdaysQuery } from '@pos/shared';
 import type { Database } from '../../db/client';
 import { COUNTS_AS_SOLD } from './sold';
-import { toHHMM } from './workday.domain';
 
 export interface WorkdayRow {
   id: string;

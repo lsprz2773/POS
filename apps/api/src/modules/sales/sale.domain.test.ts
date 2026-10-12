@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hashPaymentRequest, hashSaleRequest, isOutsideHours, localTime } from './sale.domain';
+import { hashPaymentRequest, hashSaleRequest } from './sale.domain';
 
 const p1 = '5b2c1a54-7a8e-4a8e-9a55-4b0a1f6d2a10';
 const p2 = '9d8c7b6a-1111-4222-8333-444455556666';
@@ -29,23 +29,6 @@ describe('huella de la solicitud', () => {
 
   it('trata ausente y null como lo mismo', () => {
     expect(hashSaleRequest({ ...base, note: null })).toBe(hashSaleRequest(base));
-  });
-});
-
-describe('horario de la jornada', () => {
-  const hours = { startTime: '08:00', endTime: '16:00' };
-
-  it('usa la hora local de la tienda', () => {
-    expect(localTime('America/Mexico_City', new Date('2026-10-15T18:00:00Z'))).toBe('12:00');
-    expect(localTime('UTC', new Date('2026-10-15T18:00:00Z'))).toBe('18:00');
-  });
-
-  it('avisa fuera de horario y no en el borde de apertura; el cierre ya es fuera', () => {
-    const at = (utc: string) => new Date(`2026-10-15T${utc}:00Z`);
-    expect(isOutsideHours('America/Mexico_City', at('14:00'), hours)).toBe(false); // 08:00
-    expect(isOutsideHours('America/Mexico_City', at('13:59'), hours)).toBe(true); // 07:59
-    expect(isOutsideHours('America/Mexico_City', at('21:59'), hours)).toBe(false); // 15:59
-    expect(isOutsideHours('America/Mexico_City', at('22:00'), hours)).toBe(true); // 16:00
   });
 });
 

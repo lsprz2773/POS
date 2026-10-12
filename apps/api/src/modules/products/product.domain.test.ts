@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Product } from '@pos/shared';
+import { type Product } from '@pos/shared';
 import { auditActionFor, diffProduct, escapeLike } from './product.domain';
 
 const base: Product = {

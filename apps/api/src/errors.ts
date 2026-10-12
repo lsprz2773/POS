@@ -1,4 +1,4 @@
-import type { ErrorCode } from '@pos/shared';
+import { type ErrorCode } from '@pos/shared';
 
 /** Error esperado que se traduce a una respuesta HTTP sin detalles internos. */
 export class AppError extends Error {

@@ -35,3 +35,22 @@ export function formatShortDate(date: string): string {
     .format(new Date(`${date}T00:00:00Z`))
     .replace(/\./g, '');
 }
+
+/** "10:20" en la zona horaria de la tienda. */
+export function formatTime(iso: string, timeZone: string): string {
+  return new Intl.DateTimeFormat(LOCALE, {
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+    timeZone,
+  }).format(new Date(iso));
+}
+
+/** "octubre de 2026" a partir de una fecha de negocio. */
+export function formatMonthYear(date: string): string {
+  return new Intl.DateTimeFormat(LOCALE, {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(`${date}T00:00:00Z`));
+}

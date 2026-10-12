@@ -12,6 +12,9 @@ import { ProfilePage } from './features/session/ProfilePage';
 import { useSession } from './features/session/useSession';
 import { CatalogPage } from './features/catalog/CatalogPage';
 import { ProductFormPage } from './features/catalog/ProductFormPage';
+import { TodayPage } from './features/dashboard/TodayPage';
+import { HistoryPage } from './features/history/HistoryPage';
+import { ReportsPage } from './features/reports/ReportsPage';
 import { NewSalePage } from './features/sales/NewSalePage';
 import { PendingPage } from './features/sales/PendingPage';
 import { SaleDetailPage } from './features/sales/SaleDetailPage';
@@ -20,16 +23,8 @@ import { InventoryPage } from './features/workday/InventoryPage';
 import { PastDaysPage } from './features/workday/PastDaysPage';
 import { PrepareDayPage } from './features/workday/PrepareDayPage';
 import { SettingsPage } from './features/store/SettingsPage';
-import { ComingSoonPage } from './pages/ComingSoonPage';
 import { MorePage } from './pages/MorePage';
 import { NotFoundPage } from './pages/NotFoundPage';
-
-/** Pantallas que se construyen en la siguiente entrega (8e). */
-const PLACEHOLDERS = [
-  ['/', copy.nav.today],
-  ['/historial', copy.more.history],
-  ['/reportes', copy.more.reports],
-] as const;
 
 /** Deja pasar solo con sesión válida; si no, manda al inicio de sesión o explica el bloqueo. */
 function SessionGate() {
@@ -70,11 +65,10 @@ export const routes: RouteObject[] = [
   {
     element: <SessionGate />,
     children: [
-      ...PLACEHOLDERS.map(([path, title]) => ({
-        path,
-        element: <ComingSoonPage title={title} />,
-      })),
       { path: '/mas', element: <MorePage /> },
+      { path: '/', element: <TodayPage /> },
+      { path: '/historial', element: <HistoryPage /> },
+      { path: '/reportes', element: <ReportsPage /> },
       { path: '/vender', element: <NewSalePage /> },
       { path: '/vender/listo/:id', element: <SaleRegisteredPage /> },
       { path: '/ventas/:id', element: <SaleDetailPage /> },

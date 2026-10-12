@@ -213,3 +213,71 @@ export const pendingItem = (sale: ReturnType<typeof makeSale>) => ({
   balance: sale.balance,
   paymentStatus: sale.paymentStatus,
 });
+
+export function makeDashboard(overrides: Record<string, unknown> = {}) {
+  return {
+    date: '2026-10-15',
+    salesTotal: '1285.00',
+    salesCount: 18,
+    collected: '985.00',
+    collectedByMethod: { cash: '640.00', transfer: '345.00' },
+    pendingCount: 3,
+    pendingTotal: '300.00',
+    estimatedGrossProfit: '512.00',
+    isGrossLoss: false,
+    dayPrepared: true,
+    ...overrides,
+  };
+}
+
+export function makeReport(overrides: Record<string, unknown> = {}) {
+  return {
+    from: '2026-10-12',
+    to: '2026-10-18',
+    salesTotal: '4892.00',
+    salesCount: 66,
+    averageTicket: '74.12',
+    unitsSold: '263',
+    collected: '4592.00',
+    collectedByMethod: { cash: '2980.00', transfer: '1612.00' },
+    pending: '300.00',
+    costOfGoodsSold: '2963.00',
+    grossProfit: '1929.00',
+    isGrossLoss: false,
+    grossMargin: '39.43',
+    topProducts: [
+      {
+        productId: '20000000-0000-4000-8000-000000000001',
+        name: 'Tamal de rajas',
+        units: '98',
+        amount: '2450.00',
+      },
+      {
+        productId: '20000000-0000-4000-8000-000000000002',
+        name: 'Jugo de naranja',
+        units: '62',
+        amount: '1116.00',
+      },
+    ],
+    cancelled: { count: 2, total: '108.00', refundDue: '54.00' },
+    ...overrides,
+  };
+}
+
+export const saleSummary = (overrides: Record<string, unknown> = {}) => {
+  const sale = makeSale();
+  return {
+    id: sale.id,
+    folio: sale.folio,
+    folioNumber: sale.folioNumber,
+    date: '2026-10-15',
+    createdAt: '2026-10-15T16:20:00.000Z',
+    customerReference: null,
+    status: 'active',
+    total: '68.00',
+    paid: '68.00',
+    balance: '0.00',
+    paymentStatus: 'paid',
+    ...overrides,
+  };
+};

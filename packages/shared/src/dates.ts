@@ -71,3 +71,6 @@ export function monthOf(date: string): Period {
   const prefix = date.slice(0, 7);
   return { from: `${prefix}-01`, to: `${prefix}-${String(last).padStart(2, '0')}` };
 }
+
+/** Un reporte abarca como máximo un año para que la consulta siga siendo rápida. */
+export const MAX_REPORT_DAYS = 366;

@@ -32,7 +32,11 @@ export function AppShell() {
   useEffect(() => onSessionExpired(() => setExpired(true)), []);
 
   // Al cambiar de pantalla el foco pasa al contenido: el lector de pantalla lo anuncia (WCAG 2.4.3).
+  // En la carga inicial no: así el enlace "Saltar al contenido" sigue siendo la primera parada del teclado.
+  const lastPath = useRef(location.pathname);
   useEffect(() => {
+    if (lastPath.current === location.pathname) return;
+    lastPath.current = location.pathname;
     main.current?.focus();
   }, [location.pathname]);
 

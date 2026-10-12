@@ -81,15 +81,14 @@ export function PendingPage() {
 
   return (
     <>
-      <PageHeader
-        title={copy.sale.pendingTitle}
-        action={
-          <button type="button" className="pill" onClick={() => setFiltering(true)}>
-            <CalendarDays className="ic" aria-hidden="true" />
-            {label}
-          </button>
-        }
-      />
+      <PageHeader title={copy.sale.pendingTitle} />
+      {/* El rango va en su propia fila: con fechas elegidas es largo y no cabe junto al título en 360 px. */}
+      <div className="flex">
+        <button type="button" className="pill" onClick={() => setFiltering(true)}>
+          <CalendarDays className="ic" aria-hidden="true" />
+          {label}
+        </button>
+      </div>
 
       {query.isPending ? (
         <LoadingRegion label={copy.states.loading}>

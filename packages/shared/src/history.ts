@@ -8,9 +8,12 @@ export const listSalesQuerySchema = z
     from: z.iso.date('Usa el formato AAAA-MM-DD.').optional(),
     to: z.iso.date('Usa el formato AAAA-MM-DD.').optional(),
     status: z.enum(saleStatuses, 'Elige vigente o cancelada.').optional(),
-    /** Estado de cobro de las ventas vigentes. */
+    /** Estado de cobro de las ventas vigentes; `unpaid` agrupa pendientes y parciales (con saldo). */
     collection: z
-      .enum(['pending', 'partial', 'paid'], 'Elige pendiente, parcial o pagada.')
+      .enum(
+        ['pending', 'partial', 'paid', 'unpaid'],
+        'Elige pendiente, parcial, pagada o con saldo.',
+      )
       .optional(),
     /** Folio (por ejemplo "V-0043" o "43") o parte de la referencia del cliente. */
     q: z

@@ -9,6 +9,7 @@ import { authRoutes } from './modules/auth/auth.routes';
 import type { IdentityProvider } from './modules/auth/identity-provider';
 import { authPlugin } from './modules/auth/plugin';
 import { productRoutes } from './modules/products/product.routes';
+import { reportRoutes } from './modules/reports/report.routes';
 import { saleRoutes } from './modules/sales/sale.routes';
 import { storeRoutes } from './modules/store/store.routes';
 import { workdayRoutes } from './modules/workdays/workday.routes';
@@ -99,6 +100,7 @@ export function buildApp(options: AppOptions): FastifyInstance {
       const clock = options.clock ?? (() => new Date());
       await api.register(workdayRoutes, { db, clock });
       await api.register(saleRoutes, { db, clock });
+      await api.register(reportRoutes, { db, clock });
     },
     { prefix: '/api' },
   );

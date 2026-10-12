@@ -68,6 +68,10 @@ export interface PendingSaleRow {
   paid: string;
 }
 
+export interface SaleSummaryRow extends PendingSaleRow {
+  status: 'active' | 'cancelled';
+}
+
 export interface SaleItemRow {
   id: string;
   productId: string;
@@ -431,6 +435,74 @@ export function createSaleRepository(db: Database, tenantId: string) {
         .where('tenant_id', '=', tenantId)
         .where('id', '=', saleId)
         .execute();
+    },
+
+    /** Historial: ventas de cualquier día y estado, de la más nueva a la más antigua. */
+    async list(filter: {
+      from?: string;
+      to?: string;
+      status?: 'active' | 'cancelled';
+      collection?: 'pending' | 'partial' | 'paid';
+      q?: string;
+      limit: number;
+      offset: number;
+    }): Promise<{ items: SaleSummaryRow[]; total: number }> {
+      const paid = sql<string>`coalesce((select sum(p.amount) from payments p
+        where p.sale_id = s.id and p.tenant_id = s.tenant_id and p.status = 'valid'), 0)`;
+      const scoped = () => {
+        let query = db
+          .selectFrom('sales as s')
+          .innerJoin('workdays as w', (join) =>
+            join.onRef('w.id', '=', 's.workday_id').onRef('w.tenant_id', '=', 's.tenant_id'),
+          )
+          .where('s.tenant_id', '=', tenantId);
+        if (filter.from) query = query.where(sql<boolean>`w.business_date >= ${filter.from}::date`);
+        if (filter.to) query = query.where(sql<boolean>`w.business_date <= ${filter.to}::date`);
+        if (filter.status) query = query.where('s.status', '=', filter.status);
+        if (filter.collection) {
+          query = query.where('s.status', '=', 'active');
+          query = query.where(
+            filter.collection === 'paid'
+              ? sql<boolean>`s.total <= ${paid}`
+              : filter.collection === 'partial'
+                ? sql<boolean>`${paid} > 0 and s.total > ${paid}`
+                : sql<boolean>`${paid} = 0 and s.total > 0`,
+          );
+        }
+        if (filter.q) {
+          const folio = /^(?:v-?)?(\d{1,9})$/i.exec(filter.q)?.[1];
+          const like = `%${filter.q.replace(/[\\%_]/g, '\\$&')}%`;
+          query = query.where(
+            folio
+              ? sql<boolean>`(s.folio = ${Number(folio)} or s.customer_reference ilike ${like})`
+              : sql<boolean>`s.customer_reference ilike ${like}`,
+          );
+        }
+        return query;
+      };
+
+      const [rows, count] = await Promise.all([
+        scoped()
+          .select([
+            's.id',
+            's.folio as folioNumber',
+            sql<string>`w.business_date::text`.as('date'),
+            's.created_at as createdAt',
+            's.customer_reference as customerReference',
+            's.status',
+            sql<string>`s.total::text`.as('total'),
+            sql<string>`${paid}::text`.as('paid'),
+          ])
+          // El folio crece con cada venta: orden estable, de la más nueva a la más antigua.
+          .orderBy('s.folio', 'desc')
+          .limit(filter.limit)
+          .offset(filter.offset)
+          .execute(),
+        scoped()
+          .select((eb) => eb.fn.countAll<string>().as('total'))
+          .executeTakeFirstOrThrow(),
+      ]);
+      return { items: rows as SaleSummaryRow[], total: Number(count.total) };
     },
 
     /** Ventas activas con saldo mayor que cero, de cualquier día (RF-073, RF-080). */

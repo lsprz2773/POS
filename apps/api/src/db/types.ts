@@ -90,6 +90,16 @@ export interface Products {
   version: Generated<number>;
 }
 
+export interface SaleCancellations {
+  cancelled_at: Generated<Timestamp>;
+  cancelled_by: string;
+  id: Generated<string>;
+  inventory_restored: boolean;
+  reason: string;
+  sale_id: string;
+  tenant_id: string;
+}
+
 export interface SaleCounters {
   last_folio: Generated<number>;
   tenant_id: string;
@@ -180,6 +190,7 @@ export interface DB {
   memberships: Memberships;
   payments: Payments;
   products: Products;
+  sale_cancellations: SaleCancellations;
   sale_counters: SaleCounters;
   sale_items: SaleItems;
   sales: Sales;

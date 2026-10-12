@@ -1,5 +1,6 @@
 import { sql } from 'kysely';
 import type { Database } from '../../db/client';
+import { COUNTS_AS_SOLD } from '../workdays/sold';
 
 /** Producto ofrecido hoy, ya bloqueado para esta transacción, con lo necesario para vender. */
 export interface LockedOffer {
@@ -37,6 +38,12 @@ export interface SaleRow {
   note: string | null;
   total: string;
   settledAt: Date | null;
+}
+
+export interface CancellationRow {
+  reason: string;
+  cancelledAt: Date;
+  inventoryRestored: boolean;
 }
 
 export interface PaymentRow {
@@ -122,7 +129,7 @@ export function createSaleRepository(db: Database, tenantId: string) {
           sql<string>`(select coalesce(sum(si.quantity), 0)::text from sale_items si
             join sales s on s.id = si.sale_id and s.tenant_id = si.tenant_id
             where si.daily_offer_id = o.id and si.tenant_id = o.tenant_id
-              and s.status = 'active')`.as('soldQuantity'),
+              and ${COUNTS_AS_SOLD})`.as('soldQuantity'),
         ])
         .where('o.tenant_id', '=', tenantId)
         .where(
@@ -198,9 +205,15 @@ export function createSaleRepository(db: Database, tenantId: string) {
       return sale.id;
     },
 
-    async findById(
-      id: string,
-    ): Promise<{ sale: SaleRow; items: SaleItemRow[]; payments: PaymentRow[] } | undefined> {
+    async findById(id: string): Promise<
+      | {
+          sale: SaleRow;
+          items: SaleItemRow[];
+          payments: PaymentRow[];
+          cancellation: CancellationRow | null;
+        }
+      | undefined
+    > {
       const sale = await db
         .selectFrom('sales as s')
         .innerJoin('workdays as w', (join) =>
@@ -238,7 +251,63 @@ export function createSaleRepository(db: Database, tenantId: string) {
         .where('sale_id', '=', id)
         .orderBy('position')
         .execute();
-      return { sale: sale as SaleRow, items, payments: await this.paymentsOf(id) };
+      const cancellation = await db
+        .selectFrom('sale_cancellations')
+        .select([
+          'reason',
+          'cancelled_at as cancelledAt',
+          'inventory_restored as inventoryRestored',
+        ])
+        .where('tenant_id', '=', tenantId)
+        .where('sale_id', '=', id)
+        .executeTakeFirst();
+      return {
+        sale: sale as SaleRow,
+        items,
+        payments: await this.paymentsOf(id),
+        cancellation: cancellation ?? null,
+      };
+    },
+
+    /** Marca la venta como cancelada y guarda el registro de la cancelación. */
+    async cancel(values: {
+      saleId: string;
+      reason: string;
+      inventoryRestored: boolean;
+      userId: string;
+      at: Date;
+    }): Promise<void> {
+      await db
+        .updateTable('sales')
+        .set({ status: 'cancelled' })
+        .where('tenant_id', '=', tenantId)
+        .where('id', '=', values.saleId)
+        .execute();
+      await db
+        .insertInto('sale_cancellations')
+        .values({
+          tenant_id: tenantId,
+          sale_id: values.saleId,
+          reason: values.reason,
+          inventory_restored: values.inventoryRestored,
+          cancelled_by: values.userId,
+          cancelled_at: values.at,
+        })
+        .execute();
+    },
+
+    /** Fecha de negocio de la jornada de la venta. */
+    async saleDate(saleId: string): Promise<string | undefined> {
+      const row = await db
+        .selectFrom('sales as s')
+        .innerJoin('workdays as w', (join) =>
+          join.onRef('w.id', '=', 's.workday_id').onRef('w.tenant_id', '=', 's.tenant_id'),
+        )
+        .select(sql<string>`w.business_date::text`.as('date'))
+        .where('s.tenant_id', '=', tenantId)
+        .where('s.id', '=', saleId)
+        .executeTakeFirst();
+      return row?.date;
     },
 
     async paymentsOf(saleId: string): Promise<PaymentRow[]> {

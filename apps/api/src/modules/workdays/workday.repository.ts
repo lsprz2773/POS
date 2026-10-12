@@ -1,6 +1,7 @@
 import { sql } from 'kysely';
 import type { ListWorkdaysQuery } from '@pos/shared';
 import type { Database } from '../../db/client';
+import { COUNTS_AS_SOLD } from './sold';
 import { toHHMM } from './workday.domain';
 
 export interface WorkdayRow {
@@ -246,7 +247,7 @@ export function createWorkdayRepository(db: Database, tenantId: string) {
         )
         .select(['si.daily_offer_id as offerId', sql<string>`sum(si.quantity)::text`.as('sold')])
         .where('si.tenant_id', '=', tenantId)
-        .where('s.status', '=', 'active')
+        .where(COUNTS_AS_SOLD)
         .where('si.daily_offer_id', 'in', offerIds)
         .groupBy('si.daily_offer_id')
         .execute();
@@ -281,7 +282,7 @@ export function createWorkdayRepository(db: Database, tenantId: string) {
             sql<string>`(select coalesce(sum(si.quantity), 0)::text from sale_items si
               join sales s on s.id = si.sale_id and s.tenant_id = si.tenant_id
               join daily_offers o on o.id = si.daily_offer_id
-              where o.workday_id = w.id and s.status = 'active')`.as('soldQuantity'),
+              where o.workday_id = w.id and ${COUNTS_AS_SOLD})`.as('soldQuantity'),
           ])
           .orderBy('w.business_date', 'desc')
           .limit(filter.limit)

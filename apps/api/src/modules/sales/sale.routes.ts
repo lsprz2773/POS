@@ -2,6 +2,7 @@ import type { FastifyPluginAsync } from 'fastify';
 import type { Database } from '../../db/client';
 import { authOf } from '../auth/plugin';
 import type { Clock } from '../workdays/workday.usecases';
+import { cancelSale } from './cancel.usecases';
 import { listPending, registerPayments, voidPayment } from './payment.usecases';
 import { createSale, getSale } from './sale.usecases';
 
@@ -41,6 +42,11 @@ export const saleRoutes: FastifyPluginAsync<{ db: Database; clock: Clock }> = as
     if (replayed) reply.header('idempotent-replayed', 'true');
     return reply.code(replayed ? 200 : 201).send(sale);
   });
+
+  /** Cancela una venta con motivo. Devuelve la venta actualizada. */
+  app.post<{ Params: { id: string } }>('/sales/:id/cancel', async (request) =>
+    cancelSale(db, authOf(request), request.params.id, request.body, clock),
+  );
 
   /** Anula un pago con motivo. Devuelve la venta actualizada. */
   app.post<{ Params: { id: string } }>('/payments/:id/void', async (request) =>

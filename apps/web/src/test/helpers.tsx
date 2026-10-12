@@ -108,6 +108,7 @@ export function makeOffer(overrides: Record<string, unknown> = {}) {
     productActive: true,
     unit: 'pieza',
     allowsFractions: false,
+    price: '25.00',
     initialQuantity: '40',
     adjustedQuantity: '0',
     soldQuantity: '18',
@@ -132,3 +133,83 @@ export function makeWorkday(offers: unknown[] = [], overrides: Record<string, un
 }
 
 export const notPrepared = () => apiError(404, 'not_found', 'Ese día todavía no está preparado.');
+
+let saleCounter = 0;
+
+/** Venta con la forma que devuelve el API (vigente, pendiente, sin pagos). */
+export function makeSale(overrides: Record<string, unknown> = {}) {
+  saleCounter += 1;
+  return {
+    id: `50000000-0000-4000-8000-${String(saleCounter).padStart(12, '0')}`,
+    folio: `V-${String(40 + saleCounter).padStart(4, '0')}`,
+    folioNumber: 40 + saleCounter,
+    date: '2026-10-15',
+    createdAt: '2026-10-15T15:48:00.000Z',
+    status: 'active',
+    customerReference: null,
+    note: null,
+    total: '135.00',
+    outsideWorkdayHours: false,
+    paid: '0.00',
+    balance: '135.00',
+    paymentStatus: 'pending',
+    settledAt: null,
+    cancellation: null,
+    payments: [] as ReturnType<typeof makePayment>[],
+    items: [
+      {
+        id: '60000000-0000-4000-8000-000000000001',
+        productId: '20000000-0000-4000-8000-000000000001',
+        productName: 'Tamal de rajas',
+        quantity: '3',
+        unitPrice: '25.00',
+        subtotal: '75.00',
+      },
+      {
+        id: '60000000-0000-4000-8000-000000000002',
+        productId: '20000000-0000-4000-8000-000000000002',
+        productName: 'Jugo de naranja',
+        quantity: '2',
+        unitPrice: '18.00',
+        subtotal: '36.00',
+      },
+      {
+        id: '60000000-0000-4000-8000-000000000003',
+        productId: '20000000-0000-4000-8000-000000000003',
+        productName: 'Gelatina',
+        quantity: '2',
+        unitPrice: '12.00',
+        subtotal: '24.00',
+      },
+    ],
+    ...overrides,
+  };
+}
+
+export function makePayment(overrides: Record<string, unknown> = {}) {
+  saleCounter += 1;
+  return {
+    id: `70000000-0000-4000-8000-${String(saleCounter).padStart(12, '0')}`,
+    operationId: '80000000-0000-4000-8000-000000000001',
+    method: 'cash',
+    amount: '40.00',
+    status: 'valid',
+    createdAt: '2026-10-15T15:50:00.000Z',
+    voidedAt: null,
+    voidReason: null,
+    ...overrides,
+  };
+}
+
+export const pendingItem = (sale: ReturnType<typeof makeSale>) => ({
+  id: sale.id,
+  folio: sale.folio,
+  folioNumber: sale.folioNumber,
+  date: sale.date,
+  createdAt: sale.createdAt,
+  customerReference: sale.customerReference,
+  total: sale.total,
+  paid: sale.paid,
+  balance: sale.balance,
+  paymentStatus: sale.paymentStatus,
+});

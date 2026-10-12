@@ -23,3 +23,15 @@ export function formatDateTime(iso: string, timeZone: string): string {
     timeZone,
   }).format(new Date(iso));
 }
+
+/** "14 oct 2026" a partir de una fecha de negocio AAAA-MM-DD. */
+export function formatShortDate(date: string): string {
+  return new Intl.DateTimeFormat(LOCALE, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  })
+    .format(new Date(`${date}T00:00:00Z`))
+    .replace(/\./g, '');
+}

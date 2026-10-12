@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatBusinessDate, formatDateTime } from './format';
+import { formatBusinessDate, formatDateTime, formatShortDate } from './format';
 
 describe('formato de fechas', () => {
   it('escribe la fecha de negocio en español sin depender de la zona del navegador', () => {
@@ -11,5 +11,11 @@ describe('formato de fechas', () => {
       /15.*oct.*2026.*12:00/,
     );
     expect(formatDateTime('2026-10-16T05:30:00Z', 'America/Mexico_City')).toMatch(/15.*23:30/);
+  });
+});
+
+describe('fecha corta', () => {
+  it('escribe día, mes abreviado y año', () => {
+    expect(formatShortDate('2026-10-14')).toBe('14 oct 2026');
   });
 });

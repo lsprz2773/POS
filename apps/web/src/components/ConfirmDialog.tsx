@@ -12,6 +12,10 @@ interface Props {
   riskLabel: string;
   onRisk: () => void;
   risking?: boolean;
+  /** Contenido extra entre la descripción y los botones (por ejemplo, un campo de motivo). */
+  children?: ReactNode;
+  /** Mientras falten datos obligatorios la acción de riesgo no se habilita. */
+  riskDisabled?: boolean;
 }
 
 /**
@@ -27,6 +31,8 @@ export function ConfirmDialog({
   riskLabel,
   onRisk,
   risking,
+  children,
+  riskDisabled,
 }: Props) {
   return (
     <AlertDialog.Root open={open} onOpenChange={(next) => (!next ? onSafe() : undefined)}>
@@ -36,6 +42,7 @@ export function ConfirmDialog({
           <div className="grab" aria-hidden="true" />
           <AlertDialog.Title className="h2">{title}</AlertDialog.Title>
           <AlertDialog.Description className="sub">{description}</AlertDialog.Description>
+          {children}
           <div className="flex flex-col gap-2">
             <AlertDialog.Cancel asChild>
               <button type="button" className="btn btn-p btn-lg btn-block" onClick={onSafe}>
@@ -46,7 +53,7 @@ export function ConfirmDialog({
               type="button"
               className="btn btn-s btn-block"
               style={{ color: 'var(--bad)', borderColor: 'var(--bad)' }}
-              disabled={risking}
+              disabled={risking || riskDisabled}
               onClick={onRisk}
             >
               {riskLabel}

@@ -12,7 +12,7 @@ Estado: planeación inicial. La documentación y el código se agregarán por fa
 
 ## Desarrollo local
 
-Requisitos: Node 22 (`.nvmrc`), npm y Docker (o un PostgreSQL 16 propio). El frontend aún no existe: se desarrollará cuando se cuente con el diseño.
+Requisitos: Node 22 (`.nvmrc`), npm y Docker (o un PostgreSQL 16 propio).
 
 ```
 npm install
@@ -21,6 +21,7 @@ npm run db:up            # PostgreSQL 16 en contenedor, solo accesible desde tu 
 npm run db:migrate       # aplica las migraciones
 npm run provision -w @pos/api -- --name "Mi tienda" --email dueno@ejemplo.test
 npm run dev              # API en :3000
+npm run dev:web          # web en :5173 (reenvía /api al API local)
 ```
 
 Para iniciar sesión se usa `POST /api/auth/login` con un usuario de `LOCAL_AUTH_USERS`; su correo debe coincidir con el del `provision`.
@@ -28,6 +29,8 @@ Para iniciar sesión se usa `POST /api/auth/login` con un usuario de `LOCAL_AUTH
 | Comando | Qué hace |
 |---|---|
 | `npm run check` | Lint, formato, tipos y pruebas unitarias |
+| `npm run test:e2e` | Pruebas de extremo a extremo en Chromium (móvil y escritorio) con una base propia `pos_e2e`; en el contenedor de desarrollo, `PW_CHROMIUM_PATH` apunta al navegador instalado, y en otro equipo hace falta `npx playwright install chromium` |
+| `npm run build` | Construye la web |
 | `npm run test:integration` | Pruebas contra PostgreSQL (recrea la base `pos_test`) |
 | `npm run db:migrate` | Aplica las migraciones pendientes |
 | `npm run db:types` | Regenera los tipos de Kysely desde la base migrada |

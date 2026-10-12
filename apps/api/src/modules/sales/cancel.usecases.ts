@@ -8,7 +8,7 @@ import { createStoreRepository } from '../store/store.repository';
 import type { AuthContext } from '../tenancy/context';
 import { todayIn } from '../workdays/workday.domain';
 import type { Clock } from '../workdays/workday.usecases';
-import { formatFolio } from './sale.domain';
+import { formatFolio } from '@pos/shared';
 import { createSaleRepository } from './sale.repository';
 import { getSale } from './sale.usecases';
 

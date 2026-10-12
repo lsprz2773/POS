@@ -1,6 +1,7 @@
 import js from '@eslint/js';
 import globals from 'globals';
 import prettier from 'eslint-config-prettier';
+import reactHooks from 'eslint-plugin-react-hooks';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
@@ -15,8 +16,20 @@ export default tseslint.config(
     },
   },
   {
-    files: ['apps/api/**/*.ts', 'packages/**/*.ts', '*.config.{js,ts}'],
+    files: [
+      'apps/api/**/*.ts',
+      'packages/**/*.ts',
+      '*.config.{js,ts}',
+      'apps/web/*.config.ts',
+      'apps/web/e2e/**/*.{ts,mjs}',
+    ],
     languageOptions: { globals: globals.node },
+  },
+  {
+    files: ['apps/web/**/*.{ts,tsx}'],
+    languageOptions: { globals: globals.browser },
+    plugins: { 'react-hooks': reactHooks },
+    rules: reactHooks.configs.recommended.rules,
   },
   prettier,
 );

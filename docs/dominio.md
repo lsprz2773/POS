@@ -108,15 +108,17 @@ erDiagram
 | Número de ventas | Cantidad de esas ventas. |
 | Ticket promedio | Ventas ÷ número de ventas. |
 | Unidades vendidas | Suma de cantidades de esas ventas. |
-| Cobrado | Suma de pagos `valid` con fecha de pago dentro del periodo, de ventas no canceladas. Puede incluir pagos de ventas de periodos anteriores. |
+| Cobrado | Suma de pagos `valid` con fecha de pago dentro del periodo (día completo en la zona de la tienda), de ventas no canceladas. Puede incluir pagos de ventas de periodos anteriores. |
 | Cobrado por método | Lo mismo, separado en efectivo y transferencia. |
 | Pendiente del periodo | Saldo actual de las ventas del periodo. |
 | Pendiente total | Saldo actual de todas las ventas activas del tenant (dashboard y lista de pendientes). |
-| Costo de productos vendidos | Suma de cantidad × costo unitario congelado de las ventas del periodo. |
+| Costo de productos vendidos | Suma de cantidad × costo unitario congelado de las ventas del periodo; cada renglón se redondea a centavos con la mitad hacia arriba. |
 | Utilidad bruta | Ventas − costo de productos vendidos. Si es negativa, se muestra como pérdida bruta. |
-| Margen bruto | Utilidad bruta ÷ ventas, cuando ventas > 0. |
-| Ventas canceladas | Se muestran aparte y no entran en ninguna métrica anterior. |
-| Por devolver fuera del sistema | Pagos vigentes de ventas canceladas (B14). |
+| Margen bruto | Utilidad bruta ÷ ventas, en porcentaje con 2 decimales, cuando ventas > 0; si no, nulo. |
+| Productos más vendidos | Los 10 primeros por unidades vendidas en el periodo (desempate por importe), solo de ventas no canceladas. |
+| Ventas canceladas | Número y total de las ventas canceladas con fecha de negocio dentro del periodo. Se muestran aparte y no entran en ninguna métrica anterior. |
+| Por devolver fuera del sistema | Pagos vigentes de las ventas canceladas del periodo (B14). |
+| Dashboard (hoy) | Ventas, número de ventas, cobrado (por método) y utilidad bruta estimada del día de hoy; pendiente total (número y monto) de todas las ventas vigentes con saldo, de cualquier día. |
 
 La utilidad bruta no incluye gastos ni impuestos y no es utilidad neta; así se etiqueta en la interfaz.
 

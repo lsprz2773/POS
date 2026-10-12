@@ -4,6 +4,7 @@ import { authOf } from '../auth/plugin';
 import type { Clock } from '../workdays/workday.usecases';
 import { cancelSale } from './cancel.usecases';
 import { listPending, registerPayments, voidPayment } from './payment.usecases';
+import { listSales } from './history.usecases';
 import { createSale, getSale } from './sale.usecases';
 
 /** Las ventas y los pagos no se editan ni se borran: se crean, se consultan y se anulan o cancelan. */
@@ -20,6 +21,9 @@ export const saleRoutes: FastifyPluginAsync<{ db: Database; clock: Clock }> = as
     if (replayed) reply.header('idempotent-replayed', 'true');
     return reply.code(replayed ? 200 : 201).send(sale);
   });
+
+  /** Historial de ventas con filtros y paginación. */
+  app.get('/sales', async (request) => listSales(db, authOf(request), request.query));
 
   /** Ventas con saldo pendiente de cualquier día. Debe ir antes de `/sales/:id`. */
   app.get('/sales/pending', async (request) => listPending(db, authOf(request), request.query));

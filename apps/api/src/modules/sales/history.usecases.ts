@@ -3,7 +3,7 @@ import type { Database } from '../../db/client';
 import { AppError } from '../../errors';
 import { parseInput } from '../../validation';
 import type { AuthContext } from '../tenancy/context';
-import { balanceOf, collectionStatus, formatFolio } from './sale.domain';
+import { balanceOf, collectionStatus, formatFolio } from '@pos/shared';
 import { createSaleRepository } from './sale.repository';
 
 /** Historial de ventas con filtros, búsqueda por folio o cliente y paginación (RNF-006). */

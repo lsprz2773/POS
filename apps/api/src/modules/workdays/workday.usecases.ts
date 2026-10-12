@@ -16,16 +16,8 @@ import { parseInput } from '../../validation';
 import { recordAudit } from '../audit/audit';
 import { createStoreRepository } from '../store/store.repository';
 import type { AuthContext } from '../tenancy/context';
-import {
-  addDays,
-  availableQuantity,
-  isOperatingDay,
-  isPastDate,
-  isWholeQuantity,
-  MAX_DAYS_AHEAD,
-  sumQuantities,
-  todayIn,
-} from './workday.domain';
+import { addDays, isOperatingDay, isPastDate, MAX_DAYS_AHEAD, todayIn } from './workday.domain';
+import { availableQuantity, isWholeQuantity, sumQuantities } from '@pos/shared';
 import { createWorkdayRepository, type WorkdayRow } from './workday.repository';
 
 export type Clock = () => Date;

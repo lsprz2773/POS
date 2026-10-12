@@ -77,6 +77,7 @@ Historial paginado y detalle de ventas, dashboard del día, reportes diario, sem
 
 ### Fase 8. Frontend, accesibilidad y pruebas de extremo a extremo
 Construcción de las pantallas de todas las fases anteriores a partir del diseño del propietario, responsive desde 360 px, accesibilidad WCAG 2.2 AA en los flujos principales, estados de error de red y las pruebas E2E del documento. El prompt con el que se obtuvo el diseño y el enlace al diseño aprobado están en [diseno/prompt-diseno.md](diseno/prompt-diseno.md).
+Se entrega en seis partes (8a a 8f, T58 de [decisiones.md](decisiones.md)), cada una con su rama y su PR.
 **Aceptación:** pasan los 15 flujos E2E de la sección 10.4 de [requerimientos.md](requerimientos.md) en móvil y escritorio, y los flujos de nueva venta, pago mixto y pendientes se usan con una mano en 360 px.
 
 ### Fase 9. Despliegue (requiere aprobación explícita)

@@ -1,61 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import {
-  balanceOf,
-  collectionStatus,
-  formatFolio,
-  formatMoney,
-  hashPaymentRequest,
-  fromCents,
-  hashSaleRequest,
-  isOutsideHours,
-  lineSubtotal,
-  localTime,
-  sumMoney,
-  toCents,
-} from './sale.domain';
+import { hashPaymentRequest, hashSaleRequest, isOutsideHours, localTime } from './sale.domain';
 
 const p1 = '5b2c1a54-7a8e-4a8e-9a55-4b0a1f6d2a10';
 const p2 = '9d8c7b6a-1111-4222-8333-444455556666';
-
-describe('dinero en centavos exactos', () => {
-  it('convierte de ida y vuelta', () => {
-    expect(toCents('25.50')).toBe(2550n);
-    expect(toCents('0.05')).toBe(5n);
-    expect(toCents('7')).toBe(700n);
-    expect(fromCents(2550n)).toBe('25.50');
-    expect(fromCents(5n)).toBe('0.05');
-    expect(fromCents(0n)).toBe('0.00');
-  });
-
-  it('suma sin errores de punto flotante', () => {
-    expect(sumMoney(['0.10', '0.20'])).toBe('0.30');
-    expect(sumMoney(['50.00', '18.00'])).toBe('68.00');
-    expect(sumMoney([])).toBe('0.00');
-  });
-});
-
-describe('subtotal del renglón', () => {
-  it('es exacto con piezas enteras', () => {
-    expect(lineSubtotal('2', '25.00')).toBe('50.00');
-    expect(lineSubtotal('3', '18.50')).toBe('55.50');
-    expect(lineSubtotal('0', '25.00')).toBe('0.00');
-  });
-
-  it('con decimales redondea a centavos con la mitad hacia arriba', () => {
-    expect(lineSubtotal('2.5', '25.00')).toBe('62.50');
-    expect(lineSubtotal('0.333', '9.99')).toBe('3.33'); // 3.32667
-    expect(lineSubtotal('0.5', '0.01')).toBe('0.01'); // 0.005 sube
-    expect(lineSubtotal('0.4', '0.01')).toBe('0.00'); // 0.004 baja
-  });
-});
-
-describe('folio', () => {
-  it('es legible y crece sin tope', () => {
-    expect(formatFolio(1)).toBe('V-0001');
-    expect(formatFolio(43)).toBe('V-0043');
-    expect(formatFolio(12345)).toBe('V-12345');
-  });
-});
 
 describe('huella de la solicitud', () => {
   const base = {
@@ -99,43 +46,6 @@ describe('horario de la jornada', () => {
     expect(isOutsideHours('America/Mexico_City', at('13:59'), hours)).toBe(true); // 07:59
     expect(isOutsideHours('America/Mexico_City', at('21:59'), hours)).toBe(false); // 15:59
     expect(isOutsideHours('America/Mexico_City', at('22:00'), hours)).toBe(true); // 16:00
-  });
-});
-
-describe('saldo y estado de cobro', () => {
-  it('saldo = total − pagado, con centavos exactos', () => {
-    expect(balanceOf('75.00', '0.00')).toBe('75.00');
-    expect(balanceOf('75.00', '30.10')).toBe('44.90');
-    expect(balanceOf('75.00', '75.00')).toBe('0.00');
-  });
-
-  it('pendiente sin pagos, parcial con pagos y pagada solo sin saldo', () => {
-    const sale = { status: 'active' as const, total: '100.00' };
-    expect(collectionStatus({ ...sale, paid: '0.00' })).toBe('pending');
-    expect(collectionStatus({ ...sale, paid: '0.01' })).toBe('partial');
-    expect(collectionStatus({ ...sale, paid: '99.99' })).toBe('partial');
-    expect(collectionStatus({ ...sale, paid: '100.00' })).toBe('paid');
-  });
-
-  it('una venta cancelada siempre es cancelada', () => {
-    expect(collectionStatus({ status: 'cancelled', total: '100.00', paid: '100.00' })).toBe(
-      'cancelled',
-    );
-    expect(collectionStatus({ status: 'cancelled', total: '100.00', paid: '0.00' })).toBe(
-      'cancelled',
-    );
-  });
-
-  it('una venta de total cero no tiene saldo: cuenta como pagada y no queda pendiente', () => {
-    expect(collectionStatus({ status: 'active', total: '0.00', paid: '0.00' })).toBe('paid');
-  });
-});
-
-describe('formato de moneda', () => {
-  it('da formato de pesos con miles y 2 decimales', () => {
-    expect(formatMoney('75.00', 'MXN')).toBe('$75.00');
-    expect(formatMoney('1285.5', 'MXN')).toBe('$1,285.50');
-    expect(formatMoney('0.00', 'MXN')).toBe('$0.00');
   });
 });
 

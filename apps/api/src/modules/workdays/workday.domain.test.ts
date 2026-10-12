@@ -1,49 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  addDays,
-  availableQuantity,
-  fromMilli,
-  isOperatingDay,
-  isPastDate,
-  isoWeekday,
-  isWholeQuantity,
-  sumQuantities,
-  todayIn,
-  toMilli,
-} from './workday.domain';
-
-describe('cantidades exactas', () => {
-  it('convierte a milésimas y de vuelta sin ceros sobrantes', () => {
-    expect(toMilli('40')).toBe(40_000n);
-    expect(toMilli('2.5')).toBe(2_500n);
-    expect(toMilli('0.001')).toBe(1n);
-    expect(fromMilli(40_000n)).toBe('40');
-    expect(fromMilli(2_500n)).toBe('2.5');
-    expect(fromMilli(1n)).toBe('0.001');
-    expect(fromMilli(0n)).toBe('0');
-  });
-
-  it('suma decimales sin errores de redondeo', () => {
-    expect(sumQuantities(['0.1', '0.2'])).toBe('0.3');
-    expect(sumQuantities([])).toBe('0');
-    expect(sumQuantities(['10', '5', '2.25'])).toBe('17.25');
-  });
-
-  it('calcula el disponible = inicial + aumentos − vendido', () => {
-    expect(availableQuantity({ initial: '40', adjusted: '10', sold: '18' })).toBe('32');
-    expect(availableQuantity({ initial: '2.5', adjusted: '0', sold: '0.5' })).toBe('2');
-  });
-
-  it('el disponible nunca es negativo', () => {
-    expect(availableQuantity({ initial: '5', adjusted: '0', sold: '9' })).toBe('0');
-  });
-
-  it('distingue cantidades enteras de fraccionarias', () => {
-    expect(isWholeQuantity('12')).toBe(true);
-    expect(isWholeQuantity('12.000')).toBe(true);
-    expect(isWholeQuantity('12.5')).toBe(false);
-  });
-});
+import { addDays, isOperatingDay, isPastDate, isoWeekday, todayIn } from './workday.domain';
 
 describe('fechas de negocio', () => {
   it('calcula "hoy" en la zona horaria de la tienda, no en UTC', () => {

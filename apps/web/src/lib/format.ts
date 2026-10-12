@@ -1,0 +1,25 @@
+const LOCALE = 'es-MX';
+
+/** "jueves, 15 de octubre de 2026" a partir de una fecha de negocio AAAA-MM-DD. */
+export function formatBusinessDate(date: string): string {
+  return new Intl.DateTimeFormat(LOCALE, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(`${date}T00:00:00Z`));
+}
+
+/** "15 oct 2026, 12:00" en la zona horaria de la tienda. */
+export function formatDateTime(iso: string, timeZone: string): string {
+  return new Intl.DateTimeFormat(LOCALE, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+    timeZone,
+  }).format(new Date(iso));
+}

@@ -8,6 +8,7 @@ export * from './auth';
 export * from './errors';
 export * from './health';
 export * from './history';
+export * from './money';
 export * from './payments';
 export * from './products';
 export * from './reports';

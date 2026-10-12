@@ -639,4 +639,53 @@ body {
     color: var(--ink);
     box-shadow: 0 2px 8px rgba(16, 34, 58, 0.18);
   }
+
+  .qty {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px;
+    border-radius: 18px;
+    background: var(--glass2);
+    border: 1.5px solid var(--line);
+  }
+  .qty button {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    border: 0;
+    background: var(--primsoft);
+    color: var(--prim);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .qty .qv {
+    width: 84px;
+    min-height: 44px;
+    border: 0;
+    background: transparent;
+    text-align: center;
+    font: inherit;
+    font-weight: 800;
+    font-size: 18px;
+    color: var(--ink);
+  }
+  .qty:has(.qv[aria-invalid='true']) {
+    border-color: var(--bad);
+    border-width: 2px;
+  }
+  .bar {
+    height: 8px;
+    border-radius: 4px;
+    background: var(--hair);
+    overflow: hidden;
+  }
+  .bar > i {
+    display: block;
+    height: 100%;
+    background: var(--prim);
+    border-radius: 4px;
+  }
 }

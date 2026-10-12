@@ -1,3 +1,5 @@
+/** Fechas y horas de negocio de la tienda, compartidas por el backend y la web. */
+
 /** Hasta cuántos días por delante se puede preparar una jornada (evita fechas con errores de captura). */
 export const MAX_DAYS_AHEAD = 60;
 
@@ -30,3 +32,23 @@ export function addDays(date: string, days: number): string {
 export const isPastDate = (date: string, today: string) => date < today;
 
 export const toHHMM = (time: string) => time.slice(0, 5);
+
+/** Hora local de la tienda (HH:MM) en el instante dado. */
+export function localTime(timezone: string, at: Date): string {
+  return new Intl.DateTimeFormat('en-GB', {
+    timeZone: timezone,
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).format(at);
+}
+
+/** El horario de la jornada es informativo (B15): solo avisa, nunca bloquea. */
+export function isOutsideHours(
+  timezone: string,
+  at: Date,
+  hours: { startTime: string; endTime: string },
+): boolean {
+  const time = localTime(timezone, at);
+  return time < hours.startTime || time >= hours.endTime;
+}

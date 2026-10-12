@@ -1,4 +1,4 @@
-import type { Product, UpdateProductInput } from '@pos/shared';
+import { type Product, type UpdateProductInput } from '@pos/shared';
 
 /** Campos del producto que una persona puede editar (todo menos id, versión y fechas). */
 export type ProductChanges = Omit<UpdateProductInput, 'version'>;

@@ -1,5 +1,5 @@
 import { AppError } from '../../errors';
-import { addDays } from '../workdays/workday.domain';
+import { addDays } from '@pos/shared';
 
 /** Un reporte abarca como máximo un año para que la consulta siga siendo rápida. */
 export const MAX_REPORT_DAYS = 366;

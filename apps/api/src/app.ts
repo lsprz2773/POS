@@ -1,7 +1,7 @@
 import cookie from '@fastify/cookie';
 import Fastify, { type FastifyInstance, type FastifyServerOptions } from 'fastify';
 import { sql } from 'kysely';
-import type { ApiErrorBody } from '@pos/shared';
+import { type ApiErrorBody } from '@pos/shared';
 import type { Config } from './config';
 import type { Database } from './db/client';
 import { AppError } from './errors';

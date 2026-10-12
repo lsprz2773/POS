@@ -1,10 +1,16 @@
-import type { PaymentLinesInput } from '@pos/shared';
+import {
+  balanceOf,
+  formatFolio,
+  formatMoney,
+  sumMoney,
+  toCents,
+  type PaymentLinesInput,
+} from '@pos/shared';
 import { randomUUID } from 'node:crypto';
 import type { Database } from '../../db/client';
 import { AppError } from '../../errors';
 import { recordAudit } from '../audit/audit';
 import type { AuthContext } from '../tenancy/context';
-import { balanceOf, formatFolio, formatMoney, sumMoney, toCents } from '@pos/shared';
 import { createSaleRepository } from './sale.repository';
 
 export interface PaymentTarget {

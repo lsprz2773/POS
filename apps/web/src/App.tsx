@@ -12,17 +12,19 @@ import { ProfilePage } from './features/session/ProfilePage';
 import { useSession } from './features/session/useSession';
 import { CatalogPage } from './features/catalog/CatalogPage';
 import { ProductFormPage } from './features/catalog/ProductFormPage';
+import { InventoryPage } from './features/workday/InventoryPage';
+import { PastDaysPage } from './features/workday/PastDaysPage';
+import { PrepareDayPage } from './features/workday/PrepareDayPage';
 import { SettingsPage } from './features/store/SettingsPage';
 import { ComingSoonPage } from './pages/ComingSoonPage';
 import { MorePage } from './pages/MorePage';
 import { NotFoundPage } from './pages/NotFoundPage';
 
-/** Pantallas que se construyen en las siguientes entregas (8c a 8e). */
+/** Pantallas que se construyen en las siguientes entregas (8d y 8e). */
 const PLACEHOLDERS = [
   ['/', copy.nav.today],
   ['/vender', copy.nav.sell],
   ['/pendientes', copy.nav.pending],
-  ['/dia', copy.nav.day],
   ['/historial', copy.more.history],
   ['/reportes', copy.more.reports],
 ] as const;
@@ -71,6 +73,9 @@ export const routes: RouteObject[] = [
         element: <ComingSoonPage title={title} />,
       })),
       { path: '/mas', element: <MorePage /> },
+      { path: '/dia', element: <PrepareDayPage /> },
+      { path: '/dia/inventario', element: <InventoryPage /> },
+      { path: '/dia/anteriores', element: <PastDaysPage /> },
       { path: '/catalogo', element: <CatalogPage /> },
       { path: '/catalogo/nuevo', element: <ProductFormPage /> },
       { path: '/catalogo/:id', element: <ProductFormPage /> },

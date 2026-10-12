@@ -1,5 +1,5 @@
 import type { FastifyPluginAsync } from 'fastify';
-import type { HealthResponse, ReadyResponse } from '@pos/shared';
+import { type HealthResponse, type ReadyResponse } from '@pos/shared';
 
 export interface HealthRoutesOptions {
   /** Verifica que la base de datos responde; debe lanzar si no está disponible. */

@@ -57,3 +57,36 @@ export function ConfirmDialog({
     </AlertDialog.Root>
   );
 }
+
+/** Aviso que solo se reconoce ("Entendido"): explica por qué una acción no es posible. */
+export function NoticeDialog({
+  open,
+  title,
+  description,
+  actionLabel,
+  onClose,
+}: {
+  open: boolean;
+  title: string;
+  description: ReactNode;
+  actionLabel: string;
+  onClose: () => void;
+}) {
+  return (
+    <AlertDialog.Root open={open} onOpenChange={(next) => (!next ? onClose() : undefined)}>
+      <AlertDialog.Portal>
+        <AlertDialog.Overlay className="scrim" />
+        <AlertDialog.Content className="sheet glass2">
+          <div className="grab" aria-hidden="true" />
+          <AlertDialog.Title className="h2">{title}</AlertDialog.Title>
+          <AlertDialog.Description className="sub">{description}</AlertDialog.Description>
+          <AlertDialog.Cancel asChild>
+            <button type="button" className="btn btn-p btn-lg btn-block" onClick={onClose}>
+              {actionLabel}
+            </button>
+          </AlertDialog.Cancel>
+        </AlertDialog.Content>
+      </AlertDialog.Portal>
+    </AlertDialog.Root>
+  );
+}

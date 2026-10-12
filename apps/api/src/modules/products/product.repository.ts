@@ -1,5 +1,5 @@
 import { sql, type Selectable } from 'kysely';
-import type { ListProductsQuery, Product } from '@pos/shared';
+import { type ListProductsQuery, type Product } from '@pos/shared';
 import type { Database } from '../../db/client';
 import type { Products } from '../../db/types';
 import { escapeLike, type ProductChanges } from './product.domain';

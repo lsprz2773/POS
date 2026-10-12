@@ -6,7 +6,7 @@ import {
   type PaymentLinesInput,
 } from '@pos/shared';
 import { ChevronLeft, ShoppingCart } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { Banner } from '../../components/Banner';
 import { Button } from '../../components/Button';
@@ -23,6 +23,8 @@ import { ApiError } from '../../lib/api';
 import { createIntentKeys } from '../../lib/idempotency';
 import { messageOf } from '../../lib/errors';
 import { useUnsavedGuard } from '../../lib/useUnsavedGuard';
+import { clearDraft, loadDraft, saveDraft } from '../../lib/draft';
+import { useSession } from '../session/useSession';
 import { useStore, useToday } from '../store/useStore';
 import { useWorkday } from '../workday/useWorkday';
 import { cartLines, cartTotals, sellable, setQuantity, stepQuantity, type Cart } from './cart';
@@ -45,10 +47,14 @@ export function NewSalePage() {
   const keys = useRef(createIntentKeys());
 
   const [step, setStep] = useState<1 | 2>(1);
-  const [cart, setCart] = useState<Cart>({});
+  const session = useSession();
+  const tenantId = session.status === 'authenticated' ? session.me.tenant.id : undefined;
+  // Si la sesión expiró a medio cobro, el borrador sigue aquí al volver a entrar (M7).
+  const [saved] = useState(() => (tenantId ? loadDraft(tenantId) : null));
+  const [cart, setCart] = useState<Cart>(saved?.cart ?? {});
   const [search, setSearch] = useState('');
-  const [customer, setCustomer] = useState('');
-  const [note, setNote] = useState('');
+  const [customer, setCustomer] = useState(saved?.customer ?? '');
+  const [note, setNote] = useState(saved?.note ?? '');
   const [collect, setCollect] = useState<Collect>('now');
   const [payment, setPayment] = useState<PaymentDraft | null>(null);
   const [editingPayment, setEditingPayment] = useState(false);
@@ -61,6 +67,12 @@ export function NewSalePage() {
   const hasItems = lines.length > 0;
 
   const guard = useUnsavedGuard(hasItems && !create.isPending);
+
+  useEffect(() => {
+    if (!tenantId) return;
+    if (Object.keys(cart).length === 0) clearDraft();
+    else saveDraft({ tenantId, cart, customer, note });
+  }, [tenantId, cart, customer, note]);
 
   const visible = offers.filter((offer) =>
     offer.productName.toLowerCase().includes(search.trim().toLowerCase()),
@@ -94,6 +106,7 @@ export function NewSalePage() {
     try {
       const sale = await create.mutateAsync({ key, body });
       keys.current.done();
+      clearDraft();
       guard.allowLeave();
       void navigate(`/vender/listo/${sale.id}`, { replace: true });
     } catch (error) {

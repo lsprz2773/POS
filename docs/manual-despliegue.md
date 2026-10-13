@@ -17,12 +17,12 @@ Guía paso a paso para poner el POS en internet con servicios gratuitos. Está e
 | 1 | Crear y asegurar la cuenta de AWS | aws.amazon.com | 30 min |
 | 2 | Crear la base de datos | neon.com | 15 min |
 | 3 | Guardar la cadena de conexión | AWS, Parameter Store | 10 min |
-| 4 | Ejecutar el arranque (permisos y presupuesto) | AWS, CloudFormation | 20 min |
-| 5 | Configurar GitHub | github.com | 20 min |
-| 6 | Primer despliegue de **staging** | GitHub, Actions | 15 min |
-| 7 | Crear tu tienda y tu usuario | GitHub y AWS CloudShell | 15 min |
+| 4 | Ejecutar el arranque (bucket y presupuesto) | AWS, CloudFormation | 20 min |
+| 5 | Preparar CloudShell | AWS CloudShell | 20 min |
+| 6 | Primer despliegue de **staging** | AWS CloudShell | 20 min |
+| 7 | Crear tu tienda y tu usuario | AWS CloudShell | 15 min |
 | 8 | Probar staging | tu navegador | 30 min |
-| 9 | Desplegar **producción** | GitHub | 20 min |
+| 9 | Desplegar **producción** | GitHub y AWS CloudShell | 20 min |
 | 10 | Uso diario y mantenimiento | — | cada mes |
 | 11 | Si algo sale mal | — | — |
 | 12 | Apagar todo | AWS | 15 min |
@@ -34,10 +34,10 @@ Las partes 1 a 7 las hace la primera vez que despliegas; las partes 6, 8 y 9 se 
 ## Parte 0. Lo que necesitas
 
 - [ ] Un **correo** que revises seguido (recibirá alertas de costo y de fallas).
-- [ ] Una **tarjeta** de crédito o débito. AWS la pide para abrir la cuenta aunque no cobre nada.
-- [ ] Tu **teléfono** (para la verificación en dos pasos) con una app de autenticación: Google Authenticator, Microsoft Authenticator o Authy.
-- [ ] Tu cuenta de **GitHub** y acceso de administrador al repositorio `lsprz2773/POS`.
-- [ ] Que las fases 8a a 8f y 9a ya estén fusionadas en `main` (revisa en GitHub que la carpeta `.github/workflows` de `main` tenga `deploy.yml` y `provision.yml`). Los botones de GitHub Actions ("Run workflow") solo aparecen si el flujo está en la **rama predeterminada** del repositorio (revísala en GitHub → Settings → General → Default branch).
+- [ ] La cuenta con la que entras a AWS (**Google, GitHub, Apple o Amazon**): la nueva experiencia de AWS no usa usuario raíz, entras con ese inicio de sesión.
+- [ ] Tu **teléfono** con una app de autenticación (Google Authenticator, Microsoft Authenticator o Authy) para la verificación en dos pasos.
+- [ ] Tu cuenta de **GitHub** (para ver el repositorio `lsprz2773/POS` y crear la versión de producción).
+- [ ] Que las fases 8a a 8f y 9a ya estén fusionadas en `main` (revisa en GitHub que `main` tenga la carpeta `infra` con `deploy.sh` y `provision.sh`).
 - [ ] Un lugar seguro (gestor de contraseñas) para guardar lo que vayas generando.
 
 **Anota aquí mientras avanzas** (en tu gestor de contraseñas, no en el repositorio):
@@ -45,7 +45,7 @@ Las partes 1 a 7 las hace la primera vez que despliegas; las partes 6, 8 y 9 se 
 | Dato | Dónde se obtiene | Valor |
 |---|---|---|
 | Correo de alertas | tú | |
-| ID de cuenta de AWS (12 dígitos) | parte 1 | |
+| ID de cuenta de AWS (12 dígitos) y fecha en que vencen los créditos | parte 1 | |
 | Región | parte 1 | `us-east-2` |
 | Cadena de conexión de Neon (staging) | parte 2 | |
 | Cadena de conexión de Neon (producción) | parte 2 | |
@@ -56,54 +56,56 @@ Las partes 1 a 7 las hace la primera vez que despliegas; las partes 6, 8 y 9 se 
 
 ---
 
-## Parte 1. Cuenta de AWS
+## Parte 1. Cuenta de AWS (nueva experiencia)
 
-**Dónde:** <https://aws.amazon.com> → "Crear una cuenta de AWS" (Create an AWS account).
+Tu cuenta es de la **nueva experiencia de AWS** (*Sign up for AWS (new)*). Funciona distinto a una cuenta clásica:
 
-1. Escribe tu correo y un nombre de cuenta (por ejemplo `pos-tamales`). Verifica el correo con el código que llega.
-2. Crea la contraseña del **usuario raíz** (root). Es la llave maestra: guárdala en tu gestor de contraseñas.
-3. Elige tipo de cuenta **Personal** y llena tus datos y la tarjeta. AWS puede hacer un cargo de verificación de aproximadamente un dólar que se devuelve.
-4. Verifica tu teléfono.
-5. **Plan.** Si aparece la opción entre **Free plan** y **Paid plan**, elige **Free plan**:
-   - Te da créditos de bienvenida (US$ 100 y hasta US$ 100 más al completar tareas de inicio).
-   - Dura **6 meses o hasta gastar los créditos**, lo que ocurra primero. En ese plan AWS no te cobra: si se acaba, la cuenta pasa a un estado limitado hasta que decidas pasar al plan de pago.
-   - Si no aparece la opción, tu cuenta es del esquema anterior (12 meses de capa gratuita) y las alertas de la parte 4 son tu protección.
-6. Plan de soporte: **Basic** (gratuito).
-7. Entra a la consola: <https://console.aws.amazon.com> con tu correo y la contraseña raíz.
+- Entras con tu **AWS Builder ID**, que se crea con el inicio de sesión que usaste (Google, GitHub, Apple o Amazon). **No hay usuario raíz ni hace falta crear un usuario administrador de IAM.**
+- Tu trabajo vive en un **proyecto** (el tuyo se llama "Blank slate"). Un proyecto es una sola cuenta de AWS con su propia facturación, fijada a una región.
+- Empiezas en el **Free plan**: US$ 100 de créditos, por 6 meses o hasta gastarlos. En ese plan AWS dice que no hay cargos mientras no actualices.
+- Los servicios que usamos (Lambda, API Gateway, CloudFront, Cognito, S3, CloudFormation, IAM, Systems Manager, SNS, CloudWatch, Budgets, CloudShell) están incluidos en el Free plan.
+- **No actualices al Paid plan ni actives las "características avanzadas".** Si la consola te dice "actualice la cuenta para activar las características avanzadas", ignóralo: son funciones de empresa que no necesitamos.
 
-### 1.1 Activar la verificación en dos pasos del usuario raíz
+**Dónde:** entra a <https://console.aws.amazon.com> con tu inicio de sesión de siempre, o a <https://settings.aws.com> para la cuenta y la facturación.
 
-1. Arriba a la derecha, clic en el nombre de tu cuenta → **Security credentials** (Credenciales de seguridad).
-2. En **Multi-factor authentication (MFA)** → **Assign MFA device** (Asignar dispositivo MFA).
-3. Nombre: `telefono`. Tipo: **Authenticator app**. Escanea el código QR con tu app y escribe dos códigos consecutivos.
+### 1.1 Proteger tu inicio de sesión
 
-### 1.2 Crear un usuario administrador (para no usar el raíz)
+Como no hay usuario raíz, la seguridad de tu cuenta de AWS es la de **la cuenta con la que entras**:
 
-1. Busca **IAM** en la barra de búsqueda de arriba → **Users** (Usuarios) → **Create user** (Crear usuario).
-2. Nombre: `pos-admin`. Marca "Provide user access to the AWS Management Console" → "I want to create an IAM user" → contraseña personalizada y desmarca "debe cambiarla".
-3. Permisos: **Attach policies directly** → marca `AdministratorAccess` → Crear.
-4. Abre el usuario → **Security credentials** → **Assign MFA device** igual que arriba.
-5. Anota la **dirección de inicio de sesión** de tu cuenta (aparece en el panel de IAM, algo como `https://123456789012.signin.aws.amazon.com/console`) y el **ID de cuenta** de 12 dígitos.
-6. Cierra la sesión del raíz. Desde ahora entras con `pos-admin`. El usuario raíz solo se usa si pierdes acceso o para tareas de facturación.
+1. Activa la **verificación en dos pasos** en esa cuenta (Google, GitHub, etc.) desde su configuración de seguridad.
+2. En tu perfil de AWS Builder ID (<https://profile.aws.amazon.com> → Security) revisa que tenga un dispositivo de verificación (MFA) y agrega uno si no.
+3. Guarda en tu gestor de contraseñas el correo y el método con que entras.
 
-### 1.3 Ver la facturación con `pos-admin`
+### 1.2 Revisar tu plan y tus créditos
 
-1. Entra como **raíz** una vez más → clic en tu nombre → **Account** (Cuenta).
-2. Baja a **IAM user and role access to Billing information** → **Edit** → activa **Activate IAM Access** → Update.
-3. En **Billing and Cost Management → Billing preferences** (Preferencias de facturación) activa **Receive Free Tier usage alerts** y **Receive billing alerts** con tu correo.
+1. Abre <https://settings.aws.com> → **Billing**.
+2. Anota: el nombre del plan (**Free plan**), el saldo de créditos y la **fecha en que vencen**. Tu cuenta tiene US$ 100 que vencen a los 183 días; agenda un recordatorio un mes antes (ver la parte 10, "Cuando termine el plan gratuito").
+3. No pulses **Upgrade**.
 
-### 1.4 Elegir la región
+### 1.3 Confirmar el proyecto y la región
 
-Arriba a la derecha, junto a tu nombre, está el selector de región. Elige **US East (Ohio) us-east-2**. Es donde se hace **todo** lo demás de este manual; si cambias de región a medias, no verás tus recursos.
+1. En <https://settings.aws.com> → **Projects**, abre tu proyecto.
+2. Confirma que su región es **US East (Ohio) us-east-2**. En la nueva experiencia la región queda fija por proyecto y no se puede cambiar; es la que usaremos para todo.
+3. Si más adelante algo "no aparece", revisa que arriba a la derecha de la consola siga diciendo **us-east-2**.
 
-> Es la región que ya te muestra tu consola. No uses otra: los recursos de una región no se ven desde las demás.
+### 1.4 Anotar el ID de cuenta
+
+En la consola, clic en el nombre del proyecto o de tu cuenta, arriba a la derecha: busca **Account ID** (12 dígitos) y cópialo a tu lista.
+
+### 1.5 Comprobar que CloudShell abre
+
+CloudShell es la terminal del navegador que usaremos en la parte 7. En la consola, clic en el ícono `>_` de arriba y espera a que abra una línea de comandos. Ciérrala.
+
+### 1.6 Las alertas de costo
+
+**No crees presupuestos a mano**: la parte 4 crea los dos (`pos-mensual` y `pos-primer-centavo`) y tener más puede generar un cargo por presupuesto adicional. Mientras tanto no hay riesgo de cobro en el Free plan.
 
 ### ✅ Comprobación de la parte 1
 
-- [ ] Entras con `pos-admin` y MFA.
-- [ ] El usuario raíz tiene MFA.
-- [ ] Anotaste el ID de cuenta y la región.
-- [ ] Recibes correos de AWS en tu bandeja.
+- [ ] Tu inicio de sesión (Google, GitHub, etc.) tiene verificación en dos pasos.
+- [ ] El plan dice **Free plan** y anotaste los créditos y su fecha de vencimiento.
+- [ ] El proyecto está en **us-east-2** y anotaste el ID de cuenta.
+- [ ] CloudShell abre.
 
 ---
 
@@ -157,181 +159,180 @@ Los nombres deben quedar **exactamente** así (con mayúsculas y minúsculas, y 
 
 ---
 
-## Parte 4. Arranque: permisos de GitHub y presupuesto
+## Parte 4. Arranque: bucket de despliegue y presupuesto
 
-Este paso se ejecuta **una sola vez** y crea: el permiso para que GitHub despliegue sin llaves, un bucket de archivos de despliegue y tu **presupuesto con alertas y bloqueo**.
+> **Qué pasó con la versión anterior.** El primer intento de esta parte pedía además un permiso para que GitHub desplegara por ti. Falló porque la política de tu cuenta (*service control policy*) **prohíbe crear un proveedor de identidad OIDC** (`iam:CreateOpenIDConnectProvider`). Es una restricción de la nueva experiencia de AWS, no un error tuyo. Por eso el despliegue se hace desde **CloudShell**, que ya tiene tu sesión: no necesita llaves ni permisos extra, y es igual de seguro. Los flujos de GitHub **Deploy** y **Provision** no se usan en esta cuenta.
 
-**Dónde:** consola de AWS (`us-east-2`) → **CloudFormation** → **Create stack** → **With new resources (standard)**.
+Este paso se ejecuta **una sola vez** y crea el **bucket** donde se suben los paquetes al desplegar y tus **dos presupuestos con alertas**.
 
-1. **Prerequisite**: *Choose an existing template*. **Specify template**: *Upload a template file* → sube `infra/bootstrap.yaml` (descárgalo del repositorio: GitHub → carpeta `infra` → archivo → botón de descarga "Download raw file").
+**Dónde:** consola de AWS → **CloudFormation** → **Create stack** → **With new resources (standard)**. Esa consola abre en Ohio (`us-east-2`) aunque la dirección diga otra cosa.
+
+1. **Prerequisite**: *Choose an existing template*. **Specify template**: *Upload a template file* → sube `infra/bootstrap.yaml` (GitHub → carpeta `infra` → archivo → botón de descarga "Download raw file").
 2. **Siguiente**. Nombre del stack: `pos-bootstrap`.
 3. Parámetros:
 
    | Parámetro | Qué poner |
    |---|---|
-   | GitHubOwner | `lsprz2773` |
-   | GitHubRepo | `POS` |
    | AlertEmail | tu correo de alertas |
    | MonthlyLimitUsd | `1` |
-   | CreateOidcProvider | `true` (si el paso falla diciendo que ya existe, repite con `false`) |
 
-4. **Siguiente** dos veces. En la última pantalla marca **"I acknowledge that AWS CloudFormation might create IAM resources with custom names"** → **Submit**.
-5. Espera a que el estado sea **CREATE_COMPLETE** (1 a 3 minutos; actualiza con el botón de refrescar).
-6. Pestaña **Outputs** (Salidas): copia **`DeployRoleArn`** y **`ArtifactBucketName`** a tu lista.
-7. **Confirma las suscripciones por correo:** AWS Budgets te manda mensajes de confirmación. Ábrelos y confirma. (Las alarmas de la parte 6 también mandarán uno; confírmalo cuando llegue.)
-
-### Qué hace cada recurso
+4. **Siguiente** dos veces y **Submit**. No pide reconocer permisos de IAM porque ya no crea ninguno.
+5. Espera a **CREATE_COMPLETE** (1 a 2 minutos).
+6. Pestaña **Outputs**: copia **`ArtifactBucketName`** a tu lista.
+7. **Confirma las suscripciones por correo** que AWS Budgets te manda.
 
 | Recurso | Para qué sirve |
 |---|---|
-| Rol `pos-github-deploy` | Lo asume GitHub Actions mientras corre el despliegue, solo desde tu repositorio y solo desde los entornos `staging` y `prod`. Dura una hora y no hay llaves. |
-| Bucket `pos-deploy-artifacts-…` | Guarda los paquetes que se suben al desplegar (se borran a los 30 días). |
+| Bucket `pos-deploy-artifacts-…` | Guarda los paquetes de la API al desplegar (se borran a los 30 días). |
 | Presupuesto `pos-mensual` | Tope de US$ 1. Avisa al 50 %, 80 % y 100 % del gasto real y al 100 % del pronosticado. |
 | Presupuesto `pos-primer-centavo` | Te avisa en cuanto aparezca **cualquier cobro**, aunque sea de un centavo. |
-| Acción automática | Al llegar al 100 % del presupuesto, el rol de despliegue **pierde permiso de desplegar** hasta que tú lo restableces (parte 10). |
+
+Mientras estés en el **Free plan** AWS no cobra, así que los presupuestos son una segunda alarma. El tope real, que pausa los recursos, llega al pasar al Paid plan (ver "Cuando termine el plan gratuito").
+
+### Si falla
+
+Abre la pestaña **Events**, copia el **Logical ID** y el **Status reason** de la primera fila roja y pásamelos. Si el problema son los presupuestos, se pueden quitar de la plantilla: no son necesarios para desplegar.
 
 ### ✅ Comprobación de la parte 4
 
 - [ ] El stack `pos-bootstrap` está en `CREATE_COMPLETE`.
-- [ ] Copiaste `DeployRoleArn` y `ArtifactBucketName`.
-- [ ] En **Billing → Budgets** ves `pos-mensual` y `pos-primer-centavo`.
+- [ ] Copiaste `ArtifactBucketName`.
 - [ ] Confirmaste los correos de suscripción.
 
 ---
 
-## Parte 5. Configurar GitHub
+## Parte 5. Preparar CloudShell
 
-**Dónde:** <https://github.com/lsprz2773/POS> → **Settings**.
+Desde aquí todo se hace en **AWS CloudShell** (el ícono `>_` de la consola). Es una terminal en el navegador, ya con tu sesión iniciada.
 
-### 5.1 Crear los dos entornos
+> **Desde el teléfono** es incómodo teclear comandos largos. Copia y pega cada bloque tal cual. Si puedes, usa una computadora.
 
-1. **Settings → Environments → New environment**. Nombre: `staging`. Crear.
-2. Repite con `prod` (nombre exactamente así).
-3. En `prod`:
-   - Marca **Required reviewers** y agrégate a ti. Así, un despliegue a producción siempre espera tu aprobación.
-   - En **Deployment branches and tags** elige **Selected branches and tags** → agrega la regla de etiqueta `v*`. Producción solo se despliega desde etiquetas de versión.
+1. Abre CloudShell y espera el cursor. Comprueba la región: `echo $AWS_REGION` debe decir `us-east-2`.
+2. Descarga el código (el repositorio es público):
 
-### 5.2 Variables de cada entorno
+   ```
+   git clone https://github.com/lsprz2773/POS.git
+   cd POS
+   ```
 
-En **cada** entorno (`staging` y `prod`), sección **Environment variables → Add variable**:
+3. Prepara las herramientas (instala Node 22 en tu carpeta y las dependencias; tarda unos 5 minutos):
 
-| Nombre | Valor |
-|---|---|
-| `AWS_ROLE_ARN` | el `DeployRoleArn` de la parte 4 |
-| `AWS_REGION` | `us-east-2` |
-| `ARTIFACT_BUCKET` | el `ArtifactBucketName` de la parte 4 |
-| `ALERT_EMAIL` | tu correo de alertas |
+   ```
+   ./infra/cloudshell-prepare.sh
+   source ~/.bashrc
+   node -v
+   ```
 
-Son datos de configuración, no secretos. Las **llaves** de AWS no existen.
+   `node -v` debe decir `v22` o más.
+4. Define los datos del despliegue (cambia el correo y el bucket por los tuyos):
 
-### 5.3 Secretos para las pruebas de humo (más adelante)
+   ```
+   export ARTIFACT_BUCKET=pos-deploy-artifacts-505467908806-us-east-2
+   export ALERT_EMAIL=tu-correo@ejemplo.com
+   ```
 
-En la parte 7 creas el usuario de pruebas. Después, en cada entorno → **Environment secrets**, agrega `SMOKE_EMAIL` y `SMOKE_PASSWORD`. Hasta entonces, las pruebas de humo omiten las que requieren sesión.
+   Si el nombre del bucket de la parte 4 es otro, usa el que copiaste.
+
+> **Importante:** CloudShell borra los archivos del directorio de trabajo temporal tras un tiempo sin usarse, pero conserva ~1 GB de tu carpeta personal. Si al volver ya no encuentras `POS`, repite los pasos 2 a 4.
 
 ### ✅ Comprobación de la parte 5
 
-- [ ] Existen los entornos `staging` y `prod`.
-- [ ] `prod` exige tu aprobación y solo acepta etiquetas `v*`.
-- [ ] Las cuatro variables están en los dos entornos.
+- [ ] `echo $AWS_REGION` dice `us-east-2`.
+- [ ] `node -v` dice `v22` o más.
+- [ ] `npm ci` terminó sin errores.
 
 ---
 
 ## Parte 6. Primer despliegue de staging
 
-**Dónde:** GitHub → pestaña **Actions** → en la lista de la izquierda, **Deploy** → botón **Run workflow**.
+En CloudShell, dentro de la carpeta `POS`:
 
-1. **Use workflow from:** rama `dev`.
-2. **Entorno:** `staging`.
-3. **Run workflow**. Se abre una ejecución nueva; haz clic en ella para ver el avance.
+```
+git pull
+ENVIRONMENT=staging BUILD=1 ./infra/deploy.sh
+```
 
 **Qué hace, en orden:**
 
 | Paso | Qué significa |
 |---|---|
-| Comprobaciones | Revisa el código (estilo, tipos y pruebas) antes de tocar la nube. |
-| Construir API y web | Empaqueta la API para Lambda y compila la web. |
-| Migraciones | Prepara las tablas de la base de datos (Neon). |
-| Desplegar | Crea el stack `pos-staging`: Cognito, Lambda, API Gateway, S3 y CloudFront. |
-| Dirección pública | Como la API necesita conocer la dirección de CloudFront, que no existe hasta crearse, se despliega **dos veces** la primera vez. |
-| Publicar la web | Sube los archivos a S3 y limpia la caché. |
-| Pruebas de humo | Comprueba que todo responde. |
+| 0. Construir | Empaqueta la API para Lambda y compila la web. |
+| 1. Migraciones | Prepara las tablas en Neon (lee la cadena de Parameter Store). |
+| 2. API, identidad y distribución | Crea el stack `pos-staging`: Cognito, Lambda, API Gateway, S3 y CloudFront. |
+| 3. Dirección pública | La API necesita conocer la dirección de CloudFront, que no existe hasta crearse, así que la primera vez se despliega **dos veces**. |
+| 4. Publicar la web | Sube los archivos a S3 y limpia la caché. |
+| 5. Listo | Imprime `Aplicación: https://xxxx.cloudfront.net`. |
 
-**La primera vez tarda entre 10 y 20 minutos** (CloudFront es lo más lento). Es normal que se vea "en curso" un buen rato.
+**La primera vez tarda entre 10 y 20 minutos** (CloudFront es lo más lento). Es normal que parezca detenido.
 
-Al final, en el resumen del paso **Desplegar**, verás `Aplicación: https://xxxxxxxx.cloudfront.net`. Esa es la **dirección de staging**: anótala.
+Al final anota la dirección de staging. Después corre las pruebas de humo:
 
-**Correo de SNS:** llega un mensaje "AWS Notification - Subscription Confirmation" de las alarmas. **Confírmalo**.
+```
+node infra/smoke.mjs https://TU-DIRECCION.cloudfront.net
+```
+
+Debe mostrar todo con ✓. Si más tarde fijas una cuenta de pruebas, agrega `SMOKE_EMAIL` y `SMOKE_PASSWORD` escribiéndolos en la terminal (no en archivos).
+
+**Correo de SNS:** llega un mensaje "AWS Notification - Subscription Confirmation" de las alarmas. Confírmalo.
 
 ### Si falla
 
 | Dónde se detiene | Causa probable | Qué hacer |
 |---|---|---|
-| "Configure AWS credentials" dice *Not authorized to perform sts:AssumeRoleWithWebIdentity* | El entorno de GitHub no se llama exactamente `staging`, o GitHubOwner/GitHubRepo del arranque están mal | Corrige el nombre del entorno o repite el arranque con los valores correctos (CloudFormation → `pos-bootstrap` → Update) |
-| Migraciones: *ParameterNotFound* | El parámetro no se llama `/pos/staging/database-url` | Corrige el nombre en Parameter Store (parte 3) |
-| Migraciones: no conecta o *password authentication failed* | Cadena mal copiada | Vuelve a copiarla de Neon y actualiza el parámetro |
-| Desplegar: *AccessDenied* con una acción de IAM, Lambda, CloudFront… | A la política del rol le falta un permiso | Copia el mensaje completo en el chat; se ajusta `infra/bootstrap.yaml` y se actualiza el stack `pos-bootstrap` |
-| Desplegar: *ROLLBACK_COMPLETE* | El stack falló al crearse y se deshizo | En CloudFormation → `pos-staging` → pestaña **Events**, busca la primera línea en rojo; envíala. Borra el stack fallido antes de reintentar |
-| Pruebas de humo: *llegan las cabeceras de seguridad* falla | CloudFront aún propaga la configuración | Reintenta en 5 minutos |
+| `ParameterNotFound` en las migraciones | Falta o está mal escrito `/pos/staging/database-url` | Corrige el nombre en Parameter Store (parte 3) |
+| La migración no conecta o *password authentication failed* | Cadena mal copiada | Vuelve a copiarla de Neon y actualiza el parámetro |
+| `AccessDenied` o *explicit deny in a service control policy* al crear algo | La política de tu cuenta prohíbe ese recurso | Pega el mensaje completo: se cambia la plantilla |
+| `ROLLBACK_COMPLETE` | El stack falló al crearse y se deshizo | En CloudFormation → `pos-staging` → **Events**, copia la primera fila roja. Borra el stack antes de reintentar |
+| Humo: *cabeceras de seguridad* | CloudFront aún propaga | Reintenta en 5 minutos |
 
-> Un stack en `ROLLBACK_COMPLETE` no se puede actualizar: hay que **borrarlo** (CloudFormation → seleccionar → Delete) y volver a ejecutar el despliegue.
+> Un stack en `ROLLBACK_COMPLETE` no se puede actualizar: **bórralo** (CloudFormation → seleccionar → Delete) y vuelve a ejecutar el despliegue.
 
 ### ✅ Comprobación de la parte 6
 
-- [ ] El flujo terminó en verde.
-- [ ] Anotaste la dirección de staging.
-- [ ] Si abres `https://…cloudfront.net/api/health` ves `{"status":"ok"}`.
+- [ ] El script terminó con `Aplicación: https://…`.
+- [ ] `/api/health` de esa dirección responde `{"status":"ok"}`.
+- [ ] Las pruebas de humo salieron en verde.
 - [ ] Confirmaste el correo de SNS.
 
 ---
 
 ## Parte 7. Crear tu tienda y tu usuario
 
-El inicio de sesión necesita dos cosas: una **cuenta en Cognito** (quién eres) y una **tienda en la base** (a qué datos accedes). Un flujo de GitHub hace ambas; **tú solo fijas la contraseña**, para que nunca pase por GitHub.
+El inicio de sesión necesita dos cosas: una **cuenta en Cognito** (quién eres) y una **tienda en la base** (a qué datos accedes). Un script hace ambas; **tú fijas la contraseña**, así nunca queda en un archivo.
 
 ### 7.1 Crear la cuenta y la tienda
 
-1. GitHub → **Actions** → **Provision** → **Run workflow**.
-2. Rama `dev`, entorno `staging`.
-3. **Nombre de la tienda:** el de tu negocio. **Correo:** el correo con el que vas a entrar.
-4. **Run workflow**. Debe terminar en verde en un par de minutos.
+En CloudShell, en la carpeta `POS` (cambia el nombre y el correo):
 
-### 7.2 Fijar tu contraseña (AWS CloudShell)
+```
+ENVIRONMENT=staging ./infra/provision.sh "Nombre de mi tienda" tu-correo@ejemplo.com
+```
 
-CloudShell es una terminal que AWS te presta dentro del navegador, sin instalar nada.
+Debe terminar con "Cuenta lista".
 
-1. En la consola de AWS (`us-east-2`), arriba a la derecha, clic en el ícono `>_` (**CloudShell**). Espera a que abra.
-2. Obtén el identificador del grupo de usuarios:
+### 7.2 Fijar tu contraseña
 
-   ```
-   aws cloudformation describe-stacks --stack-name pos-staging \
-     --query "Stacks[0].Outputs[?OutputKey=='UserPoolId'].OutputValue" --output text
-   ```
+La contraseña debe tener **al menos 12 caracteres, con mayúscula, minúscula y número**. Escríbela sin que se muestre:
 
-   Copia el resultado (se ve como `us-east-2_AbC123dEf`).
-3. Fija la contraseña (**de al menos 12 caracteres, con mayúscula, minúscula y número**). Reemplaza los dos valores en mayúsculas:
+```
+read -rs -p "Contraseña: " PW; echo
+POOL=$(aws cloudformation describe-stacks --stack-name pos-staging --query "Stacks[0].Outputs[?OutputKey=='UserPoolId'].OutputValue" --output text)
+aws cognito-idp admin-set-user-password --user-pool-id "$POOL" --username tu-correo@ejemplo.com --password "$PW" --permanent
+unset PW
+```
 
-   ```
-   aws cognito-idp admin-set-user-password \
-     --user-pool-id IDENTIFICADOR_DEL_GRUPO \
-     --username TU_CORREO \
-     --password 'TU_CONTRASEÑA' --permanent
-   ```
-
-   Si no devuelve nada, funcionó. Las comillas simples evitan que la terminal interprete símbolos de tu contraseña.
-4. Cierra CloudShell. La contraseña **no** queda en GitHub; guárdala en tu gestor.
+Si no devuelve nada, funcionó. Guarda el correo y la contraseña en tu gestor.
 
 ### 7.3 Usuario para las pruebas de humo (recomendado)
 
-Para que las pruebas automáticas no usen tus datos reales de producción, crea en **cada** entorno otra cuenta de prueba. Repite 7.1 y 7.2 con:
+Para que las pruebas automáticas no usen tus datos reales de producción, crea en **cada** entorno otra cuenta de prueba, repitiendo 7.1 y 7.2 con:
 
 - Nombre de tienda: `Pruebas de humo`.
-- Correo: una variante tuya, por ejemplo `tucorreo+humo@gmail.com` (Gmail entrega a tu bandeja los correos con `+algo`).
-
-Luego, en GitHub → Settings → Environments → (staging o prod) → **Environment secrets**: `SMOKE_EMAIL` y `SMOKE_PASSWORD` con esa cuenta.
+- Correo: una variante tuya, por ejemplo `tucorreo+humo@gmail.com`.
 
 ### ✅ Comprobación de la parte 7
 
-- [ ] El flujo **Provision** terminó en verde.
+- [ ] `provision.sh` terminó en "Cuenta lista".
 - [ ] Fijaste la contraseña sin errores.
 - [ ] Guardaste el correo y la contraseña en tu gestor.
 
@@ -363,7 +364,7 @@ Luego, en GitHub → Settings → Environments → (staging o prod) → **Enviro
 ### ✅ Comprobación de la parte 8
 
 - [ ] Todo lo de la lista funciona en teléfono y computadora.
-- [ ] Las pruebas de humo del último despliegue estaban en verde con sesión (si ya cargaste `SMOKE_*`, vuelve a ejecutar **Deploy**).
+- [ ] Las pruebas de humo del último despliegue estaban en verde con sesión (si ya tienes la cuenta de humo, corre `SMOKE_EMAIL=… SMOKE_PASSWORD=… node infra/smoke.mjs <dirección>` escribiendo la contraseña en la terminal).
 
 ---
 
@@ -380,18 +381,27 @@ Producción repite todo, pero con la base y el usuario reales, y solo desde una 
 
 ### 9.2 Desplegar
 
-1. Actions → **Deploy** → **Run workflow**.
-2. **Use workflow from:** elige la **etiqueta** `v0.1.0` (no una rama). Entorno `prod`.
-3. GitHub te pedirá **aprobar** el despliegue (por el revisor obligatorio): abre la ejecución → **Review deployments** → marca `prod` → **Approve and deploy**.
-4. Espera. Anota la dirección de producción.
+En CloudShell, en la carpeta `POS`:
+
+```
+git fetch --tags
+git checkout v0.1.0
+ENVIRONMENT=prod BUILD=1 ./infra/deploy.sh
+```
+
+Producción se despliega **siempre desde una etiqueta**, no desde una rama: así sabes exactamente qué versión está en línea. Al terminar anota la dirección de producción y corre las pruebas de humo:
+
+```
+node infra/smoke.mjs https://TU-DIRECCION-DE-PRODUCCION.cloudfront.net
+```
 
 ### 9.3 Tienda, contraseña y humo
 
-Repite la **parte 7** con el entorno `prod`:
+Repite la **parte 7** con `ENVIRONMENT=prod` y `--stack-name pos-prod`:
 
-- [ ] Flujo **Provision** con entorno `prod`, **ejecutado desde la etiqueta `v0.1.0`** (el entorno `prod` solo acepta etiquetas), con el nombre real de tu tienda y tu correo.
-- [ ] Contraseña en CloudShell (usa el stack `pos-prod`).
-- [ ] Usuario de pruebas de humo y sus secretos en el entorno `prod`.
+- [ ] `ENVIRONMENT=prod ./infra/provision.sh "Tu tienda real" tu-correo@ejemplo.com`
+- [ ] Contraseña con el comando de 7.2 (cambia `pos-staging` por `pos-prod`).
+- [ ] Usuario de pruebas de humo para producción.
 
 ### 9.4 Prueba de humo y uso
 
@@ -401,7 +411,7 @@ Repite la **parte 7** con el entorno `prod`:
 
 ### ✅ Comprobación de la parte 9
 
-- [ ] Flujo **Deploy** de `prod` en verde, con humo.
+- [ ] El despliegue de `prod` terminó y las pruebas de humo salieron en verde.
 - [ ] Puedes vender en producción.
 - [ ] Recibes alertas en tu correo (prueba una alarma si quieres).
 
@@ -418,21 +428,21 @@ Repite la **parte 7** con el entorno `prod`:
 | Capa gratuita | **Billing → Free Tier** | Todo por debajo del límite |
 | Base de datos | Neon → **Dashboard** | Almacenamiento bajo 0.5 GB; horas de cómputo bajo el límite |
 | Alarmas | CloudWatch → **Alarms** | Ninguna en rojo |
-| Plan de AWS | Billing | Si aún estás en el Free plan: cuántos días o créditos quedan |
+| Plan de AWS | settings.aws.com → Billing | Cuántos días y cuántos créditos quedan en el Free plan |
 
 ### Publicar una versión nueva
 
 1. Cambios en una rama → PR a `dev` → CI en verde → fusionar.
-2. Actions → **Deploy** → rama `dev` → `staging`. Probar.
-3. PR de `dev` a `main` → crear etiqueta nueva (`v0.1.1`…) → **Deploy** con esa etiqueta y entorno `prod` → aprobar.
+2. En CloudShell: `git checkout dev && git pull && ENVIRONMENT=staging BUILD=1 ./infra/deploy.sh`. Probar.
+3. PR de `dev` a `main` → crear etiqueta nueva (`v0.1.1`…) → `git fetch --tags && git checkout v0.1.1 && ENVIRONMENT=prod BUILD=1 ./infra/deploy.sh`.
 
 ### Volver atrás (reversión)
 
-Ejecuta **Deploy** con la etiqueta de la versión anterior y entorno `prod`. Las migraciones **no** se revierten: por eso se escriben compatibles hacia atrás y se prueban primero en staging.
+Vuelve a ejecutar `deploy.sh` con la etiqueta de la versión anterior (`git checkout v0.1.0`) y `ENVIRONMENT=prod`. Las migraciones **no** se revierten: por eso se escriben compatibles hacia atrás y se prueban primero en staging.
 
 ### Agregar a otra persona o tienda
 
-Flujo **Provision** con el nombre de su tienda y su correo; luego fija su contraseña en CloudShell (parte 7.2).
+`./infra/provision.sh` con el nombre de su tienda y su correo; luego fija su contraseña (parte 7.2).
 
 ### Cambiar una contraseña olvidada
 
@@ -441,16 +451,24 @@ CloudShell: el mismo comando `admin-set-user-password` de la parte 7.2 con la co
 ### Si llegó la alerta de presupuesto al 100 %
 
 1. Revisa **Billing → Cost Explorer** para ver qué servicio cobró.
-2. El despliegue quedó bloqueado por seguridad. La aplicación **sigue funcionando**; solo no se puede desplegar.
-3. Cuando entiendas el cobro y quieras seguir: IAM → **Roles** → `pos-github-deploy` → pestaña **Permissions** → quita (**Detach**) la política `pos-deploy-bloqueado`.
+2. En el Free plan no deberías ver cobros. Si pasaste al Paid plan, revisa también el tope de gasto del proyecto en <https://settings.aws.com>: al alcanzarlo AWS **pausa** los recursos hasta el mes siguiente, o hasta que lo subas.
+3. Entiende el cobro antes de volver a desplegar.
 
 ### Respaldo y restauración (parte 9c)
 
 Se agrega en la siguiente entrega: copia semanal cifrada a S3 y prueba de restauración en una rama de Neon. Mientras tanto, Neon conserva un historial corto desde su panel (Branches → Restore).
 
-### Cuando termine el plan gratuito de AWS (≈6 meses)
+### Cuando termine el plan gratuito de AWS
 
-Si empezaste con el **Free plan**, AWS te avisa por correo antes de que termine. Hay que **pasar al plan de pago** (Billing → Account plan → Upgrade). Con tu volumen el gasto esperado son centavos al mes (sobre todo API Gateway), y tus alertas de US$ 1 siguen protegiéndote. No hay que migrar nada.
+Tu Free plan termina a los **6 meses o cuando se acaben los US$ 100 de créditos (lo que ocurra primero)**; en tu cuenta, a los 183 días contados desde su apertura. **Si no haces nada, la cuenta se cierra automáticamente y se pierden los recursos.** AWS conserva tus datos 90 días más, y en ese plazo puedes actualizar al Paid plan para recuperarlos.
+
+Lo recomendable es decidir **un mes antes**:
+
+1. Entra a <https://settings.aws.com> → **Billing** → **Upgrade** y agrega un método de pago.
+2. En el mismo asistente, o después, elige **Set spend limits** y pon un tope mensual para el proyecto (por ejemplo, US$ 2). Al alcanzarlo, AWS **pausa** los recursos hasta el mes siguiente: es un tope real, no solo una alerta.
+3. La actualización **no se puede revertir**. Los créditos que queden se aplican a tus facturas futuras. Con tu volumen el gasto esperado son centavos al mes (sobre todo API Gateway).
+
+Agenda el recordatorio en tu calendario ahora (fecha de vencimiento menos 30 días).
 
 ---
 
@@ -461,8 +479,8 @@ Si empezaste con el **Free plan**, AWS te avisa por correo antes de que termine.
 | La página carga pero "no se pudo conectar" | Abre `/api/health`. Si no responde: CloudWatch → log group `/aws/lambda/pos-<entorno>-api`. |
 | `/api/health` responde pero `/api/health/ready` da 503 | La base no responde: Neon puede estar pausada (reintenta) o la cadena del parámetro es incorrecta. |
 | Iniciar sesión dice "Correo o contraseña incorrectos" | Contraseña no fijada (parte 7.2), correo distinto al del alta, o contraseña de menos de 12 caracteres. |
-| Inicia sesión y pide algo de "tienda" o aparece "tu cuenta aún no tiene una tienda" | Falta ejecutar **Provision** para ese correo en ese entorno. |
-| Cualquier guardado falla con 403 "origen no permitido" | La API no conoce su dirección: vuelve a ejecutar **Deploy** (el segundo paso la corrige). |
+| Inicia sesión y pide algo de "tienda" o aparece "tu cuenta aún no tiene una tienda" | Falta ejecutar `provision.sh` para ese correo en ese entorno. |
+| Cualquier guardado falla con 403 "origen no permitido" | La API no conoce su dirección: vuelve a ejecutar `deploy.sh` (el segundo paso la corrige). |
 | La primera carga del día es lenta | Normal: base pausada y Lambda en frío. |
 | Un despliegue se quedó en `UPDATE_ROLLBACK_FAILED` | No borres nada a ciegas; envía los *Events* del stack. |
 | Ves un cargo inesperado | **Billing → Bills** por servicio; dime cuál y revisamos. No sigas desplegando hasta entender. |
@@ -501,12 +519,13 @@ Los números vienen de las páginas de precios al momento de escribir esto y pue
 
 | Archivo | Para qué |
 |---|---|
-| `infra/bootstrap.yaml` | Parte 4 (permisos de GitHub, bucket, presupuesto) |
+| `infra/bootstrap.yaml` | Parte 4 (bucket de despliegue y presupuestos) |
 | `infra/template.yaml` | Partes 6 y 9 (todo el entorno) |
-| `infra/deploy.sh` | Parte 6 y 9 (migraciones, despliegue, publicar web) |
+| `infra/deploy.sh` | Partes 6 y 9 (migraciones, despliegue, publicar la web) |
 | `infra/smoke.mjs` | Pruebas de humo |
-| `.github/workflows/deploy.yml` | Botón **Deploy** |
-| `.github/workflows/provision.yml` | Botón **Provision** |
+| `infra/cloudshell-prepare.sh` | Parte 5 (Node y dependencias en CloudShell) |
+| `infra/provision.sh` | Parte 7 (tienda y usuario) |
+| `.github/workflows/{deploy,provision}.yml` | **No se usan en tu cuenta** (requieren OIDC, prohibido por su política); quedan para una cuenta que lo permita |
 | `apps/api/src/lambda.ts` | La API dentro de Lambda |
 | `apps/api/src/modules/auth/cognito-identity-provider.ts` | Inicio de sesión con Cognito |
 
@@ -516,7 +535,7 @@ Los números vienen de las páginas de precios al momento de escribir esto y pue
 |---|---|
 | **Región** | Ciudad (centro de datos) de AWS donde viven tus recursos. |
 | **IAM / rol** | Permisos de AWS. Un rol es un conjunto de permisos que alguien (aquí GitHub) puede "ponerse" por un rato. |
-| **OIDC** | Forma de que GitHub demuestre quién es ante AWS sin contraseñas ni llaves guardadas. |
+| **OIDC** | Forma de que GitHub demuestre quién es ante AWS sin llaves guardadas. Tu cuenta no lo permite, por eso se despliega desde CloudShell. |
 | **CloudFormation / SAM** | Texto que describe qué crear en AWS; AWS lo crea y lo puede borrar entero. |
 | **Stack** | Un conjunto de recursos creados juntos por una plantilla (`pos-staging`, `pos-prod`). |
 | **Lambda** | Código que AWS ejecuta solo cuando alguien lo usa; no hay servidor encendido. |

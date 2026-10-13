@@ -127,8 +127,26 @@
     transition-delay: 0s !important;
     scroll-behavior: auto !important;
   }
-  /* Los avisos se quitan por tiempo (JS): sin movimiento no deben desvanecerse antes de tiempo. */
-  .toast {
+  /*
+   * Sin movimiento, las entradas y salidas no existen (ni un fotograma intermedio con transparencia, que
+   * además arruinaría la medición de contraste). Quedan solo los indicadores de carga (giro, esqueleto).
+   * Los avisos se quitan por tiempo (JS): sin movimiento no deben desvanecerse antes de tiempo.
+   */
+  .page-in > *,
+  .stagger > *,
+  .scrim,
+  .sheet,
+  .toast,
+  .ban,
+  .errt,
+  .inp[aria-invalid='true'],
+  .pop,
+  .halo::after,
+  .tab .ic,
+  .side a .ic,
+  .bar > i,
+  .topbar,
+  .topbar::after {
     animation: none !important;
   }
 }

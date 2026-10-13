@@ -70,17 +70,21 @@ test.describe('con movimiento normal', () => {
 test.describe('reducir movimiento', () => {
   test.use({ reducedMotion: 'reduce' });
 
-  test('las animaciones duran un instante y no hay esperas escalonadas', async ({ page }) => {
+  test('las entradas no se animan: ni pantallas ni hojas pasan por un estado a medias', async ({
+    page,
+  }) => {
     await page.goto('/historial');
     await expect(page.getByRole('heading', { name: 'Historial' })).toBeVisible();
-    const timing = await page
-      .locator('main .page-in > *')
-      .first()
-      .evaluate((el) => {
-        const style = getComputedStyle(el);
-        return { duration: style.animationDuration, delay: style.animationDelay };
-      });
-    expect(parseFloat(timing.duration)).toBeLessThan(0.001);
-    expect(parseFloat(timing.delay)).toBe(0);
+    const nameOf = (selector: string) =>
+      page
+        .locator(selector)
+        .first()
+        .evaluate((el) => getComputedStyle(el).animationName);
+    expect(await nameOf('main .page-in > *')).toBe('none');
+
+    await page.getByRole('button', { name: 'Todas las fechas' }).click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+    expect(await nameOf('.sheet')).toBe('none');
+    expect(await nameOf('.scrim')).toBe('none');
   });
 });

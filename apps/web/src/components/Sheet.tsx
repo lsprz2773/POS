@@ -1,6 +1,7 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { useReturnFocus } from './useReturnFocus';
 
 interface Props {
   open: boolean;
@@ -26,6 +27,7 @@ export function Sheet({
   closeLabel = 'Cerrar',
   children,
 }: Props) {
+  const returnFocus = useReturnFocus();
   const block = (event: Event) => {
     if (!dismissible) event.preventDefault();
   };
@@ -35,6 +37,7 @@ export function Sheet({
         <Dialog.Overlay className="scrim" />
         <Dialog.Content
           className="sheet glass2"
+          {...returnFocus}
           onEscapeKeyDown={block}
           onPointerDownOutside={block}
           onInteractOutside={block}

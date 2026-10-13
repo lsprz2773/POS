@@ -1,7 +1,7 @@
 // Animaciones y transiciones (movimiento normal): entrada de pantalla, diálogos con salida y respeto de
 // "reducir movimiento". El resto de las pruebas corren con ese ajuste (ver playwright.config.ts).
 import { expect, test, type Page } from '@playwright/test';
-import { expectAccessible, owner, signIn } from './helpers';
+import { expectAccessible, ORIGIN, owner, signIn, unique } from './helpers';
 
 test.beforeEach(async ({ page }) => {
   await signIn(page, owner);
@@ -36,7 +36,7 @@ test.describe('con movimiento normal', () => {
     await expectAccessible(page);
   });
 
-  test('la hoja de filtro entra y sale animada y devuelve el foco', async ({ page }, info) => {
+  test('la hoja de filtro entra animada y al cerrar devuelve el foco', async ({ page }, info) => {
     await page.goto('/historial');
     const opener = page.getByRole('button', { name: 'Todas las fechas' });
     await opener.click();
@@ -47,15 +47,19 @@ test.describe('con movimiento normal', () => {
     await settled(page);
 
     await page.keyboard.press('Escape');
-    // Sigue en pantalla mientras se anima la salida y luego se quita.
     await expect(dialog).toBeHidden();
     await expect(opener).toBeFocused();
   });
 
-  test('el interruptor mueve su perilla con una transición', async ({ page }) => {
+  test('el interruptor mueve su perilla con una transición', async ({ page }, info) => {
+    const name = unique('Movimiento', info.project.name);
+    await page.request.post('/api/products', {
+      headers: { origin: ORIGIN },
+      data: { name, price: '10', cost: '4' },
+    });
     await page.goto('/catalogo');
     const toggle = page.getByRole('switch').first();
-    test.skip((await toggle.count()) === 0, 'Sin productos en el catálogo.');
+    await expect(toggle).toBeVisible();
     const duration = await toggle.evaluate(
       (el) => getComputedStyle(el, '::after').transitionDuration,
     );

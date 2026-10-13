@@ -34,8 +34,8 @@ Las partes 1 a 7 las hace la primera vez que despliegas; las partes 6, 8 y 9 se 
 ## Parte 0. Lo que necesitas
 
 - [ ] Un **correo** que revises seguido (recibirá alertas de costo y de fallas).
-- [ ] Una **tarjeta** de crédito o débito. AWS la pide para abrir la cuenta aunque no cobre nada.
-- [ ] Tu **teléfono** (para la verificación en dos pasos) con una app de autenticación: Google Authenticator, Microsoft Authenticator o Authy.
+- [ ] La cuenta con la que entras a AWS (**Google, GitHub, Apple o Amazon**): la nueva experiencia de AWS no usa usuario raíz, entras con ese inicio de sesión.
+- [ ] Tu **teléfono** con una app de autenticación (Google Authenticator, Microsoft Authenticator o Authy) para la verificación en dos pasos.
 - [ ] Tu cuenta de **GitHub** y acceso de administrador al repositorio `lsprz2773/POS`.
 - [ ] Que las fases 8a a 8f y 9a ya estén fusionadas en `main` (revisa en GitHub que la carpeta `.github/workflows` de `main` tenga `deploy.yml` y `provision.yml`). Los botones de GitHub Actions ("Run workflow") solo aparecen si el flujo está en la **rama predeterminada** del repositorio (revísala en GitHub → Settings → General → Default branch).
 - [ ] Un lugar seguro (gestor de contraseñas) para guardar lo que vayas generando.
@@ -45,7 +45,7 @@ Las partes 1 a 7 las hace la primera vez que despliegas; las partes 6, 8 y 9 se 
 | Dato | Dónde se obtiene | Valor |
 |---|---|---|
 | Correo de alertas | tú | |
-| ID de cuenta de AWS (12 dígitos) | parte 1 | |
+| ID de cuenta de AWS (12 dígitos) y fecha en que vencen los créditos | parte 1 | |
 | Región | parte 1 | `us-east-2` |
 | Cadena de conexión de Neon (staging) | parte 2 | |
 | Cadena de conexión de Neon (producción) | parte 2 | |
@@ -56,54 +56,56 @@ Las partes 1 a 7 las hace la primera vez que despliegas; las partes 6, 8 y 9 se 
 
 ---
 
-## Parte 1. Cuenta de AWS
+## Parte 1. Cuenta de AWS (nueva experiencia)
 
-**Dónde:** <https://aws.amazon.com> → "Crear una cuenta de AWS" (Create an AWS account).
+Tu cuenta es de la **nueva experiencia de AWS** (*Sign up for AWS (new)*). Funciona distinto a una cuenta clásica:
 
-1. Escribe tu correo y un nombre de cuenta (por ejemplo `pos-tamales`). Verifica el correo con el código que llega.
-2. Crea la contraseña del **usuario raíz** (root). Es la llave maestra: guárdala en tu gestor de contraseñas.
-3. Elige tipo de cuenta **Personal** y llena tus datos y la tarjeta. AWS puede hacer un cargo de verificación de aproximadamente un dólar que se devuelve.
-4. Verifica tu teléfono.
-5. **Plan.** Si aparece la opción entre **Free plan** y **Paid plan**, elige **Free plan**:
-   - Te da créditos de bienvenida (US$ 100 y hasta US$ 100 más al completar tareas de inicio).
-   - Dura **6 meses o hasta gastar los créditos**, lo que ocurra primero. En ese plan AWS no te cobra: si se acaba, la cuenta pasa a un estado limitado hasta que decidas pasar al plan de pago.
-   - Si no aparece la opción, tu cuenta es del esquema anterior (12 meses de capa gratuita) y las alertas de la parte 4 son tu protección.
-6. Plan de soporte: **Basic** (gratuito).
-7. Entra a la consola: <https://console.aws.amazon.com> con tu correo y la contraseña raíz.
+- Entras con tu **AWS Builder ID**, que se crea con el inicio de sesión que usaste (Google, GitHub, Apple o Amazon). **No hay usuario raíz ni hace falta crear un usuario administrador de IAM.**
+- Tu trabajo vive en un **proyecto** (el tuyo se llama "Blank slate"). Un proyecto es una sola cuenta de AWS con su propia facturación, fijada a una región.
+- Empiezas en el **Free plan**: US$ 100 de créditos, por 6 meses o hasta gastarlos. En ese plan AWS dice que no hay cargos mientras no actualices.
+- Los servicios que usamos (Lambda, API Gateway, CloudFront, Cognito, S3, CloudFormation, IAM, Systems Manager, SNS, CloudWatch, Budgets, CloudShell) están incluidos en el Free plan.
+- **No actualices al Paid plan ni actives las "características avanzadas".** Si la consola te dice "actualice la cuenta para activar las características avanzadas", ignóralo: son funciones de empresa que no necesitamos.
 
-### 1.1 Activar la verificación en dos pasos del usuario raíz
+**Dónde:** entra a <https://console.aws.amazon.com> con tu inicio de sesión de siempre, o a <https://settings.aws.com> para la cuenta y la facturación.
 
-1. Arriba a la derecha, clic en el nombre de tu cuenta → **Security credentials** (Credenciales de seguridad).
-2. En **Multi-factor authentication (MFA)** → **Assign MFA device** (Asignar dispositivo MFA).
-3. Nombre: `telefono`. Tipo: **Authenticator app**. Escanea el código QR con tu app y escribe dos códigos consecutivos.
+### 1.1 Proteger tu inicio de sesión
 
-### 1.2 Crear un usuario administrador (para no usar el raíz)
+Como no hay usuario raíz, la seguridad de tu cuenta de AWS es la de **la cuenta con la que entras**:
 
-1. Busca **IAM** en la barra de búsqueda de arriba → **Users** (Usuarios) → **Create user** (Crear usuario).
-2. Nombre: `pos-admin`. Marca "Provide user access to the AWS Management Console" → "I want to create an IAM user" → contraseña personalizada y desmarca "debe cambiarla".
-3. Permisos: **Attach policies directly** → marca `AdministratorAccess` → Crear.
-4. Abre el usuario → **Security credentials** → **Assign MFA device** igual que arriba.
-5. Anota la **dirección de inicio de sesión** de tu cuenta (aparece en el panel de IAM, algo como `https://123456789012.signin.aws.amazon.com/console`) y el **ID de cuenta** de 12 dígitos.
-6. Cierra la sesión del raíz. Desde ahora entras con `pos-admin`. El usuario raíz solo se usa si pierdes acceso o para tareas de facturación.
+1. Activa la **verificación en dos pasos** en esa cuenta (Google, GitHub, etc.) desde su configuración de seguridad.
+2. En tu perfil de AWS Builder ID (<https://profile.aws.amazon.com> → Security) revisa que tenga un dispositivo de verificación (MFA) y agrega uno si no.
+3. Guarda en tu gestor de contraseñas el correo y el método con que entras.
 
-### 1.3 Ver la facturación con `pos-admin`
+### 1.2 Revisar tu plan y tus créditos
 
-1. Entra como **raíz** una vez más → clic en tu nombre → **Account** (Cuenta).
-2. Baja a **IAM user and role access to Billing information** → **Edit** → activa **Activate IAM Access** → Update.
-3. En **Billing and Cost Management → Billing preferences** (Preferencias de facturación) activa **Receive Free Tier usage alerts** y **Receive billing alerts** con tu correo.
+1. Abre <https://settings.aws.com> → **Billing**.
+2. Anota: el nombre del plan (**Free plan**), el saldo de créditos y la **fecha en que vencen**. Tu cuenta tiene US$ 100 que vencen a los 183 días; agenda un recordatorio un mes antes (ver la parte 10, "Cuando termine el plan gratuito").
+3. No pulses **Upgrade**.
 
-### 1.4 Elegir la región
+### 1.3 Confirmar el proyecto y la región
 
-Arriba a la derecha, junto a tu nombre, está el selector de región. Elige **US East (Ohio) us-east-2**. Es donde se hace **todo** lo demás de este manual; si cambias de región a medias, no verás tus recursos.
+1. En <https://settings.aws.com> → **Projects**, abre tu proyecto.
+2. Confirma que su región es **US East (Ohio) us-east-2**. En la nueva experiencia la región queda fija por proyecto y no se puede cambiar; es la que usaremos para todo.
+3. Si más adelante algo "no aparece", revisa que arriba a la derecha de la consola siga diciendo **us-east-2**.
 
-> Es la región que ya te muestra tu consola. No uses otra: los recursos de una región no se ven desde las demás.
+### 1.4 Anotar el ID de cuenta
+
+En la consola, clic en el nombre del proyecto o de tu cuenta, arriba a la derecha: busca **Account ID** (12 dígitos) y cópialo a tu lista.
+
+### 1.5 Comprobar que CloudShell abre
+
+CloudShell es la terminal del navegador que usaremos en la parte 7. En la consola, clic en el ícono `>_` de arriba y espera a que abra una línea de comandos. Ciérrala.
+
+### 1.6 Las alertas de costo
+
+**No crees presupuestos a mano**: la parte 4 crea los dos (`pos-mensual` y `pos-primer-centavo`) y tener más puede generar un cargo por presupuesto adicional. Mientras tanto no hay riesgo de cobro en el Free plan.
 
 ### ✅ Comprobación de la parte 1
 
-- [ ] Entras con `pos-admin` y MFA.
-- [ ] El usuario raíz tiene MFA.
-- [ ] Anotaste el ID de cuenta y la región.
-- [ ] Recibes correos de AWS en tu bandeja.
+- [ ] Tu inicio de sesión (Google, GitHub, etc.) tiene verificación en dos pasos.
+- [ ] El plan dice **Free plan** y anotaste los créditos y su fecha de vencimiento.
+- [ ] El proyecto está en **us-east-2** y anotaste el ID de cuenta.
+- [ ] CloudShell abre.
 
 ---
 
@@ -162,6 +164,8 @@ Los nombres deben quedar **exactamente** así (con mayúsculas y minúsculas, y 
 Este paso se ejecuta **una sola vez** y crea: el permiso para que GitHub despliegue sin llaves, un bucket de archivos de despliegue y tu **presupuesto con alertas y bloqueo**.
 
 **Dónde:** consola de AWS (`us-east-2`) → **CloudFormation** → **Create stack** → **With new resources (standard)**.
+
+> **Aviso para la nueva experiencia.** IAM y CloudFormation están incluidos en tu plan, pero no pude comprobar si tu proyecto te deja crear el proveedor de identidad de GitHub y el rol. Es posible que este paso falle. Si ocurre, **no insistas**: abre en CloudFormation la pestaña **Events** del stack, copia el primer mensaje en rojo y pégamelo. Hay alternativas (quitar el bloqueo automático del presupuesto o desplegar desde CloudShell en lugar de GitHub Actions) y la elegimos con el mensaje a la vista.
 
 1. **Prerequisite**: *Choose an existing template*. **Specify template**: *Upload a template file* → sube `infra/bootstrap.yaml` (descárgalo del repositorio: GitHub → carpeta `infra` → archivo → botón de descarga "Download raw file").
 2. **Siguiente**. Nombre del stack: `pos-bootstrap`.
@@ -418,7 +422,7 @@ Repite la **parte 7** con el entorno `prod`:
 | Capa gratuita | **Billing → Free Tier** | Todo por debajo del límite |
 | Base de datos | Neon → **Dashboard** | Almacenamiento bajo 0.5 GB; horas de cómputo bajo el límite |
 | Alarmas | CloudWatch → **Alarms** | Ninguna en rojo |
-| Plan de AWS | Billing | Si aún estás en el Free plan: cuántos días o créditos quedan |
+| Plan de AWS | settings.aws.com → Billing | Cuántos días y cuántos créditos quedan en el Free plan |
 
 ### Publicar una versión nueva
 
@@ -448,9 +452,17 @@ CloudShell: el mismo comando `admin-set-user-password` de la parte 7.2 con la co
 
 Se agrega en la siguiente entrega: copia semanal cifrada a S3 y prueba de restauración en una rama de Neon. Mientras tanto, Neon conserva un historial corto desde su panel (Branches → Restore).
 
-### Cuando termine el plan gratuito de AWS (≈6 meses)
+### Cuando termine el plan gratuito de AWS
 
-Si empezaste con el **Free plan**, AWS te avisa por correo antes de que termine. Hay que **pasar al plan de pago** (Billing → Account plan → Upgrade). Con tu volumen el gasto esperado son centavos al mes (sobre todo API Gateway), y tus alertas de US$ 1 siguen protegiéndote. No hay que migrar nada.
+Tu Free plan termina a los **6 meses o cuando se acaben los US$ 100 de créditos (lo que ocurra primero)**; en tu cuenta, a los 183 días contados desde su apertura. **Si no haces nada, la cuenta se cierra automáticamente y se pierden los recursos.** AWS conserva tus datos 90 días más, y en ese plazo puedes actualizar al Paid plan para recuperarlos.
+
+Lo recomendable es decidir **un mes antes**:
+
+1. Entra a <https://settings.aws.com> → **Billing** → **Upgrade** y agrega un método de pago.
+2. En el mismo asistente, o después, elige **Set spend limits** y pon un tope mensual para el proyecto (por ejemplo, US$ 2). Al alcanzarlo, AWS **pausa** los recursos hasta el mes siguiente: es un tope real, no solo una alerta.
+3. La actualización **no se puede revertir**. Los créditos que queden se aplican a tus facturas futuras. Con tu volumen el gasto esperado son centavos al mes (sobre todo API Gateway).
+
+Agenda el recordatorio en tu calendario ahora (fecha de vencimiento menos 30 días).
 
 ---
 

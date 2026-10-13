@@ -59,7 +59,7 @@ Con un solo usuario y volumen bajo, el consumo estimado queda muy por debajo de 
 
 Dos riesgos reales que sí hay que vigilar:
 
-1. **Cuenta de AWS nueva.** Desde julio de 2025 las cuentas nuevas reciben US$ 100 a 200 en créditos y el plan gratuito termina a los 6 meses o al agotarse los créditos, lo que ocurra primero; después hay que pasar al plan de pago. Lambda, CloudFront y Cognito conservan su cuota permanente, pero API Gateway cuesta (centavos de dólar por millón de solicitudes). Con este uso serían centavos al mes, dentro del tope de US$ 1. En una cuenta antigua rige el esquema de 12 meses.
+1. **Cuenta de la nueva experiencia de AWS (la del propietario).** Free plan: US$ 100 de créditos por 6 meses o hasta gastarlos (183 días en este caso). Al terminar, la cuenta se **cierra** y los datos se conservan 90 días; para seguir hay que actualizar al Paid plan, donde sí se puede fijar un tope de gasto por proyecto que pausa los recursos. Lambda, CloudFront y Cognito conservan su cuota permanente y API Gateway cuesta centavos al mes con este uso.
 2. **Neon gratuito: 0.5 GB de almacenamiento y pausa tras 5 minutos sin uso.** La primera solicitud tras una pausa tarda un poco más (la web ya muestra estado de carga). El almacenamiento alcanza para muchos meses de ventas de una tienda, pero se vigila.
 
 ## Respaldo y restauración (RNF)
@@ -79,7 +79,7 @@ Cada una con su rama y su PR, como hasta ahora.
 
 ## Lo que necesito de ti para empezar 9b
 
-1. **La cuenta de AWS.** ¿Ya existe? ¿Es nueva (2025 en adelante, con créditos y 6 meses) o antigua? Activa la verificación en dos pasos del usuario raíz y no uses el usuario raíz para nada más.
+1. **La cuenta de AWS:** resuelto. Es de la nueva experiencia (proyecto "Blank slate" en `us-east-2`, Free plan con US$ 100 que vencen a los 183 días); no hay usuario raíz ni usuarios de IAM que crear.
 2. **Aprobar el tope** de US$ 1 al mes, el correo para las alertas y la acción automática al 100 %.
 3. **La forma de dar acceso.** Recomendada: tú ejecutas una sola vez la plantilla de arranque que te preparo (crea el proveedor OIDC de GitHub y un rol limitado) y yo nunca manejo llaves. Alternativa: llaves temporales que tú generes para este fin.
 4. **Región:** `us-east-2` (Ohio), aprobada.

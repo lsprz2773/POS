@@ -11,7 +11,7 @@ import { Segmented } from '../../components/Segmented';
 import { LoadingRegion, MetricSkeleton } from '../../components/Skeleton';
 import { copy } from '../../copy/es';
 import { useCurrency, useToday } from '../store/useStore';
-import { periodAround, periodLabel, shiftPeriod, type PeriodKind } from './periods';
+import { periodAround, periodLabel, periodOnSwitch, shiftPeriod, type PeriodKind } from './periods';
 import { useReport } from './useReport';
 
 const KINDS = [
@@ -46,7 +46,7 @@ export function ReportsPage() {
       setAnchor(null);
       return;
     }
-    setAnchor(today ? periodAround(next, period?.from ?? today) : null);
+    setAnchor(today ? periodOnSwitch(next, period, today) : null);
   }
 
   function shift(direction: 1 | -1) {

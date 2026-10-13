@@ -46,7 +46,7 @@ Las partes 1 a 7 las hace la primera vez que despliegas; las partes 6, 8 y 9 se 
 |---|---|---|
 | Correo de alertas | tú | |
 | ID de cuenta de AWS (12 dígitos) | parte 1 | |
-| Región | parte 1 | `us-east-1` |
+| Región | parte 1 | `us-east-2` |
 | Cadena de conexión de Neon (staging) | parte 2 | |
 | Cadena de conexión de Neon (producción) | parte 2 | |
 | ARN del rol de despliegue | parte 4 | |
@@ -94,9 +94,9 @@ Las partes 1 a 7 las hace la primera vez que despliegas; las partes 6, 8 y 9 se 
 
 ### 1.4 Elegir la región
 
-Arriba a la derecha, junto a tu nombre, está el selector de región. Elige **US East (N. Virginia) us-east-1**. Es donde se hace **todo** lo demás de este manual; si cambias de región a medias, no verás tus recursos.
+Arriba a la derecha, junto a tu nombre, está el selector de región. Elige **US East (Ohio) us-east-2**. Es donde se hace **todo** lo demás de este manual; si cambias de región a medias, no verás tus recursos.
 
-> Si prefieres **Mexico (Central) / mx-central-1** (Querétaro, más cerca de Chiapas), comprueba antes que Cognito y los demás servicios estén disponibles y sean gratuitos ahí; si dudas, quédate en `us-east-1`.
+> Es la región que ya te muestra tu consola. No uses otra: los recursos de una región no se ven desde las demás.
 
 ### ✅ Comprobación de la parte 1
 
@@ -114,7 +114,7 @@ Arriba a la derecha, junto a tu nombre, está el selector de región. Elige **US
 1. **Crear proyecto** (Create project):
    - Nombre: `pos`.
    - Versión de Postgres: la que ofrezca por omisión (16 o más nueva).
-   - Región: **AWS US East (N. Virginia)** (`aws-us-east-1`), igual que la de AWS, para que respondan rápido.
+   - Región: **AWS US East 2 (Ohio)** (`aws-us-east-2`), igual que la de AWS, para que respondan rápido.
 2. Neon crea una rama llamada `main` (o `production`). Esa es la base de **producción**.
 3. Crea la rama de staging: menú **Branches** → **Create branch** → nombre `staging`, **parent** = la rama principal, y elige **"Current data"** o equivalente. (Tu base aún está vacía; da igual.)
 4. Obtén las cadenas de conexión. Para **cada** rama:
@@ -137,7 +137,7 @@ Arriba a la derecha, junto a tu nombre, está el selector de región. Elige **US
 
 La aplicación lee la cadena de la base desde aquí; nunca está en el código ni en GitHub.
 
-**Dónde:** consola de AWS (región `us-east-1`) → busca **Systems Manager** → menú izquierdo **Parameter Store** → **Create parameter**.
+**Dónde:** consola de AWS (región `us-east-2`) → busca **Systems Manager** → menú izquierdo **Parameter Store** → **Create parameter**.
 
 Crea **dos** parámetros:
 
@@ -161,7 +161,7 @@ Los nombres deben quedar **exactamente** así (con mayúsculas y minúsculas, y 
 
 Este paso se ejecuta **una sola vez** y crea: el permiso para que GitHub despliegue sin llaves, un bucket de archivos de despliegue y tu **presupuesto con alertas y bloqueo**.
 
-**Dónde:** consola de AWS (`us-east-1`) → **CloudFormation** → **Create stack** → **With new resources (standard)**.
+**Dónde:** consola de AWS (`us-east-2`) → **CloudFormation** → **Create stack** → **With new resources (standard)**.
 
 1. **Prerequisite**: *Choose an existing template*. **Specify template**: *Upload a template file* → sube `infra/bootstrap.yaml` (descárgalo del repositorio: GitHub → carpeta `infra` → archivo → botón de descarga "Download raw file").
 2. **Siguiente**. Nombre del stack: `pos-bootstrap`.
@@ -218,7 +218,7 @@ En **cada** entorno (`staging` y `prod`), sección **Environment variables → A
 | Nombre | Valor |
 |---|---|
 | `AWS_ROLE_ARN` | el `DeployRoleArn` de la parte 4 |
-| `AWS_REGION` | `us-east-1` |
+| `AWS_REGION` | `us-east-2` |
 | `ARTIFACT_BUCKET` | el `ArtifactBucketName` de la parte 4 |
 | `ALERT_EMAIL` | tu correo de alertas |
 
@@ -299,7 +299,7 @@ El inicio de sesión necesita dos cosas: una **cuenta en Cognito** (quién eres)
 
 CloudShell es una terminal que AWS te presta dentro del navegador, sin instalar nada.
 
-1. En la consola de AWS (`us-east-1`), arriba a la derecha, clic en el ícono `>_` (**CloudShell**). Espera a que abra.
+1. En la consola de AWS (`us-east-2`), arriba a la derecha, clic en el ícono `>_` (**CloudShell**). Espera a que abra.
 2. Obtén el identificador del grupo de usuarios:
 
    ```
@@ -307,7 +307,7 @@ CloudShell es una terminal que AWS te presta dentro del navegador, sin instalar 
      --query "Stacks[0].Outputs[?OutputKey=='UserPoolId'].OutputValue" --output text
    ```
 
-   Copia el resultado (se ve como `us-east-1_AbC123dEf`).
+   Copia el resultado (se ve como `us-east-2_AbC123dEf`).
 3. Fija la contraseña (**de al menos 12 caracteres, con mayúscula, minúscula y número**). Reemplaza los dos valores en mayúsculas:
 
    ```

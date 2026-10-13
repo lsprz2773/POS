@@ -14,7 +14,7 @@ Cognito (grupo de usuarios) ◀── la Lambda valida y renueva la sesión
 ```
 
 - **Un solo origen.** La web y `/api` salen de la misma dirección de CloudFront, igual que en local (T11): las cookies `HttpOnly` funcionan sin comprar dominio. El dominio propio se queda para después (D2).
-- **Región.** `us-east-1` para AWS y Neon (misma región, menor latencia entre Lambda y la base). Se revisa si Cognito y las demás piezas existen y son gratuitas en `mx-central-1` (Querétaro); si sí, se prefiere por la cercanía a Chiapas.
+- **Región.** `us-east-2` (Ohio), la que muestra la consola de AWS del propietario, para AWS y Neon (`aws-us-east-2`): misma región, menor latencia entre Lambda y la base. Los servicios de la plantilla existen ahí (validado con `cfn-lint --regions us-east-2`).
 - **API.** Lambda con Node 22 en arm64, 512 MB, detrás de un adaptador delgado sobre el mismo Fastify de local (T5). API Gateway tipo HTTP API (más barato que REST).
 - **Identidad.** Cognito en nivel Lite o Essentials (10 000 usuarios activos al mes sin costo), sin registro público: el propietario crea las cuentas con el script `provision` y no se activan funciones de pago como la seguridad avanzada.
 - **Base de datos.** Neon plan gratuito con el endpoint de pooler (D1). Una rama de Neon por entorno.
@@ -49,7 +49,7 @@ Staging es gratis (Lambda, CloudFront y Cognito no cobran en reposo; Neon permit
 
 | Concepto | Tope propuesto |
 |---|---|
-| Gasto mensual aceptado | **US$ 1.00** |
+| Gasto mensual aceptado | **US$ 1.00** (aprobado por el propietario; en el peor caso se acepta hasta US$ 2.00, porque AWS informa los cargos con hasta un día de retraso y el bloqueo automático actúa al verlos) |
 | Presupuesto de AWS Budgets | US$ 1.00 al mes, con avisos al 50 %, 80 % y 100 % del gasto real y al 100 % del pronosticado |
 | Acción automática al 100 % | política que niega crear recursos nuevos (Budgets Actions) |
 | Neon | plan gratuito sin tarjeta; si se agota algún límite la base se pausa, no se cobra |
@@ -82,7 +82,7 @@ Cada una con su rama y su PR, como hasta ahora.
 1. **La cuenta de AWS.** ¿Ya existe? ¿Es nueva (2025 en adelante, con créditos y 6 meses) o antigua? Activa la verificación en dos pasos del usuario raíz y no uses el usuario raíz para nada más.
 2. **Aprobar el tope** de US$ 1 al mes, el correo para las alertas y la acción automática al 100 %.
 3. **La forma de dar acceso.** Recomendada: tú ejecutas una sola vez la plantilla de arranque que te preparo (crea el proveedor OIDC de GitHub y un rol limitado) y yo nunca manejo llaves. Alternativa: llaves temporales que tú generes para este fin.
-4. **Región** (`us-east-1` o `mx-central-1` si todo es gratuito ahí).
+4. **Región:** `us-east-2` (Ohio), aprobada.
 5. **Entornos:** staging y producción (recomendado) o solo producción.
 6. **Respaldo semanal a S3** (recomendado) o alternativa.
 

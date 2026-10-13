@@ -155,10 +155,11 @@ Política propuesta (M1), válida sea cual sea la herramienta:
 | T89 | Fase 9, entornos: `staging` (desde `dev`, a mano, con una rama propia de Neon) y `prod` (etiqueta `vX.Y.Z` sobre `main`, con aprobación del propietario). Siempre se ensaya en staging y se promueve el mismo código. | Propuesta |
 | T90 | Fase 9, CI/CD: GitHub Actions con OIDC y un rol de mínimo privilegio, sin llaves guardadas. Las migraciones son un paso explícito antes de `sam deploy`; tras cada despliegue corren pruebas de humo. Volver atrás es volver a desplegar la etiqueta anterior. | Propuesta |
 | T91 | Fase 9, secretos: Parameter Store estándar (`SecureString`); no se usa Secrets Manager por su costo. | Propuesta |
-| T92 | Fase 9, topes de costo: gasto aceptado de US$ 1 al mes; AWS Budgets con avisos al 50 %, 80 % y 100 % (real) y 100 % (pronosticado) y una acción que niega crear recursos al llegar al tope. No se crean RDS, EC2, NAT Gateway, WAF, Route 53, Cognito Plus ni dominio. | Propuesta |
+| T92 | Fase 9, topes de costo: gasto aceptado de US$ 1 al mes; AWS Budgets con avisos al 50 %, 80 % y 100 % (real) y 100 % (pronosticado) y una acción que niega crear recursos al llegar al tope. No se crean RDS, EC2, NAT Gateway, WAF, Route 53, Cognito Plus ni dominio. | Aprobada (el propietario acepta US$ 1 al mes y, en el peor caso, hasta US$ 2) |
 | T93 | Fase 9, monitoreo: CloudWatch Logs con retención de 14 días y alarmas de errores 5xx y de la Lambda con aviso por correo. | Propuesta |
 | T94 | Fase 9, respaldo: `pg_dump` semanal cifrado a un bucket privado de S3 con borrado a los 30 días y una restauración probada en una rama de Neon antes de usar producción. | Propuesta |
 | T95 | Fase 9, ejecución en tres partes: 9a (código y plantillas, sin recursos en la nube), 9b (cuenta, alertas, rol OIDC, Neon y staging) y 9c (producción, respaldo y checklist de consumo). 9b y 9c solo comienzan con la cuenta, el tope y la forma de acceso aprobados por el propietario. | Propuesta |
+| T96 | Fase 9, región y acceso: `us-east-2` (Ohio) para AWS y Neon (`aws-us-east-2`). El propietario ejecuta los pasos en su consola (cuenta, Neon, Parameter Store, arranque y entornos de GitHub) siguiendo `manual-despliegue.md`; no se concede acceso a la consola al asistente ni se guardan llaves de AWS. | Aprobada |
 
 ## 4. Preguntas abiertas
 

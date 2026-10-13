@@ -59,7 +59,7 @@ Registro vivo del trabajo. Se revisa antes de empezar cualquier tarea y se actua
 |---|---|---|---|
 | T-028 | Cerrar los incidentes de GitGuardian | Corrección | El propietario marcó como ignorados los 3 incidentes (38094535, 38094536 y 38094537) en el panel de GitGuardian. Falta confirmar que el chequeo pase en el próximo PR (el de `dev` a `main` vuelve a escanear esos commits); no se puede volver a ejecutar sobre el PR #4, que ya está fusionado. | (panel de GitGuardian) | PR #4 |
 | T-090f | Fase 8f: pasada final de accesibilidad y los 15 flujos E2E de la sección 10.4 | Pendiente | Ver T58 en `docs/decisiones.md` y `docs/plan.md`. |
-| T-100 | Fase 9: despliegue AWS | En curso | El propietario aprobó avanzar con la fase dentro de la capa gratuita. Propuesta de arquitectura, entornos, topes y partes 9a a 9c en `docs/despliegue.md` (T86 a T95, pendientes de confirmar). Manual paso a paso para el propietario en `docs/manual-despliegue.md`. No se ha creado ningún recurso en la nube; 9b y 9c esperan la cuenta, el tope y la forma de acceso. |
+| T-100 | Fase 9: despliegue AWS | En curso | El propietario aprobó avanzar con la fase dentro de la capa gratuita, con tope de US$ 1 al mes (hasta US$ 2 en el peor caso) y región `us-east-2`; hará él los pasos en su consola (T92 y T96). Propuesta de arquitectura, entornos, topes y partes 9a a 9c en `docs/despliegue.md` (T86 a T95, pendientes de confirmar). Manual paso a paso para el propietario en `docs/manual-despliegue.md`. No se ha creado ningún recurso en la nube; 9b y 9c esperan la cuenta, el tope y la forma de acceso. |
 
 ## Correcciones y observaciones
 

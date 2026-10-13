@@ -39,3 +39,38 @@ describe('loadConfig', () => {
     );
   });
 });
+
+describe('loadConfig con Cognito y Parameter Store', () => {
+  const cognito = {
+    AUTH_PROVIDER: 'cognito',
+    COGNITO_REGION: 'us-east-1',
+    COGNITO_USER_POOL_ID: 'us-east-1_Prueba',
+    COGNITO_CLIENT_ID: 'cliente',
+  };
+
+  it('acepta Cognito en producción con la base en Parameter Store', () => {
+    const config = loadConfig({
+      ...cognito,
+      NODE_ENV: 'production',
+      DATABASE_URL_PARAM: '/pos/prod/database-url',
+    });
+    expect(config.AUTH_PROVIDER).toBe('cognito');
+    expect(config.DATABASE_URL).toBeUndefined();
+  });
+
+  it('con Cognito exige región, grupo de usuarios y cliente, y nombra lo que falta', () => {
+    expect(() => loadConfig({ AUTH_PROVIDER: 'cognito', DATABASE_URL: 'x' })).toThrow(
+      /COGNITO_REGION, COGNITO_USER_POOL_ID, COGNITO_CLIENT_ID/,
+    );
+  });
+
+  it('exige la base de datos directa o su parámetro', () => {
+    expect(() => loadConfig({ ...cognito })).toThrow(/DATABASE_URL/);
+  });
+
+  it('el proveedor local sigue prohibido en producción', () => {
+    expect(() =>
+      loadConfig({ NODE_ENV: 'production', DATABASE_URL: 'x', AUTH_SECRET: 'x'.repeat(32) }),
+    ).toThrow(/AUTH_PROVIDER/);
+  });
+});

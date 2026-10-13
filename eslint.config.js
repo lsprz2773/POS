@@ -5,7 +5,15 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['**/node_modules/**', '**/dist/**', '**/coverage/**', 'apps/api/src/db/types.ts'] },
+  {
+    ignores: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/dist-lambda/**',
+      '**/coverage/**',
+      'apps/api/src/db/types.ts',
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
@@ -22,6 +30,8 @@ export default tseslint.config(
       '*.config.{js,ts}',
       'apps/web/*.config.ts',
       'apps/web/e2e/**/*.{ts,mjs}',
+      'apps/api/*.mjs',
+      'infra/*.mjs',
     ],
     languageOptions: { globals: globals.node },
   },

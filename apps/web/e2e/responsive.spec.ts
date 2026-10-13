@@ -3,9 +3,14 @@
 // Cada pantalla se revisa con axe (WCAG 2.2 AA) y sin desplazamiento horizontal.
 import { randomUUID } from 'node:crypto';
 import { expect, test, type Page } from '@playwright/test';
-import { expectAccessible, expectNoHorizontalScroll, owner, signIn, unique } from './helpers';
-
-const ORIGIN = 'http://localhost:5183';
+import {
+  expectAccessible,
+  expectNoHorizontalScroll,
+  ORIGIN,
+  owner,
+  signIn,
+  unique,
+} from './helpers';
 
 const SIZES = [
   { name: 'Android chico', width: 320, height: 640 },

@@ -3,13 +3,13 @@ import { expect, test, type Page } from '@playwright/test';
 import {
   expectAccessible,
   expectNoHorizontalScroll,
+  ORIGIN,
   owner,
   signIn,
   storeToday,
   unique,
 } from './helpers';
 
-const ORIGIN = 'http://localhost:5183';
 const peso = (amount: string) =>
   new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(Number(amount));
 

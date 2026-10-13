@@ -361,6 +361,26 @@ Para que las pruebas automáticas no usen tus datos reales de producción, crea 
 
 **Qué mirar si algo se ve raro:** AWS → CloudWatch → **Logs → Log groups** → `/aws/lambda/pos-staging-api`. Cada error muestra el código de referencia (`x-request-id`) que también ve la pantalla en la tarjeta de error.
 
+### 8.1 Los 15 flujos automáticos contra staging (opcional, recomendado)
+
+Además de tu prueba a mano, GitHub puede recorrer los 15 flujos del documento de requerimientos contra tu dirección de staging, en móvil y escritorio. No usa AWS ni llaves: solo la dirección pública y **dos tiendas de pruebas** propias para esto (distintas de las de las personas que prueban a mano, porque la prueba crea y cancela ventas).
+
+1. En CloudShell, crea las dos tiendas, con un correo distinto cada una (por ejemplo `tucorreo+e2e1@gmail.com` y `tucorreo+e2e2@gmail.com`):
+
+   ```
+   ENVIRONMENT=staging ./infra/provision.sh "E2E 1" tucorreo+e2e1@gmail.com
+   ENVIRONMENT=staging ./infra/provision.sh "E2E 2" tucorreo+e2e2@gmail.com
+   ```
+
+   Fija la contraseña de cada una como en la parte 7.2, **un comando a la vez**.
+2. En GitHub → **Settings → Environments → New environment**: `staging`.
+   - **Environment variables:** `E2E_BASE_URL` = la dirección de staging, sin `/` al final.
+   - **Environment secrets:** `E2E_OWNER_EMAIL` y `E2E_OWNER_PASSWORD` (la primera tienda), `E2E_OTHER_EMAIL` y `E2E_OTHER_PASSWORD` (la segunda).
+3. GitHub → **Actions → E2E staging → Run workflow**. Tarda unos 8 a 12 minutos.
+4. Debe terminar en verde. Si falla, abre la ejecución: las trazas de los fallos quedan como archivo descargable durante 7 días.
+
+La API de staging limita el ritmo (10 solicitudes por segundo) para acotar costos; la prueba reintenta una vez un flujo si coincide con esa limitación o con el despertar de la base.
+
 ### ✅ Comprobación de la parte 8
 
 - [ ] Todo lo de la lista funciona en teléfono y computadora.
@@ -523,6 +543,7 @@ Los números vienen de las páginas de precios al momento de escribir esto y pue
 | `infra/template.yaml` | Partes 6 y 9 (todo el entorno) |
 | `infra/deploy.sh` | Partes 6 y 9 (migraciones, despliegue, publicar la web) |
 | `infra/smoke.mjs` | Pruebas de humo |
+| `.github/workflows/e2e-staging.yml` y `apps/web/playwright.staging.config.ts` | Parte 8.1 (los 15 flujos contra staging) |
 | `infra/cloudshell-prepare.sh` | Parte 5 (Node y dependencias en CloudShell) |
 | `infra/provision.sh` | Parte 7 (tienda y usuario) |
 | `.github/workflows/{deploy,provision}.yml` | **No se usan en tu cuenta** (requieren OIDC, prohibido por su política); quedan para una cuenta que lo permita |

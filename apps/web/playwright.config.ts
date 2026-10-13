@@ -12,6 +12,9 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${WEB_PORT}`,
     trace: 'retain-on-failure',
+    // Las pruebas corren con "reducir movimiento" (animaciones casi instantáneas) para que axe y los clics
+    // no vean elementos a medio aparecer; `motion.spec.ts` prueba las animaciones con movimiento normal.
+    reducedMotion: 'reduce',
     // En el contenedor de desarrollo el navegador viene preinstalado; en CI se instala con Playwright.
     launchOptions: process.env.PW_CHROMIUM_PATH
       ? { executablePath: process.env.PW_CHROMIUM_PATH }

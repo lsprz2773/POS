@@ -132,7 +132,7 @@ export function PendingPage() {
             )
           ) : (
             <>
-              <ul className="m-0 flex list-none flex-col gap-3 p-0">
+              <ul className="stagger m-0 flex list-none flex-col gap-3 p-0">
                 {sales.map((sale) => (
                   <PendingCard key={sale.id} sale={sale} today={today} money={money} />
                 ))}

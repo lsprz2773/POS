@@ -204,7 +204,7 @@ export function PrepareDayPage() {
         />
       ) : (
         <>
-          <ul className="m-0 flex list-none flex-col gap-3 p-0">
+          <ul className="stagger m-0 flex list-none flex-col gap-3 p-0">
             {offers.map((offer) => (
               <OfferCard
                 key={offer.id}

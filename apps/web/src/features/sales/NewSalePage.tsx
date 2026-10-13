@@ -228,7 +228,7 @@ export function NewSalePage() {
         ) : visible.length === 0 ? (
           <p className="sub">{copy.sale.noMatches}</p>
         ) : (
-          <ul className="glass2 m-0 list-none overflow-hidden p-0">
+          <ul className="stagger glass2 m-0 list-none overflow-hidden p-0">
             {visible.map((offer) => (
               <ProductRow
                 key={offer.id}

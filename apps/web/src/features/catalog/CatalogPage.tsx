@@ -157,7 +157,7 @@ export function CatalogPage() {
         )
       ) : (
         <>
-          <ul className="glass2 m-0 list-none overflow-hidden p-0">
+          <ul className="stagger glass2 m-0 list-none overflow-hidden p-0">
             {products.map((product) => (
               <ProductRow
                 key={product.id}

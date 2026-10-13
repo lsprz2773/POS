@@ -1,5 +1,6 @@
 import * as AlertDialog from '@radix-ui/react-alert-dialog';
 import type { ReactNode } from 'react';
+import { useReturnFocus } from './useReturnFocus';
 
 interface Props {
   open: boolean;
@@ -34,11 +35,16 @@ export function ConfirmDialog({
   children,
   riskDisabled,
 }: Props) {
+  const returnFocus = useReturnFocus();
   return (
     <AlertDialog.Root open={open} onOpenChange={(next) => (!next ? onSafe() : undefined)}>
       <AlertDialog.Portal>
         <AlertDialog.Overlay className="scrim" />
-        <AlertDialog.Content className="sheet glass2">
+        <AlertDialog.Content
+          className="sheet glass2"
+          onCloseAutoFocus={returnFocus.onCloseAutoFocus}
+          onOpenAutoFocus={returnFocus.onOpenAutoFocus}
+        >
           <div className="grab" aria-hidden="true" />
           <AlertDialog.Title className="h2">{title}</AlertDialog.Title>
           <AlertDialog.Description className="sub">{description}</AlertDialog.Description>
@@ -79,11 +85,16 @@ export function NoticeDialog({
   actionLabel: string;
   onClose: () => void;
 }) {
+  const returnFocus = useReturnFocus();
   return (
     <AlertDialog.Root open={open} onOpenChange={(next) => (!next ? onClose() : undefined)}>
       <AlertDialog.Portal>
         <AlertDialog.Overlay className="scrim" />
-        <AlertDialog.Content className="sheet glass2">
+        <AlertDialog.Content
+          className="sheet glass2"
+          onCloseAutoFocus={returnFocus.onCloseAutoFocus}
+          onOpenAutoFocus={returnFocus.onOpenAutoFocus}
+        >
           <div className="grab" aria-hidden="true" />
           <AlertDialog.Title className="h2">{title}</AlertDialog.Title>
           <AlertDialog.Description className="sub">{description}</AlertDialog.Description>

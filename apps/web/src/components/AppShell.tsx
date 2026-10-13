@@ -75,7 +75,10 @@ export function AppShell() {
           tabIndex={-1}
           className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 pb-32 pt-6 outline-none"
         >
-          <Outlet />
+          {/* La clave reinicia la entrada animada al cambiar de pantalla (.page-in, ver index.css). */}
+          <div key={location.pathname} className="page-in contents">
+            <Outlet />
+          </div>
         </main>
       </div>
 

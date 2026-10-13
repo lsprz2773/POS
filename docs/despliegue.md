@@ -1,5 +1,7 @@
 # Despliegue (fase 9)
 
+Paso a paso para ti, con pantallas y comandos: [manual-despliegue.md](manual-despliegue.md).
+
 Propuesta para aprobar antes de crear cualquier recurso. Todo cabe en capa gratuita; el límite de gasto y las decisiones abiertas están al final. Las decisiones numeradas (T86 a T95) están en [decisiones.md](decisiones.md); el origen de la elección de servicios está en [requerimientos.md](requerimientos.md), secciones 5.3, 9 y 10.
 
 ## Arquitectura
@@ -33,7 +35,7 @@ Staging es gratis (Lambda, CloudFront y Cognito no cobran en reposo; Neon permit
 
 - GitHub Actions con **OIDC**: la acción asume un rol de AWS de mínimo privilegio y no existen llaves de acceso guardadas (RNF-014). El rol lo crea el propietario una sola vez con una plantilla de arranque que yo escribo y él revisa.
 - Orden de cada despliegue: dependencias reproducibles, lint, tipos, pruebas, construcción, **migraciones como paso explícito** (nunca al arrancar la Lambda), `sam deploy`, subida de la web a S3 e invalidación de CloudFront, **pruebas de humo**.
-- Pruebas de humo (RNF-058): `/api/health`, inicio de sesión del usuario de prueba, `GET /api/workdays/today`, y el subconjunto de los 15 flujos E2E que no modifica datos de producción. En staging corren los 15 flujos completos con Playwright apuntando a la dirección de staging.
+- Pruebas de humo (RNF-058): `/api/health`, inicio de sesión del usuario de prueba, `GET /api/workdays/today`, y el subconjunto de los 15 flujos E2E que no modifica datos de producción. Los 15 flujos completos con Playwright contra la dirección de staging se agregan en 9b (hoy el E2E levanta sus propios servidores locales).
 - Reversión: la web y la Lambda se despliegan por etiqueta; volver atrás es volver a desplegar la etiqueta anterior. Las migraciones solo avanzan (CLAUDE.md), así que se hacen compatibles hacia atrás y se prueban primero en staging.
 
 ## Monitoreo y alertas

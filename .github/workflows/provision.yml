@@ -1,3 +1,5 @@
+# NOTA: requiere un rol de AWS asumido por OIDC. La cuenta del propietario (nueva experiencia) lo prohíbe
+# por política de servicio; allí se despliega desde CloudShell (docs/manual-despliegue.md).
 name: Provision
 
 # Da de alta una tienda y su usuario en un entorno ya desplegado: crea la cuenta en Cognito (sin

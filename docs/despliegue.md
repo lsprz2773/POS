@@ -33,9 +33,10 @@ Staging es gratis (Lambda, CloudFront y Cognito no cobran en reposo; Neon permit
 
 ## CI/CD
 
-- GitHub Actions con **OIDC**: la acción asume un rol de AWS de mínimo privilegio y no existen llaves de acceso guardadas (RNF-014). El rol lo crea el propietario una sola vez con una plantilla de arranque que yo escribo y él revisa.
-- Orden de cada despliegue: dependencias reproducibles, lint, tipos, pruebas, construcción, **migraciones como paso explícito** (nunca al arrancar la Lambda), `sam deploy`, subida de la web a S3 e invalidación de CloudFront, **pruebas de humo**.
-- Pruebas de humo (RNF-058): `/api/health`, inicio de sesión del usuario de prueba, `GET /api/workdays/today`, y el subconjunto de los 15 flujos E2E que no modifica datos de producción. Los 15 flujos completos con Playwright contra la dirección de staging se agregan en 9b (hoy el E2E levanta sus propios servidores locales).
+- **Despliegue desde AWS CloudShell** (T98). La cuenta del propietario es de la nueva experiencia de AWS y su política de servicio **prohíbe crear un proveedor OIDC** (`iam:CreateOpenIDConnectProvider`), así que GitHub Actions no puede asumir un rol sin llaves. Se despliega desde CloudShell, que ya trae la sesión del propietario: `infra/cloudshell-prepare.sh` (Node 22 y dependencias), `infra/deploy.sh` y `infra/provision.sh`. Los flujos `deploy.yml` y `provision.yml` siguen en el repositorio para una cuenta que sí permita OIDC.
+- Orden de cada despliegue: construir (API y web), **migraciones como paso explícito** (nunca al arrancar la Lambda), `aws cloudformation package` y `deploy`, subida de la web a S3 e invalidación de CloudFront, **pruebas de humo**.
+- La CI de GitHub sigue haciendo lint, tipos, pruebas, construcción, empaquetado de la Lambda y validación de las plantillas en cada PR.
+- Pruebas de humo (RNF-058): `/api/health`, `/api/health/ready`, rutas de la SPA, 404 de la API en JSON, cabeceras de seguridad y, con una cuenta de pruebas, inicio de sesión y lectura autenticada. Los 15 flujos completos con Playwright contra staging se agregan en 9b.
 - Reversión: la web y la Lambda se despliegan por etiqueta; volver atrás es volver a desplegar la etiqueta anterior. Las migraciones solo avanzan (CLAUDE.md), así que se hacen compatibles hacia atrás y se prueban primero en staging.
 
 ## Monitoreo y alertas

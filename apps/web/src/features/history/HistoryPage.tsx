@@ -135,7 +135,7 @@ export function HistoryPage() {
           <p className="cap m-0" role="status">
             {copy.history.results(total)}
           </p>
-          <ul className="glass2 m-0 list-none overflow-hidden p-0">
+          <ul className="stagger glass2 m-0 list-none overflow-hidden p-0">
             {sales.map((sale) => (
               <SaleRow key={sale.id} sale={sale} money={money} timezone={timezone} />
             ))}

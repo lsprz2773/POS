@@ -6,6 +6,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
   type ReactNode,
 } from 'react';
 import type { Tone } from './Banner';
@@ -46,7 +47,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {items.map((item) => {
           const Icon = ICON[item.tone];
           return (
-            <div key={item.id} className={`toast glass2 toast-${item.tone} pointer-events-auto`}>
+            <div
+              key={item.id}
+              className={`toast glass2 toast-${item.tone} pointer-events-auto`}
+              style={{ '--toast-out': `${DURATION[item.tone] - 200}ms` } as CSSProperties}
+            >
               <Icon className="ic" aria-hidden="true" />
               {item.text}
             </div>

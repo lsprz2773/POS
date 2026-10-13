@@ -15,7 +15,11 @@ export default defineConfig({
   expect: { timeout: 15_000 },
   retries: 1,
   reporter: [['list']],
-  use: { baseURL: baseURL.replace(/\/$/, ''), trace: 'retain-on-failure' },
+  use: {
+    baseURL: baseURL.replace(/\/$/, ''),
+    trace: 'retain-on-failure',
+    reducedMotion: 'reduce',
+  },
   projects: [
     {
       name: 'movil',

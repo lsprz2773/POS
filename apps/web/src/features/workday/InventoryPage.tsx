@@ -104,7 +104,7 @@ export function InventoryPage() {
               </div>
             </div>
           </div>
-          <ul className="glass2 m-0 list-none overflow-hidden p-0">
+          <ul className="stagger glass2 m-0 list-none overflow-hidden p-0">
             {offers.map((offer) => {
               const level = LEVEL[stockLevel(offer)];
               return (

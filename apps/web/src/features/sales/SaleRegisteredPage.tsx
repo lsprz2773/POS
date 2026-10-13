@@ -37,7 +37,13 @@ export function SaleRegisteredPage() {
   return (
     <>
       <div className="flex flex-col items-center gap-2 pt-4 text-center">
-        <CheckCircle2 className="h-14 w-14" style={{ color: 'var(--ok)' }} aria-hidden="true" />
+        <span className="halo rounded-full">
+          <CheckCircle2
+            className="pop h-14 w-14"
+            style={{ color: 'var(--ok)' }}
+            aria-hidden="true"
+          />
+        </span>
         {/* El título es un encabezado; el aviso vivo lo anuncia sin quitarle ese papel. */}
         <div role="status">
           <h1 className="h1" tabIndex={-1}>

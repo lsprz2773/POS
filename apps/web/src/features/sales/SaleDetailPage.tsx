@@ -156,7 +156,7 @@ export function SaleDetailPage() {
         {sale.payments.length === 0 ? (
           <p className="sub m-0">{copy.sale.noPayments}</p>
         ) : (
-          <ul className="m-0 flex list-none flex-col gap-3 p-0">
+          <ul className="stagger m-0 flex list-none flex-col gap-3 p-0">
             {sale.payments.map((payment) => (
               <li key={payment.id} className="flex items-start gap-3">
                 <div className="min-w-0 flex-1">

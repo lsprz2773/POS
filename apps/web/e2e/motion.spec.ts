@@ -1,0 +1,82 @@
+// Animaciones y transiciones (movimiento normal): entrada de pantalla, diálogos con salida y respeto de
+// "reducir movimiento". El resto de las pruebas corren con ese ajuste (ver playwright.config.ts).
+import { expect, test, type Page } from '@playwright/test';
+import { expectAccessible, owner, signIn } from './helpers';
+
+test.beforeEach(async ({ page }) => {
+  await signIn(page, owner);
+  await expect(page.getByRole('heading', { name: 'Hoy' })).toBeVisible();
+});
+
+const animationOf = (page: Page, selector: string) =>
+  page
+    .locator(selector)
+    .first()
+    .evaluate((el) => getComputedStyle(el).animationName);
+
+const settled = (page: Page) =>
+  expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          document.getAnimations().filter((a) => a.effect?.getTiming().iterations !== Infinity)
+            .length,
+      ),
+    )
+    .toBe(0);
+
+test.describe('con movimiento normal', () => {
+  test.use({ reducedMotion: 'no-preference' });
+
+  test('las pantallas entran con animación y quedan accesibles al terminar', async ({ page }) => {
+    await page.goto('/historial');
+    await expect(page.getByRole('heading', { name: 'Historial' })).toBeVisible();
+    expect(await animationOf(page, 'main .page-in > *')).toContain('rise');
+    await settled(page);
+    await expectAccessible(page);
+  });
+
+  test('la hoja de filtro entra y sale animada y devuelve el foco', async ({ page }, info) => {
+    await page.goto('/historial');
+    const opener = page.getByRole('button', { name: 'Todas las fechas' });
+    await opener.click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    const entering = await dialog.evaluate((el) => getComputedStyle(el).animationName);
+    expect(entering).toBe(info.project.name === 'movil' ? 'sheet-up' : 'dialog-in');
+    await settled(page);
+
+    await page.keyboard.press('Escape');
+    // Sigue en pantalla mientras se anima la salida y luego se quita.
+    await expect(dialog).toBeHidden();
+    await expect(opener).toBeFocused();
+  });
+
+  test('el interruptor mueve su perilla con una transición', async ({ page }) => {
+    await page.goto('/catalogo');
+    const toggle = page.getByRole('switch').first();
+    test.skip((await toggle.count()) === 0, 'Sin productos en el catálogo.');
+    const duration = await toggle.evaluate(
+      (el) => getComputedStyle(el, '::after').transitionDuration,
+    );
+    expect(duration).not.toBe('0s');
+  });
+});
+
+test.describe('reducir movimiento', () => {
+  test.use({ reducedMotion: 'reduce' });
+
+  test('las animaciones duran un instante y no hay esperas escalonadas', async ({ page }) => {
+    await page.goto('/historial');
+    await expect(page.getByRole('heading', { name: 'Historial' })).toBeVisible();
+    const timing = await page
+      .locator('main .page-in > *')
+      .first()
+      .evaluate((el) => {
+        const style = getComputedStyle(el);
+        return { duration: style.animationDuration, delay: style.animationDelay };
+      });
+    expect(parseFloat(timing.duration)).toBeLessThan(0.001);
+    expect(parseFloat(timing.delay)).toBe(0);
+  });
+});

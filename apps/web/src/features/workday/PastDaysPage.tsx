@@ -38,7 +38,7 @@ export function PastDaysPage() {
         <EmptyState icon={History} title={copy.day.pastEmptyTitle} text={copy.day.pastEmptyText} />
       ) : (
         <>
-          <ul className="glass2 m-0 list-none overflow-hidden p-0">
+          <ul className="stagger glass2 m-0 list-none overflow-hidden p-0">
             {days.map((day) => (
               <li key={day.id}>
                 <Link to={`/dia/inventario?fecha=${day.date}`} className="li">

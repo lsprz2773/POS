@@ -1,5 +1,4 @@
 import { parseArgs } from 'node:util';
-import { loadConfig } from '../config';
 import { createDb } from '../db/client';
 import { provisionTenant, ProvisionError } from '../modules/tenancy/provision';
 
@@ -19,9 +18,14 @@ if (!values.name || !values.email) {
   process.exit(1);
 }
 
-const config = loadConfig();
+// Solo necesita la base de datos: sirve igual contra la local que contra Neon, sin proveedor de identidad.
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) {
+  console.error('Falta DATABASE_URL.');
+  process.exit(1);
+}
 const email = values.email.trim().toLowerCase();
-const db = createDb(config.DATABASE_URL);
+const db = createDb(databaseUrl);
 try {
   const result = await provisionTenant(db, {
     storeName: values.name,

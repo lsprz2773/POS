@@ -104,6 +104,7 @@ Se entrega en seis partes (8a a 8f, T58 de [decisiones.md](decisiones.md)), cada
 
 ### Fase 9. Despliegue (requiere aprobación explícita)
 Infraestructura como código (D5), Cognito, Neon, Lambda, API Gateway, hosting del frontend, monitoreo, alertas de presupuesto, respaldo y restauración probados, y pruebas de humo.
+Propuesta detallada, topes de costo y partes 9a a 9c en [despliegue.md](despliegue.md) (T86 a T95 de [decisiones.md](decisiones.md)).
 **Aceptación:** los criterios de finalización del MVP de [requerimientos.md](requerimientos.md), con costos acotados y alertas activas antes de crear recursos.
 
 ## Trazabilidad

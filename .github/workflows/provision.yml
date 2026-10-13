@@ -1,0 +1,68 @@
+name: Provision
+
+# Da de alta una tienda y su usuario en un entorno ya desplegado: crea la cuenta en Cognito (sin
+# contraseña) y la tienda en la base con el `sub` de esa cuenta. La contraseña la fija después el
+# propietario en la terminal de AWS (docs/manual-despliegue.md): nunca viaja por GitHub.
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Entorno
+        type: choice
+        options: [staging, prod]
+        default: staging
+      store_name:
+        description: Nombre de la tienda
+        type: string
+        required: true
+      email:
+        description: Correo del usuario (será su usuario de acceso)
+        type: string
+        required: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    env:
+      ENVIRONMENT: ${{ inputs.environment }}
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      STORE_NAME: ${{ inputs.store_name }}
+      USER_EMAIL: ${{ inputs.email }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - name: Crear la cuenta en Cognito y la tienda
+        run: |
+          set -euo pipefail
+          STACK="pos-${ENVIRONMENT}"
+          POOL="$(aws cloudformation describe-stacks --stack-name "$STACK" \
+            --query "Stacks[0].Outputs[?OutputKey=='UserPoolId'].OutputValue" --output text)"
+          EMAIL="$(echo "$USER_EMAIL" | tr '[:upper:]' '[:lower:]' | xargs)"
+
+          if ! aws cognito-idp admin-get-user --user-pool-id "$POOL" --username "$EMAIL" >/dev/null 2>&1; then
+            aws cognito-idp admin-create-user --user-pool-id "$POOL" --username "$EMAIL" \
+              --user-attributes "Name=email,Value=$EMAIL" "Name=email_verified,Value=true" \
+              --message-action SUPPRESS >/dev/null
+          fi
+          SUB="$(aws cognito-idp admin-get-user --user-pool-id "$POOL" --username "$EMAIL" \
+            --query "UserAttributes[?Name=='sub'].Value" --output text)"
+
+          DATABASE_URL="$(aws ssm get-parameter --name "/pos/${ENVIRONMENT}/database-url" \
+            --with-decryption --query Parameter.Value --output text)"
+          echo "::add-mask::$DATABASE_URL"
+          export DATABASE_URL
+          npm run provision -w @pos/api -- --name "$STORE_NAME" --email "$EMAIL" --subject "$SUB"
+          echo "Cuenta lista. Falta fijar la contraseña (manual de despliegue, paso de usuario)."

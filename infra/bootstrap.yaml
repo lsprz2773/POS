@@ -1,0 +1,293 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  Arranque único del POS ligero: acceso de GitHub Actions por OIDC (sin llaves), bucket de artefactos
+  y presupuesto con alertas y tope. Lo ejecuta el propietario una sola vez. Ver docs/manual-despliegue.md.
+
+Parameters:
+  GitHubOwner:
+    Type: String
+    Description: Usuario u organización dueña del repositorio de GitHub.
+  GitHubRepo:
+    Type: String
+    Default: POS
+  AlertEmail:
+    Type: String
+    Description: Correo que recibe las alertas de presupuesto.
+  MonthlyLimitUsd:
+    Type: Number
+    Default: 1
+    Description: Tope de gasto mensual aceptado, en dólares.
+  CreateOidcProvider:
+    Type: String
+    Default: 'true'
+    AllowedValues: ['true', 'false']
+    Description: Pon false si la cuenta ya tiene el proveedor token.actions.githubusercontent.com.
+
+Conditions:
+  NewOidcProvider: !Equals [!Ref CreateOidcProvider, 'true']
+
+Resources:
+  GitHubOidc:
+    Type: AWS::IAM::OIDCProvider
+    Condition: NewOidcProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList: [sts.amazonaws.com]
+
+  # Cerradura del tope: al llegar al 100 % del presupuesto se adjunta al rol de despliegue y ya no
+  # puede crear ni cambiar stacks hasta que el propietario la retire.
+  DenyDeployPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: pos-deploy-bloqueado
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Deny
+            Action:
+              - cloudformation:CreateStack
+              - cloudformation:UpdateStack
+              - cloudformation:CreateChangeSet
+              - cloudformation:ExecuteChangeSet
+            Resource: '*'
+
+  DeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: pos-github-deploy
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !If
+                - NewOidcProvider
+                - !Ref GitHubOidc
+                - !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+              # Solo los trabajos de este repositorio que usan el entorno de GitHub indicado.
+              StringLike:
+                token.actions.githubusercontent.com:sub:
+                  - !Sub repo:${GitHubOwner}/${GitHubRepo}:environment:staging
+                  - !Sub repo:${GitHubOwner}/${GitHubRepo}:environment:prod
+      Policies:
+        - PolicyName: pos-despliegue
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: Stacks
+                Effect: Allow
+                Action: cloudformation:*
+                Resource:
+                  - !Sub arn:${AWS::Partition}:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/pos-*/*
+                  - !Sub arn:${AWS::Partition}:cloudformation:${AWS::Region}:aws:transform/Serverless-2016-10-31
+              - Sid: LecturaDeStacks
+                Effect: Allow
+                Action:
+                  - cloudformation:GetTemplateSummary
+                  - cloudformation:ValidateTemplate
+                  - cloudformation:ListStacks
+                Resource: '*'
+              - Sid: Funciones
+                Effect: Allow
+                Action: lambda:*
+                Resource: !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:pos-*
+              - Sid: ApiHttp
+                Effect: Allow
+                Action: apigateway:*
+                Resource:
+                  - !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}::/apis
+                  - !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}::/apis/*
+                  - !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}::/tags/*
+              - Sid: CloudFront
+                Effect: Allow
+                Action:
+                  - cloudfront:*
+                Resource: '*'
+              - Sid: Cognito
+                Effect: Allow
+                Action: cognito-idp:*
+                Resource: !Sub arn:${AWS::Partition}:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/*
+              - Sid: CognitoCrear
+                Effect: Allow
+                Action: cognito-idp:CreateUserPool
+                Resource: '*'
+              - Sid: Buckets
+                Effect: Allow
+                Action: s3:*
+                Resource:
+                  - arn:aws:s3:::pos-*
+                  - arn:aws:s3:::pos-*/*
+              - Sid: RolesDeLasFunciones
+                Effect: Allow
+                Action:
+                  - iam:CreateRole
+                  - iam:DeleteRole
+                  - iam:GetRole
+                  - iam:PassRole
+                  - iam:TagRole
+                  - iam:UntagRole
+                  - iam:AttachRolePolicy
+                  - iam:DetachRolePolicy
+                  - iam:PutRolePolicy
+                  - iam:DeleteRolePolicy
+                  - iam:GetRolePolicy
+                Resource: !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:role/pos-*
+              - Sid: Parametro
+                Effect: Allow
+                Action: ssm:GetParameter
+                Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/pos/*
+              - Sid: Alarmas
+                Effect: Allow
+                Action:
+                  - sns:*
+                Resource: !Sub arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:pos-*
+              - Sid: AlarmasDeCloudWatch
+                Effect: Allow
+                Action:
+                  - cloudwatch:PutMetricAlarm
+                  - cloudwatch:DeleteAlarms
+                  - cloudwatch:DescribeAlarms
+                  - cloudwatch:TagResource
+                Resource: !Sub arn:${AWS::Partition}:cloudwatch:${AWS::Region}:${AWS::AccountId}:alarm:pos-*
+              - Sid: Registros
+                Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:DeleteLogGroup
+                  - logs:PutRetentionPolicy
+                  - logs:DescribeLogGroups
+                  - logs:TagResource
+                Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/pos-*
+
+  ArtifactBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub pos-deploy-artifacts-${AWS::AccountId}-${AWS::Region}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      LifecycleConfiguration:
+        Rules:
+          - Id: BorrarArtefactosViejos
+            Status: Enabled
+            ExpirationInDays: 30
+
+  # ---------- Presupuesto ----------
+  BudgetActionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: pos-budgets-accion
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: budgets.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: adjuntar-bloqueo
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - iam:AttachRolePolicy
+                  - iam:DetachRolePolicy
+                Resource: !GetAtt DeployRole.Arn
+                Condition:
+                  ArnEquals:
+                    iam:PolicyARN: !Ref DenyDeployPolicy
+
+  MonthlyBudget:
+    Type: AWS::Budgets::Budget
+    Properties:
+      Budget:
+        BudgetName: pos-mensual
+        BudgetType: COST
+        TimeUnit: MONTHLY
+        BudgetLimit:
+          Amount: !Ref MonthlyLimitUsd
+          Unit: USD
+      NotificationsWithSubscribers:
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 50
+            ThresholdType: PERCENTAGE
+          Subscribers: [{ SubscriptionType: EMAIL, Address: !Ref AlertEmail }]
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 80
+            ThresholdType: PERCENTAGE
+          Subscribers: [{ SubscriptionType: EMAIL, Address: !Ref AlertEmail }]
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 100
+            ThresholdType: PERCENTAGE
+          Subscribers: [{ SubscriptionType: EMAIL, Address: !Ref AlertEmail }]
+        - Notification:
+            NotificationType: FORECASTED
+            ComparisonOperator: GREATER_THAN
+            Threshold: 100
+            ThresholdType: PERCENTAGE
+          Subscribers: [{ SubscriptionType: EMAIL, Address: !Ref AlertEmail }]
+
+  # Aviso temprano: cualquier cobro, por pequeño que sea (el plan gratuito debería dar $0).
+  FirstCentBudget:
+    Type: AWS::Budgets::Budget
+    Properties:
+      Budget:
+        BudgetName: pos-primer-centavo
+        BudgetType: COST
+        TimeUnit: MONTHLY
+        BudgetLimit:
+          Amount: 0.01
+          Unit: USD
+      NotificationsWithSubscribers:
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 100
+            ThresholdType: PERCENTAGE
+          Subscribers: [{ SubscriptionType: EMAIL, Address: !Ref AlertEmail }]
+
+  BlockDeployAtLimit:
+    Type: AWS::Budgets::BudgetsAction
+    DependsOn: MonthlyBudget
+    Properties:
+      BudgetName: pos-mensual
+      NotificationType: ACTUAL
+      ActionType: APPLY_IAM_POLICY
+      ApprovalModel: AUTOMATIC
+      ActionThreshold:
+        Type: PERCENTAGE
+        Value: 100
+      ExecutionRoleArn: !GetAtt BudgetActionRole.Arn
+      Definition:
+        IamActionDefinition:
+          PolicyArn: !Ref DenyDeployPolicy
+          Roles: [!Ref DeployRole]
+      Subscribers:
+        - Type: EMAIL
+          Address: !Ref AlertEmail
+
+Outputs:
+  DeployRoleArn:
+    Description: Valor de la variable AWS_ROLE_ARN en los entornos de GitHub.
+    Value: !GetAtt DeployRole.Arn
+  ArtifactBucketName:
+    Description: Valor de la variable ARTIFACT_BUCKET en los entornos de GitHub.
+    Value: !Ref ArtifactBucket

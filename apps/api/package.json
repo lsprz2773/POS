@@ -13,10 +13,12 @@
     "migrate:create": "node ../../node_modules/node-pg-migrate/bin/node-pg-migrate.js --migrations-dir migrations --migration-file-language sql create",
     "db:types": "node --env-file-if-exists=../../.env ../../node_modules/kysely-codegen/dist/cli/bin.js --dialect postgres --out-file src/db/types.ts --exclude-pattern pgmigrations",
     "provision": "tsx --env-file-if-exists=../../.env src/scripts/provision-tenant.ts",
-    "build:lambda": "node build-lambda.mjs"
+    "build:lambda": "node build-lambda.mjs",
+    "restore": "tsx src/scripts/restore-backup.ts"
   },
   "dependencies": {
     "@aws-sdk/client-cognito-identity-provider": "^3.1150.0",
+    "@aws-sdk/client-s3": "^3.1150.0",
     "@aws-sdk/client-ssm": "^3.1150.0",
     "@fastify/aws-lambda": "^6.4.2",
     "@fastify/cookie": "^11.1.3",

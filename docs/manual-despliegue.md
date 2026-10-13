@@ -37,7 +37,7 @@ Las partes 1 a 7 las hace la primera vez que despliegas; las partes 6, 8 y 9 se 
 - [ ] Una **tarjeta** de crédito o débito. AWS la pide para abrir la cuenta aunque no cobre nada.
 - [ ] Tu **teléfono** (para la verificación en dos pasos) con una app de autenticación: Google Authenticator, Microsoft Authenticator o Authy.
 - [ ] Tu cuenta de **GitHub** y acceso de administrador al repositorio `lsprz2773/POS`.
-- [ ] Que las fases 8 y 9a ya estén fusionadas en `main`. Los botones de GitHub Actions ("Run workflow") solo aparecen si el flujo está en la **rama predeterminada** del repositorio (revísala en GitHub → Settings → General → Default branch).
+- [ ] Que las fases 8a a 8f y 9a ya estén fusionadas en `main` (revisa en GitHub que la carpeta `.github/workflows` de `main` tenga `deploy.yml` y `provision.yml`). Los botones de GitHub Actions ("Run workflow") solo aparecen si el flujo está en la **rama predeterminada** del repositorio (revísala en GitHub → Settings → General → Default branch).
 - [ ] Un lugar seguro (gestor de contraseñas) para guardar lo que vayas generando.
 
 **Anota aquí mientras avanzas** (en tu gestor de contraseñas, no en el repositorio):

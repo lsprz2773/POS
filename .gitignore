@@ -18,3 +18,8 @@ cdk.out/
 .idea/
 .DS_Store
 *.log
+
+# Resultados de Playwright
+test-results/
+playwright-report/
+dist-lambda/

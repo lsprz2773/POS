@@ -1,0 +1,61 @@
+name: Deploy
+
+# Despliegue manual. Staging sale de `dev`; producción solo de una etiqueta vX.Y.Z y espera la
+# aprobación del propietario configurada en el entorno `prod` de GitHub. Ver docs/manual-despliegue.md.
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Entorno
+        type: choice
+        options: [staging, prod]
+        default: staging
+
+concurrency:
+  group: deploy-${{ inputs.environment }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write # OIDC: el rol de AWS se asume sin llaves guardadas
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    env:
+      ENVIRONMENT: ${{ inputs.environment }}
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      ARTIFACT_BUCKET: ${{ vars.ARTIFACT_BUCKET }}
+      ALERT_EMAIL: ${{ vars.ALERT_EMAIL }}
+    steps:
+      - name: Producción solo desde una etiqueta
+        if: inputs.environment == 'prod' && !startsWith(github.ref, 'refs/tags/v')
+        run: |
+          echo "Producción se despliega desde una etiqueta vX.Y.Z, no desde ${{ github.ref }}." >&2
+          exit 1
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Comprobaciones
+        run: npm run lint && npm run typecheck && npm test
+      - name: Construir API y web
+        run: npm run build:lambda -w @pos/api && npm run build -w @pos/web
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true
+      - name: Desplegar
+        id: deploy
+        run: ./infra/deploy.sh
+      - name: Pruebas de humo
+        env:
+          SMOKE_EMAIL: ${{ secrets.SMOKE_EMAIL }}
+          SMOKE_PASSWORD: ${{ secrets.SMOKE_PASSWORD }}
+        run: node infra/smoke.mjs "${{ steps.deploy.outputs.web_url }}"

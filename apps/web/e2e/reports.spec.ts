@@ -1,6 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import { expect, test, type Page } from '@playwright/test';
-import { expectAccessible, expectNoHorizontalScroll, owner, signIn, unique } from './helpers';
+import {
+  expectAccessible,
+  expectNoHorizontalScroll,
+  owner,
+  signIn,
+  storeToday,
+  unique,
+} from './helpers';
 
 const ORIGIN = 'http://localhost:5183';
 const peso = (amount: string) =>
@@ -163,7 +170,7 @@ test('reportes: la semana, el día y el mes coinciden con el servidor y el rango
     ['Mes', 'month'],
   ] as const) {
     await page.getByRole('button', { name: label, exact: true }).click();
-    const today = new Date().toISOString().slice(0, 10);
+    const today = storeToday();
     const response = await page.request.get(`/api/reports?period=${period}&date=${today}`);
     const data = (await response.json()) as {
       salesTotal: string;
@@ -201,7 +208,7 @@ test('reportes: la semana, el día y el mes coinciden con el servidor y el rango
   await expect(page.getByLabel('Hasta')).toHaveAccessibleDescription(/anterior a la inicial/);
   await expectAccessible(page);
   await page.getByLabel('Desde').fill('2020-01-01');
-  await page.getByLabel('Hasta').fill(new Date().toISOString().slice(0, 10));
+  await page.getByLabel('Hasta').fill(storeToday());
   await page.getByRole('button', { name: 'Aplicar rango' }).click();
   await expect(page.getByLabel('Hasta')).toHaveAccessibleDescription(/366 días/);
 });

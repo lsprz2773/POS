@@ -1,17 +1,12 @@
 import { buildApp } from './app';
-import { loadConfig } from './config';
+import { loadConfig, localDatabaseUrl } from './config';
 import { createDb } from './db/client';
-import { createLocalIdentityProvider } from './modules/auth/local-identity-provider';
+import { createIdentityProvider } from './identity';
 
 const config = loadConfig();
-const db = createDb(config.DATABASE_URL);
+const db = createDb(localDatabaseUrl(config));
 
-const identity = createLocalIdentityProvider({
-  secret: config.AUTH_SECRET!,
-  usersJson: config.LOCAL_AUTH_USERS,
-  accessTtlSeconds: config.ACCESS_TTL_SECONDS,
-  refreshTtlSeconds: config.REFRESH_TTL_SECONDS,
-});
+const identity = createIdentityProvider(config);
 
 const app = buildApp({ db, identity, config, logger: true });
 

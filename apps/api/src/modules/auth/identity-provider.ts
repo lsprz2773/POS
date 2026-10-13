@@ -19,4 +19,6 @@ export interface IdentityProvider {
   login(email: string, password: string): Promise<{ identity: Identity; tokens: AuthTokens }>;
   verifyAccessToken(token: string): Promise<Identity>;
   refresh(refreshToken: string): Promise<{ identity: Identity; tokens: AuthTokens }>;
+  /** Invalida el token de renovación al cerrar sesión, si el proveedor puede hacerlo. */
+  revoke?(refreshToken: string): Promise<void>;
 }

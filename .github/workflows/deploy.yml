@@ -34,7 +34,7 @@ jobs:
         run: |
           echo "Producción se despliega desde una etiqueta vX.Y.Z, no desde ${{ github.ref }}." >&2
           exit 1
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc

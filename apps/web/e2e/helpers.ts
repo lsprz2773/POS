@@ -1,6 +1,9 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page } from '@playwright/test';
 
+/** Origen de la aplicación bajo prueba: local por omisión, o la dirección de staging (E2E_BASE_URL). */
+export const ORIGIN = process.env.E2E_BASE_URL?.replace(/\/$/, '') ?? 'http://localhost:5183';
+
 export const owner = {
   email: process.env.E2E_OWNER_EMAIL!,
   password: process.env.E2E_OWNER_PASSWORD!,

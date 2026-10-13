@@ -10,6 +10,19 @@ export function periodAround(kind: Exclude<PeriodKind, 'range'>, date: string): 
   return { from: date, to: date };
 }
 
+/**
+ * Periodo del nuevo tipo al cambiar de tipo: si el que se ve contiene hoy, el nuevo también (Semana a Día
+ * muestra hoy, no el lunes); si es otro periodo, se conserva su inicio como referencia.
+ */
+export function periodOnSwitch(
+  kind: Exclude<PeriodKind, 'range'>,
+  current: Period | null,
+  today: string,
+): Period {
+  const containsToday = !current || (current.from <= today && today <= current.to);
+  return periodAround(kind, containsToday ? today : current.from);
+}
+
 /** Periodo anterior (-1) o siguiente (+1) del mismo tipo, siempre completo. */
 export function shiftPeriod(
   kind: Exclude<PeriodKind, 'range'>,

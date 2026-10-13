@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { percentOf, periodAround, periodLabel, shiftPeriod } from './periods';
+import { percentOf, periodAround, periodLabel, periodOnSwitch, shiftPeriod } from './periods';
 
 describe('periodos de reporte', () => {
   it('el periodo que contiene una fecha', () => {
@@ -22,6 +22,26 @@ describe('periodos de reporte', () => {
     expect(shiftPeriod('month', periodAround('month', '2026-01-10'), -1)).toEqual({
       from: '2025-12-01',
       to: '2025-12-31',
+    });
+  });
+
+  it('al cambiar de tipo, el periodo con hoy se vuelve a anclar en hoy (martes: Semana a Día muestra el martes)', () => {
+    const today = '2026-10-13';
+    const week = periodAround('week', today);
+    expect(periodOnSwitch('day', week, today)).toEqual({ from: today, to: today });
+    expect(periodOnSwitch('month', week, today)).toEqual({ from: '2026-10-01', to: '2026-10-31' });
+    expect(periodOnSwitch('week', null, today)).toEqual(week);
+  });
+
+  it('al cambiar de tipo desde un periodo pasado se conserva su inicio', () => {
+    const lastWeek = periodAround('week', '2026-10-05');
+    expect(periodOnSwitch('day', lastWeek, '2026-10-13')).toEqual({
+      from: '2026-10-05',
+      to: '2026-10-05',
+    });
+    expect(periodOnSwitch('month', lastWeek, '2026-10-13')).toEqual({
+      from: '2026-10-01',
+      to: '2026-10-31',
     });
   });
 

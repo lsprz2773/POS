@@ -1,4 +1,4 @@
-// Prepara una base propia (pos_e2e), un usuario con tienda y otro sin tienda, con valores aleatorios
+// Prepara una base propia (pos_e2e), dos usuarios con tienda (tenants distintos) y otro sin tienda, con valores aleatorios
 // en cada ejecución (nada de contraseñas escritas en el código), y lanza Playwright.
 import { spawnSync } from 'node:child_process';
 import { randomBytes, randomUUID } from 'node:crypto';
@@ -20,15 +20,18 @@ await admin.query('CREATE DATABASE pos_e2e');
 await admin.end();
 
 const owner = { email: 'dueno@e2e.test', password: randomUUID() };
+const other = { email: 'otra@e2e.test', password: randomUUID() };
 const orphan = { email: 'sin-tienda@e2e.test', password: randomUUID() };
 const env = {
   ...process.env,
   DATABASE_URL: e2eUrl.toString(),
   AUTH_PROVIDER: 'local',
   AUTH_SECRET: randomBytes(32).toString('hex'),
-  LOCAL_AUTH_USERS: JSON.stringify([owner, orphan]),
+  LOCAL_AUTH_USERS: JSON.stringify([owner, other, orphan]),
   E2E_OWNER_EMAIL: owner.email,
   E2E_OWNER_PASSWORD: owner.password,
+  E2E_OTHER_EMAIL: other.email,
+  E2E_OTHER_PASSWORD: other.password,
   E2E_ORPHAN_EMAIL: orphan.email,
   E2E_ORPHAN_PASSWORD: orphan.password,
 };
@@ -50,7 +53,19 @@ run('npm', [
   '--email',
   owner.email,
 ]);
-// El segundo usuario existe en el proveedor de identidad pero no tiene tienda (cuenta bloqueada).
+// Segunda tienda: prueba de aislamiento entre tenants (flujo 15).
+run('npm', [
+  'run',
+  'provision',
+  '-w',
+  '@pos/api',
+  '--',
+  '--name',
+  'Otra tienda E2E',
+  '--email',
+  other.email,
+]);
+// El tercer usuario existe en el proveedor de identidad pero no tiene tienda (cuenta bloqueada).
 run('npx', [
   'playwright',
   'test',

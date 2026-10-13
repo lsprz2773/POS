@@ -1,8 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import { expect, test, type Page } from '@playwright/test';
-import { expectAccessible, expectNoHorizontalScroll, owner, signIn, unique } from './helpers';
-
-const ORIGIN = 'http://localhost:5183';
+import {
+  expectAccessible,
+  expectNoHorizontalScroll,
+  ORIGIN,
+  owner,
+  signIn,
+  unique,
+} from './helpers';
 
 test.beforeEach(async ({ page }) => {
   await signIn(page, owner);

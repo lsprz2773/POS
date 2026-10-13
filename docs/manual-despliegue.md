@@ -312,16 +312,43 @@ Debe terminar con "Cuenta lista".
 
 ### 7.2 Fijar tu contraseña
 
-La contraseña debe tener **al menos 12 caracteres, con mayúscula, minúscula y número**. Escríbela sin que se muestre:
+La contraseña debe tener **al menos 12 caracteres, con mayúscula, minúscula y número**; puede llevar símbolos como `/` o `-`. No la escribas dentro de ningún comando ni la pegues en el chat.
 
-```
-read -rs -p "Contraseña: " PW; echo
-POOL=$(aws cloudformation describe-stacks --stack-name pos-staging --query "Stacks[0].Outputs[?OutputKey=='UserPoolId'].OutputValue" --output text)
-aws cognito-idp admin-set-user-password --user-pool-id "$POOL" --username tu-correo@ejemplo.com --password "$PW" --permanent
-unset PW
-```
+> **Pega un comando a la vez.** Si pegas varias líneas juntas, el comando `read` toma como contraseña la línea que sigue y el comando que fija la contraseña no llega a ejecutarse. Entonces la cuenta sigue en `FORCE_CHANGE_PASSWORD` y el sitio dice "Correo o contraseña incorrectos".
 
-Si no devuelve nada, funcionó. Guarda el correo y la contraseña en tu gestor.
+1. Obtén el identificador del grupo de usuarios (cambia `pos-staging` por `pos-prod` en producción):
+
+   ```
+   POOL=$(aws cloudformation describe-stacks --stack-name pos-staging --query "Stacks[0].Outputs[?OutputKey=='UserPoolId'].OutputValue" --output text)
+   ```
+
+2. Pega **solo esta línea**, pulsa Enter y, cuando quede esperando, escribe tu contraseña (no se ve) y pulsa Enter:
+
+   ```
+   read -rs -p "Contraseña: " PW; echo
+   ```
+
+   El texto entre comillas es solo el aviso: déjalo como está.
+3. Pega **solo este comando** (cambia el correo) y pulsa Enter:
+
+   ```
+   aws cognito-idp admin-set-user-password --user-pool-id "$POOL" --username tu-correo@ejemplo.com --password "$PW" --permanent
+   ```
+
+   Si no imprime nada, funcionó. Si dice `InvalidPasswordException`, la contraseña no cumple; repite desde el paso 2.
+4. Borra la contraseña de la memoria de la terminal:
+
+   ```
+   unset PW
+   ```
+
+5. Comprueba que quedó (debe decir `CONFIRMED`):
+
+   ```
+   aws cognito-idp admin-get-user --user-pool-id "$POOL" --username tu-correo@ejemplo.com --query '{estado:UserStatus,activo:Enabled}'
+   ```
+
+Si cometiste un error, repite los pasos 2 a 4 las veces que haga falta. Si la contraseña se mostró en pantalla o la compartiste, cámbiala.
 
 ### 7.3 Usuario para las pruebas de humo (recomendado)
 
@@ -360,6 +387,26 @@ Para que las pruebas automáticas no usen tus datos reales de producción, crea 
 5. Revisa que recibes el correo de alarma de prueba si quieres: CloudWatch → Alarms → `pos-staging-errores-lambda` → Actions → **Test**… (opcional).
 
 **Qué mirar si algo se ve raro:** AWS → CloudWatch → **Logs → Log groups** → `/aws/lambda/pos-staging-api`. Cada error muestra el código de referencia (`x-request-id`) que también ve la pantalla en la tarjeta de error.
+
+### 8.1 Los 15 flujos automáticos contra staging (opcional, recomendado)
+
+Además de tu prueba a mano, GitHub puede recorrer los 15 flujos del documento de requerimientos contra tu dirección de staging, en móvil y escritorio. No usa AWS ni llaves: solo la dirección pública y **dos tiendas de pruebas** propias para esto (distintas de las de las personas que prueban a mano, porque la prueba crea y cancela ventas).
+
+1. En CloudShell, crea las dos tiendas, con un correo distinto cada una (por ejemplo `tucorreo+e2e1@gmail.com` y `tucorreo+e2e2@gmail.com`):
+
+   ```
+   ENVIRONMENT=staging ./infra/provision.sh "E2E 1" tucorreo+e2e1@gmail.com
+   ENVIRONMENT=staging ./infra/provision.sh "E2E 2" tucorreo+e2e2@gmail.com
+   ```
+
+   Fija la contraseña de cada una como en la parte 7.2, **un comando a la vez**.
+2. En GitHub → **Settings → Environments → New environment**: `staging`.
+   - **Environment variables:** `E2E_BASE_URL` = la dirección de staging, sin `/` al final.
+   - **Environment secrets:** `E2E_OWNER_EMAIL` y `E2E_OWNER_PASSWORD` (la primera tienda), `E2E_OTHER_EMAIL` y `E2E_OTHER_PASSWORD` (la segunda).
+3. GitHub → **Actions → E2E staging → Run workflow**. Tarda unos 8 a 12 minutos.
+4. Debe terminar en verde. Si falla, abre la ejecución: las trazas de los fallos quedan como archivo descargable durante 7 días.
+
+La API de staging limita el ritmo (10 solicitudes por segundo) para acotar costos; la prueba reintenta una vez un flujo si coincide con esa limitación o con el despertar de la base.
 
 ### ✅ Comprobación de la parte 8
 
@@ -534,7 +581,7 @@ Agenda el recordatorio en tu calendario ahora (fecha de vencimiento menos 30 dí
 |---|---|
 | La página carga pero "no se pudo conectar" | Abre `/api/health`. Si no responde: CloudWatch → log group `/aws/lambda/pos-<entorno>-api`. |
 | `/api/health` responde pero `/api/health/ready` da 503 | La base no responde: Neon puede estar pausada (reintenta) o la cadena del parámetro es incorrecta. |
-| Iniciar sesión dice "Correo o contraseña incorrectos" | Contraseña no fijada (parte 7.2), correo distinto al del alta, o contraseña de menos de 12 caracteres. |
+| Iniciar sesión dice "Correo o contraseña incorrectos" | Lo más probable: la contraseña nunca se fijó. Comprueba con el paso 5 de 7.2: si dice `FORCE_CHANGE_PASSWORD`, repite 7.2 pegando **un comando a la vez**. Si dice `CONFIRMED`: correo distinto al del alta o contraseña mal escrita. |
 | Inicia sesión y pide algo de "tienda" o aparece "tu cuenta aún no tiene una tienda" | Falta ejecutar `provision.sh` para ese correo en ese entorno. |
 | Cualquier guardado falla con 403 "origen no permitido" | La API no conoce su dirección: vuelve a ejecutar `deploy.sh` (el segundo paso la corrige). |
 | La primera carga del día es lenta | Normal: base pausada y Lambda en frío. |
@@ -580,6 +627,7 @@ Los números vienen de las páginas de precios al momento de escribir esto y pue
 | `infra/template.yaml` | Partes 6 y 9 (todo el entorno) |
 | `infra/deploy.sh` | Partes 6 y 9 (migraciones, despliegue, publicar la web) |
 | `infra/smoke.mjs` | Pruebas de humo |
+| `.github/workflows/e2e-staging.yml` y `apps/web/playwright.staging.config.ts` | Parte 8.1 (los 15 flujos contra staging) |
 | `infra/cloudshell-prepare.sh` | Parte 5 (Node y dependencias en CloudShell) |
 | `infra/provision.sh` | Parte 7 (tienda y usuario) |
 | `.github/workflows/{deploy,provision}.yml` | **No se usan en tu cuenta** (requieren OIDC, prohibido por su política); quedan para una cuenta que lo permita |

@@ -54,7 +54,8 @@ describe('reportes', () => {
     const last = () => calls.filter((c) => c.key === 'GET /reports').at(-1)!.url;
 
     await u.click(screen.getByRole('button', { name: 'Día' }));
-    await waitFor(() => expect(last()).toBe('/reports?period=day&date=2026-10-12'));
+    // De Semana a Día se muestra hoy (jueves 15), no el lunes de la semana.
+    await waitFor(() => expect(last()).toBe('/reports?period=day&date=2026-10-15'));
     await u.click(screen.getByRole('button', { name: 'Mes' }));
     await waitFor(() => expect(last()).toBe('/reports?period=month&date=2026-10-01'));
     expect(screen.getByText('Octubre de 2026')).toBeInTheDocument();

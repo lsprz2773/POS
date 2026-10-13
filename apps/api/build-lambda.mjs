@@ -2,8 +2,9 @@
 import { build } from 'esbuild';
 
 await build({
-  entryPoints: ['src/lambda.ts'],
-  outfile: 'dist-lambda/index.mjs',
+  entryPoints: { index: 'src/lambda.ts', backup: 'src/backup-lambda.ts' },
+  outdir: 'dist-lambda',
+  outExtension: { '.js': '.mjs' },
   bundle: true,
   platform: 'node',
   target: 'node22',

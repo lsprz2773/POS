@@ -226,6 +226,65 @@ Resources:
               StringEquals:
                 AWS:SourceArn: !Sub arn:${AWS::Partition}:cloudfront::${AWS::AccountId}:distribution/${Distribution}
 
+  # ---------- Respaldo ----------
+  # Cada semana la base se exporta a un archivo comprimido y cifrado (apps/api/src/backup). Se guarda 30
+  # días; restaurarlo está en docs/manual-despliegue.md (parte 10).
+  BackupBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      LifecycleConfiguration:
+        Rules:
+          - Id: BorrarRespaldosViejos
+            Status: Enabled
+            ExpirationInDays: 30
+
+  BackupLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/pos-${Environment}-backup
+      RetentionInDays: 14
+
+  BackupFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub pos-${Environment}-backup
+      Description: Respaldo semanal de la base de datos a S3
+      CodeUri: ../apps/api/dist-lambda/
+      Handler: backup.handler
+      Timeout: 300
+      MemorySize: 1024
+      LoggingConfig:
+        LogGroup: !Ref BackupLogGroup
+      Environment:
+        Variables:
+          DATABASE_URL_PARAM: !Ref DatabaseUrlParam
+          BACKUP_BUCKET: !Ref BackupBucket
+          BACKUP_PREFIX: !Ref Environment
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: ssm:GetParameter
+              Resource: !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${DatabaseUrlParam}
+            - Effect: Allow
+              Action: s3:PutObject
+              Resource: !Sub ${BackupBucket.Arn}/*
+      Events:
+        Weekly:
+          Type: Schedule
+          Properties:
+            # Domingos a las 09:00 UTC (03:00 en la Ciudad de México): sin uso de la tienda.
+            Schedule: cron(0 9 ? * SUN *)
+            Description: Respaldo semanal
+
   # ---------- Alarmas ----------
   AlarmTopic:
     Type: AWS::SNS::Topic
@@ -271,6 +330,24 @@ Resources:
       TreatMissingData: notBreaching
       AlarmActions: [!Ref AlarmTopic]
 
+  BackupErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub pos-${Environment}-error-respaldo
+      AlarmDescription: El respaldo semanal falló.
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref BackupFunction
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopic]
+
 Outputs:
   WebUrl:
     Description: Dirección pública de la aplicación (web y /api).
@@ -285,3 +362,7 @@ Outputs:
     Value: !Ref UserPoolClient
   FunctionName:
     Value: !Ref ApiFunction
+  BackupBucketName:
+    Value: !Ref BackupBucket
+  BackupFunctionName:
+    Value: !Ref BackupFunction

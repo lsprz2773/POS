@@ -66,7 +66,8 @@ Dos riesgos reales que sí hay que vigilar:
 ## Respaldo y restauración (RNF)
 
 - Neon gratuito conserva solo un historial corto para restaurar.
-- Propuesta: un `pg_dump` semanal programado en GitHub Actions, cifrado y guardado en un bucket privado de S3 con borrado a los 30 días (unos pocos MB), y una prueba de restauración en una rama de Neon antes de usar producción.
+- Respaldo propio (T99): una función programada (`pos-<entorno>-backup`) exporta cada domingo toda la base a un archivo comprimido y cifrado en un bucket privado de S3 con borrado a los 30 días. Es una exportación lógica (cada fila como JSON, ordenada por llaves foráneas, en una sola transacción de lectura), no un `pg_dump`: así no hace falta un programa externo en Lambda ni credenciales fuera de AWS.
+- Restauración: `npm run restore` carga el archivo en una base ya migrada y vacía, dentro de una transacción; se niega si la base no está vacía o el esquema es distinto. La prueba de restauración en una rama de Neon está en el manual (parte 10) y se hace antes de producción.
 
 ## Fases de ejecución
 

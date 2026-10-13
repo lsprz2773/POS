@@ -39,3 +39,7 @@ export async function expectNoHorizontalScroll(page: Page) {
 /** Texto único por ejecución y proyecto: las pruebas comparten base de datos. */
 export const unique = (label: string, project: string) =>
   `${label} ${project} ${Date.now().toString(36)}`;
+
+/** Hoy (AAAA-MM-DD) en la zona de la tienda de las pruebas; la fecha UTC se adelanta por las tardes-noches. */
+export const storeToday = () =>
+  new Date().toLocaleDateString('en-CA', { timeZone: 'America/Mexico_City' });

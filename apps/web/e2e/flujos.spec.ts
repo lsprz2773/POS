@@ -9,6 +9,7 @@ import {
   other,
   owner,
   signIn,
+  storeToday,
   unique,
 } from './helpers';
 
@@ -235,7 +236,7 @@ for (const [number, label, period] of [
           ] as const);
     for (const [button, key] of periods) {
       await page.getByRole('button', { name: button, exact: true }).click();
-      const today = new Date().toISOString().slice(0, 10);
+      const today = storeToday();
       const data = (await (
         await page.request.get(`/api/reports?period=${key}&date=${today}`)
       ).json()) as { salesTotal: string; collected: string; grossProfit: string };

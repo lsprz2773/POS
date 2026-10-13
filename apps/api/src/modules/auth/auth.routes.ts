@@ -70,7 +70,9 @@ export const authRoutes: FastifyPluginAsync<AuthRoutesOptions> = async (app, opt
     }
   });
 
-  app.post('/auth/logout', async (_request, reply) => {
+  app.post('/auth/logout', async (request, reply) => {
+    const refreshToken = request.cookies[REFRESH_COOKIE];
+    if (refreshToken) await identity.revoke?.(refreshToken);
     clearSessionCookies(reply, cookies);
     return reply.code(204).send();
   });

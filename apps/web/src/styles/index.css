@@ -123,8 +123,9 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     animation-delay: 0s !important;
-    transition-duration: 0.01ms !important;
-    transition-delay: 0s !important;
+    /* Sin transiciones: aun a 0.01 ms, el primer fotograma conserva el valor anterior (p. ej. la opacidad
+       0.5 de un botón recién habilitado) y la medición de contraste lo lee a medias. */
+    transition: none !important;
     scroll-behavior: auto !important;
   }
   /*

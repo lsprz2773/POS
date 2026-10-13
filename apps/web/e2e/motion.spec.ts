@@ -86,5 +86,11 @@ test.describe('reducir movimiento', () => {
     await expect(page.getByRole('dialog')).toBeVisible();
     expect(await nameOf('.sheet')).toBe('none');
     expect(await nameOf('.scrim')).toBe('none');
+    // Tampoco hay transiciones: un botón que se habilita no pasa por una opacidad a medias.
+    const transition = await page
+      .locator('.btn')
+      .first()
+      .evaluate((el) => getComputedStyle(el).transitionProperty);
+    expect(transition).toBe('none');
   });
 });

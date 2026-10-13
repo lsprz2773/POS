@@ -2,6 +2,7 @@ import type { MeResponse } from '@pos/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
 import { api, ApiError } from '../../lib/api';
+import { clearDraft } from '../../lib/draft';
 
 export const ME_KEY = ['me'] as const;
 
@@ -42,6 +43,7 @@ export function useSignOut() {
       await api.post('/auth/logout');
     } finally {
       client.clear();
+      clearDraft();
       void navigate('/login', { replace: true, state: { loggedOut: true } });
     }
   };

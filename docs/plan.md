@@ -80,6 +80,28 @@ Construcción de las pantallas de todas las fases anteriores a partir del diseñ
 Se entrega en seis partes (8a a 8f, T58 de [decisiones.md](decisiones.md)), cada una con su rama y su PR.
 **Aceptación:** pasan los 15 flujos E2E de la sección 10.4 de [requerimientos.md](requerimientos.md) en móvil y escritorio, y los flujos de nueva venta, pago mixto y pendientes se usan con una mano en 360 px.
 
+**Los 15 flujos E2E** viven en `apps/web/e2e/flujos.spec.ts`, con el nombre "Flujo N" y se ejecutan en móvil (360 px) y escritorio:
+
+| N | Flujo |
+|---|---|
+| 1 | Inicio de sesión correcto |
+| 2 | Registrar un producto |
+| 3 | Preparar el día con cantidades |
+| 4 | Venta pagada por completo en efectivo |
+| 5 | Venta pagada por completo con transferencia |
+| 6 | Pago mixto |
+| 7 | Venta parcialmente pagada |
+| 8 | Consultar ventas pendientes |
+| 9 | Pago posterior que liquida la venta |
+| 10 | Reporte del día |
+| 11 | Reportes semanal y mensual |
+| 12 | Cancelar una venta |
+| 13 | Validación de inventario y su restitución al cancelar |
+| 14 | Sesión expirada (se conserva el borrador y se vuelve a la venta) |
+| 15 | Intento de acceso a datos de otra tienda (dos tenants) |
+
+`apps/web/e2e/responsive.spec.ts` revisa las pantallas clave a 320, 390, 820 y 1280 px, en claro y oscuro, con axe y sin desplazamiento horizontal.
+
 ### Fase 9. Despliegue (requiere aprobación explícita)
 Infraestructura como código (D5), Cognito, Neon, Lambda, API Gateway, hosting del frontend, monitoreo, alertas de presupuesto, respaldo y restauración probados, y pruebas de humo.
 Propuesta detallada, topes de costo y partes 9a a 9c en [despliegue.md](despliegue.md) (T86 a T95 de [decisiones.md](decisiones.md)).

@@ -1,7 +1,7 @@
 import { loginRequestSchema } from '@pos/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import { ShoppingBag } from 'lucide-react';
-import { useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router';
 import { Banner } from '../../components/Banner';
 import { Button } from '../../components/Button';
@@ -10,6 +10,7 @@ import { useOnline } from '../../components/OfflineBanner';
 import { copy } from '../../copy/es';
 import { api, ApiError } from '../../lib/api';
 import { messageOf } from '../../lib/errors';
+import { setSessionEnded } from '../../lib/useUnsavedGuard';
 import { ME_KEY, useSession } from './useSession';
 
 type FieldErrors = Partial<Record<'email' | 'password', string>>;
@@ -25,10 +26,19 @@ export function LoginPage() {
   const [errors, setErrors] = useState<FieldErrors>({});
   const [failure, setFailure] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const loggedOut = (location.state as { loggedOut?: boolean } | null)?.loggedOut === true;
+  const state = location.state as { loggedOut?: boolean; from?: string } | null;
+  const loggedOut = state?.loggedOut === true;
+  // Solo se vuelve a rutas internas: nunca a una dirección externa.
+  const from = state?.from;
+  const returnTo =
+    from && from.startsWith('/') && !from.startsWith('//') && from !== '/login' ? from : '/';
+
+  useEffect(() => {
+    setSessionEnded(false);
+  }, []);
 
   if (session.status === 'authenticated' || session.status === 'blocked') {
-    return <Navigate to="/" replace />;
+    return <Navigate to={returnTo} replace />;
   }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -50,7 +60,7 @@ export function LoginPage() {
     try {
       await api.post('/auth/login', { email, password }, { skipRefresh: true });
       await client.invalidateQueries({ queryKey: ME_KEY });
-      void navigate('/', { replace: true });
+      void navigate(returnTo, { replace: true });
     } catch (error) {
       // Mensaje genérico: no se revela si falló el correo o la contraseña.
       setFailure(

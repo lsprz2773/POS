@@ -5,6 +5,10 @@ export const owner = {
   email: process.env.E2E_OWNER_EMAIL!,
   password: process.env.E2E_OWNER_PASSWORD!,
 };
+export const other = {
+  email: process.env.E2E_OTHER_EMAIL!,
+  password: process.env.E2E_OTHER_PASSWORD!,
+};
 export const orphan = {
   email: process.env.E2E_ORPHAN_EMAIL!,
   password: process.env.E2E_ORPHAN_PASSWORD!,

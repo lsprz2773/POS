@@ -169,3 +169,25 @@ describe('menú Más', () => {
     }
   });
 });
+
+describe('regreso tras reautenticar', () => {
+  it('cerrar sesión descarta el borrador de venta', async () => {
+    sessionStorage.setItem(
+      'pos.saleDraft',
+      JSON.stringify({ tenantId: 't1', cart: { x: '1' }, customer: '', note: '' }),
+    );
+    let loggedOut = false;
+    stubApi({
+      'GET /me': () => (loggedOut ? apiError(401, 'unauthenticated', 'x') : { body: ME }),
+      'POST /auth/refresh': apiError(401, 'unauthenticated', 'x'),
+      'POST /auth/logout': () => {
+        loggedOut = true;
+        return { status: 204 };
+      },
+    });
+    renderApp('/perfil');
+    await userEvent.click(await screen.findByRole('button', { name: 'Cerrar sesión' }));
+    await screen.findByRole('heading', { name: 'Inicia sesión' });
+    expect(sessionStorage.getItem('pos.saleDraft')).toBeNull();
+  });
+});

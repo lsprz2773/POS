@@ -4,12 +4,21 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { copy } from '../copy/es';
 
 /**
+ * Al expirar la sesión se sale a iniciar sesión sin preguntar: ya no se puede guardar nada y el
+ * borrador de la venta queda en el navegador (lib/draft.ts). La pantalla de inicio de sesión lo apaga.
+ */
+let sessionEnded = false;
+export const setSessionEnded = (value: boolean) => {
+  sessionEnded = value;
+};
+
+/**
  * Evita perder cambios sin guardar (M6): intercepta la navegación dentro de la app y el cierre de la
  * pestaña. Tras guardar, `allowLeave()` deja salir sin preguntar.
  */
 export function useUnsavedGuard(dirty: boolean) {
   const allowed = useRef(false);
-  const blocker = useBlocker(() => dirty && !allowed.current);
+  const blocker = useBlocker(() => dirty && !allowed.current && !sessionEnded);
 
   useEffect(() => {
     if (!dirty) return;

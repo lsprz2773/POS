@@ -369,3 +369,58 @@ describe('nueva venta: paso 2, cobro', () => {
     expect(screen.getByText('3 piezas · 2 productos')).toBeInTheDocument();
   });
 });
+
+describe('borrador de la venta', () => {
+  it('restaura el carrito guardado de esta tienda al volver a Nueva venta', async () => {
+    stubApi({ ...base, ...day() });
+    const u = user();
+    const first = renderApp('/vender');
+    await u.click(await screen.findByRole('button', { name: 'Agregar Tamal de rajas' }));
+    expect(screen.getByText('1 pieza · 1 producto')).toBeInTheDocument();
+    first.unmount();
+
+    renderApp('/vender');
+    expect(await screen.findByText('1 pieza · 1 producto')).toBeInTheDocument();
+  });
+
+  it('no restaura el borrador de otra tienda', async () => {
+    sessionStorage.setItem(
+      'pos.saleDraft',
+      JSON.stringify({ tenantId: 'otra', cart: { x: '3' }, customer: '', note: '' }),
+    );
+    stubApi({ ...base, ...day() });
+    renderApp('/vender');
+    await screen.findByText('Tamal de rajas');
+    expect(screen.getByText('Agrega al menos un producto para continuar.')).toBeInTheDocument();
+  });
+
+  it('con la sesión vencida al confirmar, conserva el borrador y regresa tras iniciar sesión', async () => {
+    let loggedIn = true;
+    stubApi({
+      ...base,
+      ...day(),
+      'GET /me': () => (loggedIn ? { body: ME } : apiError(401, 'unauthenticated', 'x')),
+      'POST /auth/refresh': apiError(401, 'unauthenticated', 'x'),
+      'POST /sales': () => {
+        loggedIn = false;
+        return apiError(401, 'unauthenticated', 'Sin sesión');
+      },
+      'POST /auth/login': () => {
+        loggedIn = true;
+        return { body: { status: 'ok' } };
+      },
+    });
+    const u = user();
+    renderApp('/vender');
+    await toStep2(u);
+    await u.click(screen.getByRole('button', { name: /Confirmar venta/ }));
+    await u.click(await screen.findByRole('button', { name: 'Iniciar sesión' }));
+
+    await u.type(await screen.findByLabelText('Correo electrónico'), 'ana@tienda.test');
+    await u.type(screen.getByLabelText('Contraseña'), 'x');
+    await u.click(screen.getByRole('button', { name: 'Iniciar sesión' }));
+
+    expect(await screen.findByText('Paso 1 de 2 · Productos')).toBeInTheDocument();
+    expect(await screen.findByText('3 piezas · 2 productos')).toBeInTheDocument();
+  });
+});

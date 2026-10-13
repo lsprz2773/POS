@@ -1,8 +1,10 @@
 import { CalendarDays, Ellipsis, Home, ReceiptText, ShoppingCart } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import { copy } from '../copy/es';
 import { onSessionExpired } from '../lib/api';
+import { setSessionEnded } from '../lib/useUnsavedGuard';
 import { Button } from './Button';
 import { OfflineBanner } from './OfflineBanner';
 import { Sheet } from './Sheet';
@@ -23,6 +25,7 @@ const TAB_NAV = [TODAY, PENDING, SELL, DAY, MORE] as const;
 export function AppShell() {
   const location = useLocation();
   const navigate = useNavigate();
+  const client = useQueryClient();
   const main = useRef<HTMLElement>(null);
   const [expired, setExpired] = useState(false);
   // Vendiendo o viendo una venta, la barra inferior cede su lugar a la barra de acción (como en el diseño).
@@ -103,7 +106,14 @@ export function AppShell() {
           block
           onClick={() => {
             setExpired(false);
-            void navigate('/login', { replace: true });
+            // Se limpia la caché (la sesión ya no vale) y se vuelve aquí tras iniciar sesión; el borrador
+            // de la venta se conserva en el navegador.
+            client.clear();
+            setSessionEnded(true);
+            void navigate('/login', {
+              replace: true,
+              state: { from: `${location.pathname}${location.search}` },
+            });
           }}
         >
           {copy.session.expiredAction}

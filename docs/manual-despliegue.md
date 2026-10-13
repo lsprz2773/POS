@@ -503,7 +503,63 @@ CloudShell: el mismo comando `admin-set-user-password` de la parte 7.2 con la co
 
 ### Respaldo y restauración (parte 9c)
 
-Se agrega en la siguiente entrega: copia semanal cifrada a S3 y prueba de restauración en una rama de Neon. Mientras tanto, Neon conserva un historial corto desde su panel (Branches → Restore).
+**Qué hay.** Cada domingo a las 09:00 UTC (03:00 en la Ciudad de México) una función de AWS (`pos-<entorno>-backup`) exporta **toda la base** a un archivo comprimido y cifrado en un bucket de S3. Se conservan **30 días**; el bucket y la función se crean con el despliegue. Si la función falla, llega una alarma al correo.
+
+**Hacer un respaldo ahora** (cambia `staging` por `prod` cuando toque):
+
+```
+aws lambda invoke --function-name pos-staging-backup --cli-binary-format raw-in-base64-out /tmp/respaldo.json
+cat /tmp/respaldo.json
+```
+
+Debe mostrar la ruta del archivo (`key`), su tamaño y cuántas filas respaldó por tabla.
+
+**Ver los respaldos guardados:**
+
+```
+BUCKET=$(aws cloudformation describe-stacks --stack-name pos-staging --query "Stacks[0].Outputs[?OutputKey=='BackupBucketName'].OutputValue" --output text)
+aws s3 ls "s3://$BUCKET/staging/"
+```
+
+#### Probar la restauración (hazlo una vez antes de usar producción)
+
+Un respaldo sirve solo si se sabe restaurar. Se prueba en una **rama nueva y vacía de Neon**, sin tocar tus datos. Un comando a la vez.
+
+1. En Neon crea una rama `restauracion-prueba` a partir de la rama **principal** (la de producción, que todavía está vacía) y copia su cadena de conexión con "Connection pooling".
+2. En CloudShell, descarga el respaldo más reciente (cambia el nombre del archivo por el que viste en `aws s3 ls`):
+
+   ```
+   aws s3 cp "s3://$BUCKET/staging/pos-AAAAMMDDTHHMMSSZ.ndjson.gz" /tmp/respaldo.ndjson.gz
+   ```
+
+3. Escribe la cadena de la rama de prueba sin que se vea (la línea sola, luego pulsa Enter, pega la cadena y Enter):
+
+   ```
+   read -rs -p "Cadena de la rama de prueba: " DATABASE_URL; echo
+   ```
+
+4. Prepara las tablas de esa rama (migraciones):
+
+   ```
+   export DATABASE_URL; npm run migrate -w @pos/api
+   ```
+
+5. Restaura:
+
+   ```
+   npm run restore -w @pos/api -- --file /tmp/respaldo.ndjson.gz
+   ```
+
+   Muestra cuántas filas restauró por tabla y termina con "Respaldo restaurado". **Compara esos números con los del paso de "Hacer un respaldo ahora"**: deben coincidir.
+6. Limpia y borra la rama de prueba en Neon:
+
+   ```
+   unset DATABASE_URL
+   ```
+
+La restauración se niega si la base de destino **no está vacía** o si es de otra versión del esquema (otra migración), y si algo falla no deja nada a medias.
+
+**Para recuperar de verdad** (desastre): crea una rama nueva y vacía en Neon, migra, restaura el respaldo que elijas y actualiza el parámetro `/pos/<entorno>/database-url` en Parameter Store con la cadena de esa rama. Avísame y lo hacemos juntos.
 
 ### Cuando termine el plan gratuito de AWS
 
@@ -557,6 +613,7 @@ Si quieres borrar un entorno completo (no toca Neon):
 | CloudWatch | registros a 14 días y 2 alarmas por entorno | $0 dentro de la cuota (5 GB de registros y 10 alarmas) |
 | SNS | correos de alarma | $0 |
 | Systems Manager | 2 parámetros estándar | $0 |
+| Lambda y S3 del respaldo | 1 ejecución por semana, archivos de unos MB con borrado a los 30 días | $0 |
 | Budgets | 2 presupuestos con 1 acción | $0 |
 | Neon | proyecto gratuito | $0 |
 

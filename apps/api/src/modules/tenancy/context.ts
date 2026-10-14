@@ -1,3 +1,4 @@
+import type { Role } from '@pos/shared';
 import { AppError } from '../../errors';
 import type { Database } from '../../db/client';
 
@@ -7,14 +8,14 @@ export interface AuthContext {
   email: string;
   tenantId: string;
   tenantName: string;
-  role: 'owner';
+  role: Role;
 }
 
 /** Busca usuario, tienda y rol a partir del sujeto verificado por el proveedor de identidad. */
 export async function findAuthContext(
   db: Database,
   identitySubject: string,
-): Promise<{ context: AuthContext; tenantActive: boolean } | undefined> {
+): Promise<{ context: AuthContext; tenantActive: boolean; memberActive: boolean } | undefined> {
   const row = await db
     .selectFrom('users')
     .innerJoin('memberships', 'memberships.user_id', 'users.id')
@@ -26,6 +27,7 @@ export async function findAuthContext(
       'tenants.name as tenantName',
       'tenants.status',
       'memberships.role',
+      'memberships.status as memberStatus',
     ])
     .where('users.identity_subject', '=', identitySubject)
     .executeTakeFirst();
@@ -36,9 +38,10 @@ export async function findAuthContext(
       email: row.email,
       tenantId: row.tenantId,
       tenantName: row.tenantName,
-      role: row.role as 'owner',
+      role: row.role as Role,
     },
     tenantActive: row.status === 'active',
+    memberActive: row.memberStatus === 'active',
   };
 }
 
@@ -57,6 +60,14 @@ export async function requireAuthContext(
   }
   if (!found.tenantActive) {
     throw new AppError(403, 'tenant_disabled', 'Esta tienda está desactivada.');
+  }
+  // La baja de un vendedor surte efecto en su siguiente petición, aunque su token siga vigente (T109).
+  if (!found.memberActive) {
+    throw new AppError(
+      403,
+      'membership_disabled',
+      'Tu cuenta fue dada de baja. Contacta al propietario de la tienda.',
+    );
   }
   return found.context;
 }

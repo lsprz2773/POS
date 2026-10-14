@@ -21,6 +21,7 @@ import { parseInput } from '../../validation';
 import { recordAudit } from '../audit/audit';
 import { createStoreRepository } from '../store/store.repository';
 import type { AuthContext } from '../tenancy/context';
+import { assertCan, rowScope } from '../tenancy/permissions';
 import { createWorkdayRepository } from '../workdays/workday.repository';
 import type { Clock } from '../workdays/workday.usecases';
 import { hashSaleRequest } from './sale.domain';
@@ -46,10 +47,11 @@ export interface CreateSaleResult {
 }
 
 export async function getSale(db: Database, ctx: AuthContext, id: string): Promise<Sale> {
+  assertCan(ctx, 'sale:read');
   const parsedId = z.uuid().safeParse(id);
   if (!parsedId.success) throw SALE_NOT_FOUND();
 
-  const found = await createSaleRepository(db, ctx.tenantId).findById(parsedId.data);
+  const found = await createSaleRepository(db, ctx.tenantId, rowScope(ctx)).findById(parsedId.data);
   if (!found) throw SALE_NOT_FOUND();
   const settings = await createStoreRepository(db, ctx.tenantId).get();
   const { sale, items, payments, cancellation } = found;
@@ -118,6 +120,7 @@ export async function createSale(
   input: unknown,
   clock: Clock,
 ): Promise<CreateSaleResult> {
+  assertCan(ctx, 'sale:create');
   const { idempotencyKey } = parseInput(z.object({ idempotencyKey: idempotencyKeySchema }), {
     idempotencyKey: rawKey,
   });
@@ -126,9 +129,11 @@ export async function createSale(
 
   /** Id de la venta que esta llave ya creó, si existe; error si el contenido no coincide. */
   const earlierSale = async (executor: Database): Promise<string | undefined> => {
-    const existing = await createSaleRepository(executor, ctx.tenantId).findByIdempotencyKey(
-      idempotencyKey,
-    );
+    const existing = await createSaleRepository(
+      executor,
+      ctx.tenantId,
+      rowScope(ctx),
+    ).findByIdempotencyKey(idempotencyKey);
     if (!existing) return undefined;
     if (existing.requestHash !== requestHash) throw KEY_REUSED;
     return existing.id;
@@ -151,7 +156,7 @@ export async function createSale(
       const workday = await workdays.findByDate(today);
       if (!workday) throw DAY_NOT_PREPARED;
 
-      const sales = createSaleRepository(trx, ctx.tenantId);
+      const sales = createSaleRepository(trx, ctx.tenantId, rowScope(ctx));
       const offers = await sales.lockOffers(
         workday.id,
         data.items.map((item) => item.productId),

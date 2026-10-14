@@ -17,6 +17,7 @@ import { parseInput } from '../../validation';
 import { recordAudit } from '../audit/audit';
 import { createStoreRepository } from '../store/store.repository';
 import type { AuthContext } from '../tenancy/context';
+import { assertCan, rowScope } from '../tenancy/permissions';
 import type { Clock } from '../workdays/workday.usecases';
 import { applyPayments } from './payment.apply';
 import { hashPaymentRequest } from './sale.domain';
@@ -49,6 +50,7 @@ export async function registerPayments(
   input: unknown,
   clock: Clock,
 ): Promise<RegisterPaymentResult> {
+  assertCan(ctx, 'payment:register');
   const parsedId = uuid.safeParse(saleIdParam);
   if (!parsedId.success) throw SALE_NOT_FOUND();
   const saleId = parsedId.data;
@@ -59,9 +61,11 @@ export async function registerPayments(
   const requestHash = hashPaymentRequest(saleId, lines);
 
   const earlierSale = async (executor: Database): Promise<string | undefined> => {
-    const existing = await createSaleRepository(executor, ctx.tenantId).findPaymentsByKey(
-      idempotencyKey,
-    );
+    const existing = await createSaleRepository(
+      executor,
+      ctx.tenantId,
+      rowScope(ctx),
+    ).findPaymentsByKey(idempotencyKey);
     if (!existing) return undefined;
     if (existing.requestHash !== requestHash) throw KEY_REUSED;
     return existing.saleId;
@@ -76,7 +80,7 @@ export async function registerPayments(
 
   try {
     const outcome = await db.transaction().execute(async (trx) => {
-      const sales = createSaleRepository(trx, ctx.tenantId);
+      const sales = createSaleRepository(trx, ctx.tenantId, rowScope(ctx));
       const sale = await sales.lockSale(saleId);
       if (!sale) throw SALE_NOT_FOUND();
 
@@ -120,12 +124,13 @@ export async function voidPayment(
   input: unknown,
   clock: Clock,
 ): Promise<Sale> {
+  assertCan(ctx, 'payment:void');
   const parsedId = uuid.safeParse(paymentIdParam);
   if (!parsedId.success) throw PAYMENT_NOT_FOUND();
   const { reason } = parseInput(voidPaymentSchema, input);
 
   const saleId = await db.transaction().execute(async (trx) => {
-    const sales = createSaleRepository(trx, ctx.tenantId);
+    const sales = createSaleRepository(trx, ctx.tenantId, rowScope(ctx));
 
     // Se ubica el pago sin bloquear para conocer su venta; luego se bloquea primero la venta y después
     // el pago, en el mismo orden que usa el registro de pagos, para no cruzar bloqueos.
@@ -174,15 +179,18 @@ export async function listPending(
   ctx: AuthContext,
   query: unknown,
 ): Promise<PendingList> {
+  assertCan(ctx, 'sale:read');
   const filter = parseInput(listPendingQuerySchema, query);
   if (filter.from && filter.to && filter.to < filter.from) {
     throw new AppError(400, 'validation_error', 'Revisa el rango de fechas.', {
       to: 'La fecha final no puede ser anterior a la inicial.',
     });
   }
-  const { items, total, totalBalance } = await createSaleRepository(db, ctx.tenantId).listPending(
-    filter,
-  );
+  const { items, total, totalBalance } = await createSaleRepository(
+    db,
+    ctx.tenantId,
+    rowScope(ctx),
+  ).listPending(filter);
   return {
     items: items.map((row) => {
       const balance = balanceOf(row.total, row.paid);

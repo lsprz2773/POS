@@ -50,7 +50,9 @@ export interface DailyOffers {
 
 export interface Memberships {
   created_at: Generated<Timestamp>;
+  invited_by: string | null;
   role: string;
+  status: Generated<string>;
   tenant_id: string;
   user_id: string;
 }
@@ -168,6 +170,7 @@ export interface Tenants {
 
 export interface Users {
   created_at: Generated<Timestamp>;
+  display_name: string | null;
   email: string;
   id: Generated<string>;
   identity_subject: string;

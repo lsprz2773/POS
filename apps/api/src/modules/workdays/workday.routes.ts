@@ -25,27 +25,42 @@ export const workdayRoutes: FastifyPluginAsync<{ db: Database; clock: Clock }> =
 ) => {
   app.addHook('preHandler', async (request) => app.authenticate(request));
 
-  app.get('/workdays', async (request) => listWorkdays(db, authOf(request), request.query));
-
-  app.get<{ Params: DateParams }>('/workdays/:date', async (request) =>
-    getWorkday(db, authOf(request), request.params.date, clock),
+  app.get('/workdays', { config: { permission: 'workday:read' } }, async (request) =>
+    listWorkdays(db, authOf(request), request.query),
   );
 
-  app.patch<{ Params: DateParams }>('/workdays/:date', async (request) =>
-    updateWorkdayHours(db, authOf(request), request.params.date, request.body, clock),
+  app.get<{ Params: DateParams }>(
+    '/workdays/:date',
+    { config: { permission: 'workday:read' } },
+    async (request) => getWorkday(db, authOf(request), request.params.date, clock),
   );
 
-  app.post<{ Params: DateParams }>('/workdays/:date/offers', async (request, reply) => {
-    const workday = await addOffer(db, authOf(request), request.params.date, request.body, clock);
-    return reply.code(201).send(workday);
-  });
+  app.patch<{ Params: DateParams }>(
+    '/workdays/:date',
+    { config: { permission: 'workday:hours' } },
+    async (request) =>
+      updateWorkdayHours(db, authOf(request), request.params.date, request.body, clock),
+  );
 
-  app.delete<{ Params: OfferParams }>('/workdays/:date/offers/:offerId', async (request) =>
-    removeOffer(db, authOf(request), request.params.date, request.params.offerId, clock),
+  app.post<{ Params: DateParams }>(
+    '/workdays/:date/offers',
+    { config: { permission: 'workday:prepare' } },
+    async (request, reply) => {
+      const workday = await addOffer(db, authOf(request), request.params.date, request.body, clock);
+      return reply.code(201).send(workday);
+    },
+  );
+
+  app.delete<{ Params: OfferParams }>(
+    '/workdays/:date/offers/:offerId',
+    { config: { permission: 'workday:prepare' } },
+    async (request) =>
+      removeOffer(db, authOf(request), request.params.date, request.params.offerId, clock),
   );
 
   app.post<{ Params: OfferParams }>(
     '/workdays/:date/offers/:offerId/adjustments',
+    { config: { permission: 'workday:prepare' } },
     async (request, reply) => {
       const workday = await adjustOffer(
         db,

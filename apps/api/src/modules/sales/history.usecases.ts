@@ -9,6 +9,7 @@ import type { Database } from '../../db/client';
 import { AppError } from '../../errors';
 import { parseInput } from '../../validation';
 import type { AuthContext } from '../tenancy/context';
+import { assertCan, rowScope } from '../tenancy/permissions';
 import { createSaleRepository } from './sale.repository';
 
 /** Historial de ventas con filtros, búsqueda por folio o cliente y paginación (RNF-006). */
@@ -17,13 +18,14 @@ export async function listSales(
   ctx: AuthContext,
   query: unknown,
 ): Promise<SalesList> {
+  assertCan(ctx, 'sale:read');
   const filter = parseInput(listSalesQuerySchema, query);
   if (filter.from && filter.to && filter.to < filter.from) {
     throw new AppError(400, 'validation_error', 'Revisa el rango de fechas.', {
       to: 'La fecha final no puede ser anterior a la inicial.',
     });
   }
-  const { items, total } = await createSaleRepository(db, ctx.tenantId).list(filter);
+  const { items, total } = await createSaleRepository(db, ctx.tenantId, rowScope(ctx)).list(filter);
   return {
     items: items.map((row) => ({
       id: row.id,

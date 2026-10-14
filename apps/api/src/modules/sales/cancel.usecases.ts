@@ -6,6 +6,7 @@ import { parseInput } from '../../validation';
 import { recordAudit } from '../audit/audit';
 import { createStoreRepository } from '../store/store.repository';
 import type { AuthContext } from '../tenancy/context';
+import { assertCan, rowScope } from '../tenancy/permissions';
 import type { Clock } from '../workdays/workday.usecases';
 import { createSaleRepository } from './sale.repository';
 import { getSale } from './sale.usecases';
@@ -26,12 +27,13 @@ export async function cancelSale(
   input: unknown,
   clock: Clock,
 ): Promise<Sale> {
+  assertCan(ctx, 'sale:cancel');
   const parsedId = z.uuid().safeParse(saleIdParam);
   if (!parsedId.success) throw SALE_NOT_FOUND();
   const { reason } = parseInput(cancelSaleSchema, input);
 
   const saleId = await db.transaction().execute(async (trx) => {
-    const sales = createSaleRepository(trx, ctx.tenantId);
+    const sales = createSaleRepository(trx, ctx.tenantId, rowScope(ctx));
     const sale = await sales.lockSale(parsedId.data);
     if (!sale) throw SALE_NOT_FOUND();
     if (sale.status === 'cancelled') {

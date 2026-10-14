@@ -24,6 +24,7 @@ import { parseInput } from '../../validation';
 import { recordAudit } from '../audit/audit';
 import { createStoreRepository } from '../store/store.repository';
 import type { AuthContext } from '../tenancy/context';
+import { assertCan } from '../tenancy/permissions';
 import { createWorkdayRepository, type WorkdayRow } from './workday.repository';
 
 export type Clock = () => Date;
@@ -128,6 +129,7 @@ export async function getWorkday(
   dateParam: string,
   clock: Clock,
 ): Promise<Workday> {
+  assertCan(ctx, 'workday:read');
   const { settings, today } = await context(db, ctx, clock);
   const date = resolveDate(dateParam, today);
   const repository = createWorkdayRepository(db, ctx.tenantId);
@@ -141,6 +143,7 @@ export async function listWorkdays(
   ctx: AuthContext,
   query: unknown,
 ): Promise<WorkdayList> {
+  assertCan(ctx, 'workday:read');
   const filter = parseInput(listWorkdaysQuerySchema, query);
   if (filter.from && filter.to && filter.to < filter.from) {
     throw new AppError(400, 'validation_error', 'Revisa el rango de fechas.', {
@@ -181,6 +184,7 @@ export async function addOffer(
   input: unknown,
   clock: Clock,
 ): Promise<Workday> {
+  assertCan(ctx, 'workday:prepare');
   const data = parseInput(addOfferSchema, input);
 
   try {
@@ -263,6 +267,7 @@ export async function removeOffer(
   offerIdParam: string,
   clock: Clock,
 ): Promise<Workday> {
+  assertCan(ctx, 'workday:prepare');
   const offerId = parseId(offerIdParam);
 
   return db.transaction().execute(async (trx) => {
@@ -312,6 +317,7 @@ export async function adjustOffer(
   input: unknown,
   clock: Clock,
 ): Promise<Workday> {
+  assertCan(ctx, 'workday:prepare');
   const offerId = parseId(offerIdParam);
   const data = parseInput(addAdjustmentSchema, input);
 
@@ -360,6 +366,7 @@ export async function updateWorkdayHours(
   input: unknown,
   clock: Clock,
 ): Promise<Workday> {
+  assertCan(ctx, 'workday:hours');
   const patch = parseInput(updateWorkdayHoursSchema, input);
 
   return db.transaction().execute(async (trx) => {

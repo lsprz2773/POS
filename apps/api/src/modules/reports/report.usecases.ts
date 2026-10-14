@@ -13,6 +13,7 @@ import { parseInput } from '../../validation';
 import { createSaleRepository } from '../sales/sale.repository';
 import { createStoreRepository } from '../store/store.repository';
 import type { AuthContext } from '../tenancy/context';
+import { assertCan, rowScope } from '../tenancy/permissions';
 import { createWorkdayRepository } from '../workdays/workday.repository';
 import type { Clock } from '../workdays/workday.usecases';
 import { averageTicketCents, formatSignedCents, grossMargin, resolvePeriod } from './report.domain';
@@ -26,12 +27,12 @@ const snapshot = <T>(db: Database, work: (trx: Database) => Promise<T>) =>
 
 async function buildReport(
   db: Database,
-  tenantId: string,
+  ctx: AuthContext,
   period: Period,
   timezone: string,
   topLimit: number,
 ): Promise<Report> {
-  const reports = createReportRepository(db, tenantId);
+  const reports = createReportRepository(db, ctx.tenantId, rowScope(ctx));
   const sales = await reports.sales(period.from, period.to);
   const items = await reports.items(period.from, period.to);
   const collectedBy = await reports.collected(period.from, period.to, timezone);
@@ -74,12 +75,11 @@ export async function getReport(
   query: unknown,
   clock: Clock,
 ): Promise<Report> {
+  assertCan(ctx, 'report:read');
   const parsed = parseInput(reportQuerySchema, query);
   const settings = await createStoreRepository(db, ctx.tenantId).get();
   const period = resolvePeriod(parsed, todayIn(settings.timezone, clock()));
-  return snapshot(db, (trx) =>
-    buildReport(trx, ctx.tenantId, period, settings.timezone, TOP_PRODUCTS),
-  );
+  return snapshot(db, (trx) => buildReport(trx, ctx, period, settings.timezone, TOP_PRODUCTS));
 }
 
 /** Indicadores de hoy para la pantalla principal (RF-079, RNF-044). */
@@ -88,18 +88,13 @@ export async function getDashboard(
   ctx: AuthContext,
   clock: Clock,
 ): Promise<Dashboard> {
+  assertCan(ctx, 'report:read');
   const settings = await createStoreRepository(db, ctx.tenantId).get();
   const today = todayIn(settings.timezone, clock());
 
   const view = await snapshot(db, async (trx) => {
-    const report = await buildReport(
-      trx,
-      ctx.tenantId,
-      { from: today, to: today },
-      settings.timezone,
-      0,
-    );
-    const pending = await createSaleRepository(trx, ctx.tenantId).listPending({
+    const report = await buildReport(trx, ctx, { from: today, to: today }, settings.timezone, 0);
+    const pending = await createSaleRepository(trx, ctx.tenantId, rowScope(ctx)).listPending({
       limit: 1,
       offset: 0,
     });

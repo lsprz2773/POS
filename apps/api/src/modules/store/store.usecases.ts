@@ -3,10 +3,12 @@ import type { Database } from '../../db/client';
 import { parseInput } from '../../validation';
 import { recordAudit } from '../audit/audit';
 import type { AuthContext } from '../tenancy/context';
+import { assertCan } from '../tenancy/permissions';
 import { diffSettings } from './store.domain';
 import { createStoreRepository } from './store.repository';
 
 export function getStore(db: Database, ctx: AuthContext): Promise<StoreSettings> {
+  assertCan(ctx, 'store:read');
   return createStoreRepository(db, ctx.tenantId).get();
 }
 
@@ -16,6 +18,7 @@ export async function updateStore(
   ctx: AuthContext,
   input: unknown,
 ): Promise<StoreSettings> {
+  assertCan(ctx, 'store:update');
   const patch = parseInput(storeSettingsUpdateSchema, input);
 
   return db.transaction().execute(async (trx) => {

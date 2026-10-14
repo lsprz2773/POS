@@ -1,5 +1,6 @@
 import { sql } from 'kysely';
 import type { Database } from '../../db/client';
+import type { RowScope } from '../tenancy/permissions';
 import { COUNTS_AS_SOLD } from '../workdays/sold';
 
 /** Producto ofrecido hoy, ya bloqueado para esta transacción, con lo necesario para vender. */
@@ -83,9 +84,11 @@ export interface SaleItemRow {
 
 /**
  * Repositorio acotado a una tienda: el tenant se fija al construirlo y ningún método lo recibe,
- * de modo que no se puede leer ni escribir una venta de otra tienda.
+ * de modo que no se puede leer ni escribir una venta de otra tienda. Con `scope.sellerId` (un vendedor)
+ * solo ve y toca las ventas que él registró; las de otra persona se comportan como inexistentes (T104).
  */
-export function createSaleRepository(db: Database, tenantId: string) {
+export function createSaleRepository(db: Database, tenantId: string, scope: RowScope = {}) {
+  const own = scope.sellerId;
   return {
     async findByIdempotencyKey(key: string) {
       return db
@@ -238,6 +241,7 @@ export function createSaleRepository(db: Database, tenantId: string) {
         ])
         .where('s.tenant_id', '=', tenantId)
         .where('s.id', '=', id)
+        .$if(own !== undefined, (query) => query.where('s.created_by', '=', own!))
         .executeTakeFirst();
       if (!sale) return undefined;
 
@@ -349,6 +353,7 @@ export function createSaleRepository(db: Database, tenantId: string) {
         ])
         .where('tenant_id', '=', tenantId)
         .where('id', '=', id)
+        .$if(own !== undefined, (query) => query.where('created_by', '=', own!))
         .forUpdate()
         .executeTakeFirst();
     },
@@ -414,7 +419,13 @@ export function createSaleRepository(db: Database, tenantId: string) {
           'status',
         ])
         .where('tenant_id', '=', tenantId)
-        .where('id', '=', id);
+        .where('id', '=', id)
+        .$if(own !== undefined, (query) =>
+          query.where(
+            sql<boolean>`exists (select 1 from sales s where s.id = payments.sale_id
+              and s.tenant_id = payments.tenant_id and s.created_by = ${own})`,
+          ),
+        );
       if (options.forUpdate) query = query.forUpdate();
       return query.executeTakeFirst();
     },
@@ -455,7 +466,8 @@ export function createSaleRepository(db: Database, tenantId: string) {
           .innerJoin('workdays as w', (join) =>
             join.onRef('w.id', '=', 's.workday_id').onRef('w.tenant_id', '=', 's.tenant_id'),
           )
-          .where('s.tenant_id', '=', tenantId);
+          .where('s.tenant_id', '=', tenantId)
+          .$if(own !== undefined, (qb) => qb.where('s.created_by', '=', own!));
         if (filter.from) query = query.where(sql<boolean>`w.business_date >= ${filter.from}::date`);
         if (filter.to) query = query.where(sql<boolean>`w.business_date <= ${filter.to}::date`);
         if (filter.status) query = query.where('s.status', '=', filter.status);
@@ -524,7 +536,8 @@ export function createSaleRepository(db: Database, tenantId: string) {
           )
           .where('s.tenant_id', '=', tenantId)
           .where('s.status', '=', 'active')
-          .where(sql<boolean>`s.total > ${paid}`);
+          .where(sql<boolean>`s.total > ${paid}`)
+          .$if(own !== undefined, (qb) => qb.where('s.created_by', '=', own!));
         if (filter.from) query = query.where(sql<boolean>`w.business_date >= ${filter.from}::date`);
         if (filter.to) query = query.where(sql<boolean>`w.business_date <= ${filter.to}::date`);
         return query;

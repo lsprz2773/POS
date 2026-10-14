@@ -106,7 +106,10 @@ describe('respaldo y restauración', () => {
     expect(Number(before.payments)).toBe(4);
     const dataBefore = await snapshot();
     const backup = await createBackup(db, NOW);
-    expect(backup.header.lastMigration).toMatch(/sale_cancellations/);
+    const { rows: migrations } = await sql<{
+      name: string;
+    }>`select name from pgmigrations order by id desc limit 1`.execute(db);
+    expect(backup.header.lastMigration).toBe(migrations[0]!.name);
     expect(backup.rows).toBeGreaterThan(10);
 
     await resetData(db); // la base queda vacía, como una rama nueva de Neon

@@ -11,7 +11,11 @@ export const reportRoutes: FastifyPluginAsync<{ db: Database; clock: Clock }> = 
 ) => {
   app.addHook('preHandler', async (request) => app.authenticate(request));
 
-  app.get('/dashboard', async (request) => getDashboard(db, authOf(request), clock));
+  app.get('/dashboard', { config: { permission: 'report:read' } }, async (request) =>
+    getDashboard(db, authOf(request), clock),
+  );
 
-  app.get('/reports', async (request) => getReport(db, authOf(request), request.query, clock));
+  app.get('/reports', { config: { permission: 'report:read' } }, async (request) =>
+    getReport(db, authOf(request), request.query, clock),
+  );
 };

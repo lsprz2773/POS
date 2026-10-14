@@ -11,6 +11,7 @@ import { AppError } from '../../errors';
 import { parseInput } from '../../validation';
 import { recordAudit } from '../audit/audit';
 import type { AuthContext } from '../tenancy/context';
+import { assertCan } from '../tenancy/permissions';
 import { auditActionFor, diffProduct } from './product.domain';
 import { createProductRepository } from './product.repository';
 
@@ -49,14 +50,18 @@ export async function listProducts(
   ctx: AuthContext,
   query: unknown,
 ): Promise<ProductList> {
-  const filter = parseInput(listProductsQuerySchema, query);
+  assertCan(ctx, 'product:read');
+  const parsed = parseInput(listProductsQuerySchema, query);
+  // El vendedor consulta el catálogo para armar su día: solo productos activos (T102).
+  const filter = ctx.role === 'seller' ? { ...parsed, status: 'active' as const } : parsed;
   const { items, total } = await createProductRepository(db, ctx.tenantId).list(filter);
   return { items, total, limit: filter.limit, offset: filter.offset };
 }
 
 export async function getProduct(db: Database, ctx: AuthContext, id: string): Promise<Product> {
+  assertCan(ctx, 'product:read');
   const product = await createProductRepository(db, ctx.tenantId).findById(parseProductId(id));
-  if (!product) throw notFound();
+  if (!product || (ctx.role === 'seller' && !product.active)) throw notFound();
   return product;
 }
 
@@ -66,6 +71,7 @@ export async function createProduct(
   ctx: AuthContext,
   input: unknown,
 ): Promise<Product> {
+  assertCan(ctx, 'product:write');
   const data = parseInput(createProductSchema, input);
 
   return withCodeConflict(() =>
@@ -109,6 +115,7 @@ export async function updateProduct(
   id: string,
   input: unknown,
 ): Promise<Product> {
+  assertCan(ctx, 'product:write');
   const productId = parseProductId(id);
   const { version, ...changes } = parseInput(updateProductSchema, input);
 

@@ -345,7 +345,7 @@ Usuario incluido en el MVP. Tiene control de la operación de su propia tienda.
 
 #### Vendedor
 
-Incluido a partir de la fase 10 (sección 6.13), una vez que el propietario apruebe T101 a T115 de [decisiones.md](decisiones.md). Lo da de alta el propietario de la tienda. Prepara su propio día con productos del catálogo del propietario, registra ventas y pagos, y consulta sus ventas, sus pendientes y sus reportes con su utilidad bruta. No crea ni edita productos, no configura la tienda ni gestiona a otras personas, y no cancela ventas ni anula pagos. No existe un rol "administrador" aparte: el propietario es quien gestiona el equipo.
+Incluido a partir de la fase 10 (sección 6.13), una vez que el propietario apruebe T101 a T115 de [decisiones.md](decisiones.md). Lo da de alta el propietario de la tienda. Prepara su propio día con productos del catálogo del propietario, registra ventas y pagos, cancela sus propias ventas y anula sus propios pagos, y consulta sus ventas, sus pendientes y sus reportes con su utilidad bruta. No crea ni edita productos, no ajusta el horario de la jornada, no configura la tienda ni gestiona a otras personas, y no puede cambiar su contraseña (la fija el propietario al darlo de alta). No existe un rol "administrador" aparte: el propietario es quien gestiona el equipo.
 
 #### Administrador global de plataforma
 
@@ -364,12 +364,12 @@ No se requiere interfaz de administración global durante el MVP. Cualquier nece
 | Registrar ventas | Sí | Sí | No |
 | Registrar pagos | Sí | Sí, en sus ventas | No |
 | Consultar ventas, detalle y pendientes | Todas | Solo las suyas | No |
-| Cancelar ventas y anular pagos | Sí | No | No |
+| Cancelar ventas y anular pagos | Sí, de toda la tienda | Sí, solo de sus ventas | No |
 | Consultar reportes y utilidad bruta | De toda la tienda | Solo los suyos | No |
 | Reportes del equipo (por vendedor y lo que se le debe a cada uno) | Sí | No | No |
-| Alta, baja y restablecer contraseña de vendedores | Sí | No | No |
+| Alta y baja (o reactivación) de vendedores | Sí | No | No |
 | Configurar tienda | Sí | No (solo lee moneda y zona horaria) | Soporte excepcional |
-| Cambiar su propia contraseña | Sí | Sí | No |
+| Cambiar su propia contraseña desde la app | No por ahora | No por ahora | No |
 | Acceder a otra tienda | No | No | Solo mediante mecanismos técnicos auditados |
 
 ---|---:|---:|---:|
@@ -1053,7 +1053,7 @@ Alta, posterior al MVP. Requiere aprobación del propietario (T101 a T115 de [de
 
 - El propietario entra a Equipo, da de alta un vendedor (nombre, correo y contraseña inicial) y se la entrega.
 - El vendedor inicia sesión, prepara su día (elige productos del catálogo y cantidades), vende y cobra.
-- El propietario consulta los reportes del equipo y, cuando hace falta, da de baja o restablece la contraseña de un vendedor.
+- El propietario consulta los reportes del equipo y, cuando hace falta, da de baja o reactiva a un vendedor.
 
 #### Requerimientos funcionales
 
@@ -1065,7 +1065,7 @@ Roles y autorización
 - RF-126. El permiso deberá verificarse en el caso de uso y no solo en la ruta, y el control de la interfaz será solo una comodidad.
 - RF-127. Un vendedor solo podrá consultar y operar las ventas, pagos, pendientes, historial, dashboard y reportes de las ventas que él registró. Una venta de otro vendedor deberá responderse como no disponible.
 - RF-128. Un vendedor no podrá crear, editar, activar ni desactivar productos, ni modificar la configuración de la tienda ni el horario de una jornada. Sí podrá consultar los productos activos con su precio y su costo.
-- RF-129. Un vendedor no podrá cancelar ventas ni anular pagos.
+- RF-129. Un vendedor podrá cancelar sus propias ventas y anular sus propios pagos, con motivo y con las mismas reglas que el propietario (RF-106 a RF-113). No podrá hacerlo sobre ventas o pagos de otra persona. Cancelar restituye el inventario a la disponibilidad de esa venta cuando aplique.
 
 Inventario del día por persona
 
@@ -1076,12 +1076,12 @@ Inventario del día por persona
 
 Gestión del equipo
 
-- RF-134. El propietario podrá dar de alta un vendedor con nombre, correo y contraseña inicial que cumpla la política de contraseñas.
+- RF-134. El propietario podrá dar de alta un vendedor registrando su correo y una contraseña (y un nombre para mostrar) que cumpla la política de contraseñas; con eso el vendedor podrá iniciar sesión.
 - RF-135. El propietario podrá dar de baja a un vendedor; su acceso deberá bloquearse de inmediato y su historial se conservará. También podrá reactivarlo.
-- RF-136. El propietario podrá restablecer la contraseña de un vendedor.
-- RF-137. Cualquier usuario podrá cambiar su propia contraseña indicando la actual.
+- RF-136. Por ahora la contraseña que fija el propietario no se podrá cambiar desde la app, ni por el vendedor ni por el propietario. Si se olvida, se restablece desde CloudShell (manual de despliegue). Cambiar y restablecer contraseñas desde la app queda como mejora futura.
+- RF-137. La app no mostrará ninguna pantalla de cambio ni de restablecimiento de contraseña (T108).
 - RF-138. Las contraseñas no deberán guardarse, registrarse en logs ni aparecer en la auditoría.
-- RF-139. El alta, la baja, la reactivación y el restablecimiento deberán quedar auditados con usuario y fecha.
+- RF-139. El alta, la baja y la reactivación deberán quedar auditadas con usuario y fecha.
 - RF-140. Un correo no podrá pertenecer a más de una tienda.
 
 Reportes del equipo
@@ -1179,9 +1179,8 @@ La aplicación tendrá como mínimo las siguientes áreas:
 11. Reportes.
 12. Configuración de tienda.
 13. Perfil y cierre de sesión.
-14. Equipo: lista, alta, baja, reactivación y restablecimiento de contraseña de vendedores (fase 10).
+14. Equipo: lista, alta, baja y reactivación de vendedores (fase 10).
 15. Reportes del equipo: por vendedor y su detalle, y el pendiente por cobrar de cada uno (fase 10).
-16. Cambio de contraseña (fase 10).
 
 #### Ejemplos de pantallas
 

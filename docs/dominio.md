@@ -73,7 +73,7 @@ erDiagram
 8. Una operación repetida con la misma llave de idempotencia no duplica efectos.
 9. Venta e inventario se confirman o se revierten juntos.
 10. (Fase 10) Toda operación verifica el permiso del rol en el caso de uso; una ruta privada sin permiso declarado no arranca.
-11. (Fase 10) Un `seller` solo ve y opera las ventas y pagos que él registró; un recurso de otro vendedor responde 404.
+11. (Fase 10) Un `seller` solo ve y opera (incluido cancelar y anular) las ventas y pagos que él registró; un recurso de otro vendedor responde 404.
 12. (Fase 10) Una venta solo descuenta la disponibilidad de quien la registra, y ese vendedor solo vende lo que preparó.
 13. (Fase 10) Un usuario dado de baja no puede operar desde su siguiente petición, aunque su token siga vigente; su historial se conserva.
 14. (Fase 10) La suma de las filas del reporte por vendedor cuadra con el reporte general.
@@ -111,12 +111,12 @@ erDiagram
 1. Solo el `owner`. Entrada: nombre, correo y contraseña inicial.
 2. Se valida el correo (único en todo el sistema), la política de contraseña y el tope de 10 vendedores.
 3. Se crea la cuenta en el proveedor de identidad; luego, en una transacción, `User`, `Membership` (`seller`, `active`) y auditoría. Si la base falla, se borra la cuenta creada.
-4. La contraseña no se guarda ni se registra. El propietario se la entrega al vendedor, que puede cambiarla en su perfil.
+4. La contraseña no se guarda ni se registra. Con ese correo y esa contraseña el vendedor inicia sesión. Por ahora no se puede cambiar desde la app (T108).
 
 ### Baja y reactivación (fase 10)
 1. Solo el `owner`. La baja marca la membresía `disabled`, deshabilita la cuenta en el proveedor y cierra sus sesiones.
 2. Desde su siguiente petición el usuario recibe un rechazo; sus ventas, pagos y disponibilidades se conservan.
-3. La reactivación revierte el estado y habilita la cuenta. Restablecer la contraseña la fija de nuevo en el proveedor.
+3. La reactivación revierte el estado y habilita la cuenta. Restablecer una contraseña olvidada se hace fuera de la app, en CloudShell (T108).
 
 ## Definiciones de métricas
 

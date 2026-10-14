@@ -29,7 +29,7 @@ Guía paso a paso para poner el POS en internet con servicios gratuitos. Está e
 
 Las partes 1 a 7 las hace la primera vez que despliegas; las partes 6, 8 y 9 se repiten en cada versión nueva.
 
-> **Equipo y vendedores (fase 10).** Cuando se publique la fase 10 ([plan.md](plan.md)), la parte 10 trae la sección **Equipo: vendedores** y la parte 8.1 suma los flujos 16 a 22. Esos pasos aplican **solo después** de esa versión: hoy la app no tiene Equipo y tu cuenta ya es la de propietario, así que no hay nada que configurar de antemano.
+> **Equipo y vendedores (fase 10).** Cuando se publique la fase 10 ([plan.md](plan.md)), la parte 10 trae la sección **Equipo: vendedores** y la parte 8.1 suma los flujos 16 a 21. Esos pasos aplican **solo después** de esa versión: hoy la app no tiene Equipo y tu cuenta ya es la de propietario, así que no hay nada que configurar de antemano.
 
 ---
 
@@ -405,7 +405,7 @@ Además de tu prueba a mano, GitHub puede recorrer los 15 flujos del documento d
 2. En GitHub → **Settings → Environments → New environment**: `staging`.
    - **Environment variables:** `E2E_BASE_URL` = la dirección de staging, sin `/` al final.
    - **Environment secrets:** `E2E_OWNER_EMAIL` y `E2E_OWNER_PASSWORD` (la primera tienda), `E2E_OTHER_EMAIL` y `E2E_OTHER_PASSWORD` (la segunda).
-   - **Solo desde la fase 10:** los flujos 16 a 22 (equipo y vendedores) los hace la primera tienda de pruebas con su propia cuenta de propietario. Necesitan además un vendedor fijo (hay un tope de 10 por tienda, así que se crea una vez y se reutiliza): agrega los secretos `E2E_SELLER_EMAIL` (por ejemplo `tucorreo+e2evend@gmail.com`) y `E2E_SELLER_PASSWORD` (una contraseña nueva de 12 caracteres o más). La primera ejecución lo da de alta desde Equipo; las siguientes lo reutilizan. Los detalles se confirman al entregar la parte 10e.
+   - **Solo desde la fase 10:** los flujos 16 a 21 (equipo y vendedores) los hace la primera tienda de pruebas con su propia cuenta de propietario. Necesitan además un vendedor fijo (hay un tope de 10 por tienda, así que se crea una vez y se reutiliza): agrega los secretos `E2E_SELLER_EMAIL` (por ejemplo `tucorreo+e2evend@gmail.com`) y `E2E_SELLER_PASSWORD` (una contraseña nueva de 12 caracteres o más). La primera ejecución lo da de alta desde Equipo; las siguientes lo reutilizan. Los detalles se confirman al entregar la parte 10e. Como la contraseña no se puede cambiar desde la app, este vendedor se queda con la que le pongas.
 3. GitHub → **Actions → E2E staging → Run workflow**. Tarda unos 8 a 12 minutos.
 4. Debe terminar en verde. Si falla, abre la ejecución: las trazas de los fallos quedan como archivo descargable durante 7 días.
 
@@ -506,15 +506,16 @@ Vuelve a ejecutar `deploy.sh` con la etiqueta de la versión anterior (`git chec
 **Dar de alta un vendedor** (desde la app, con tu cuenta de propietario):
 
 1. **Más → Equipo → Agregar vendedor.**
-2. Escribe su nombre, su correo y una **contraseña inicial** de al menos 12 caracteres, con mayúscula, minúscula y número. La app no la guarda ni la vuelve a mostrar.
+2. Escribe su nombre, su **correo** y su **contraseña** de al menos 12 caracteres, con mayúscula, minúscula y número. La app no la guarda ni la vuelve a mostrar, y **no se puede cambiar desde la app** por ahora: con ese correo y esa contraseña el vendedor inicia sesión.
 3. Pulsa **Crear vendedor**. Debe aparecer en la lista como **Activo**.
-4. Entrégale su correo y su contraseña **en persona o por un canal privado**, nunca en un grupo. Pídele que la cambie en **Más → Perfil → Cambiar contraseña** en su primer inicio de sesión.
+4. Entrégale su correo y su contraseña **en persona o por un canal privado**, nunca en un grupo. Elige una contraseña que no uses en ningún otro lado y anótala en un lugar seguro: no hay forma de verla después (si se olvida, ver "Dar de baja, reactivar o restablecer").
 
 **Qué hace y qué no hace un vendedor:**
 
 - Abre **Día** al empezar su jornada y elige qué productos de **tu catálogo** venderá y cuántos. Sin eso no puede vender: cada quien vende solo lo que preparó.
 - Vende, cobra y ve **sus** pendientes, su historial y sus reportes con su utilidad bruta, calculada con los precios y costos que tú fijaste.
-- No crea ni edita productos, no cambia la configuración ni el horario, no cancela ventas ni anula pagos, y no ve las ventas de otra persona.
+- **Cancela sus propias ventas y anula sus propios pagos**, con motivo, igual que tú; el inventario vuelve a su disponibilidad.
+- No crea ni edita productos, no cambia la configuración ni el horario, no cambia su contraseña y no ve ni toca las ventas de otra persona.
 
 **Lo que ves tú desde que existe el primer vendedor:**
 
@@ -524,11 +525,10 @@ Vuelve a ejecutar `deploy.sh` con la etiqueta de la versión anterior (`git chec
 - **Equipo → Ver su día:** el inventario del día de un vendedor, solo para consultar.
 - En una tienda sin vendedores nada de esto aparece.
 
-**Dar de baja, reactivar o restablecer:**
+**Dar de baja, reactivar o restablecer la contraseña:**
 
 - **Dar de baja** (Equipo → el vendedor → **Dar de baja**): deja de poder entrar en su siguiente toque; sus ventas y reportes se conservan. Puedes **reactivarlo** cuando quieras.
-- **Restablecer contraseña** (Equipo → el vendedor → **Restablecer contraseña**): escribes una nueva y se la das. Úsalo si la olvidó.
-- Tu propia contraseña olvidada se cambia en CloudShell (siguiente sección), no desde la app.
+- **Restablecer una contraseña olvidada:** la app no lo hace (decisión del propietario, T108). En CloudShell usa el comando de la parte 7.2 (pasos 1 a 4) con el **correo del vendedor** y la contraseña nueva, y entrégasela. Lo mismo vale para tu propia contraseña.
 
 **Probar en el teléfono (hazlo en staging antes de producción):**
 
@@ -537,13 +537,14 @@ Vuelve a ejecutar `deploy.sh` con la etiqueta de la versión anterior (`git chec
 3. Comprueba que ve **Hoy, Vender, Pendientes, Día y Reportes**, y que **no** ve Catálogo, Configuración ni Equipo (si pegas esas direcciones, vuelve a Hoy con un aviso).
 4. Como vendedor: prepara su día con un producto, haz una venta y cóbrala.
 5. Como propietario: abre **Reportes → Por vendedor** y comprueba que la venta aparece a nombre del vendedor y que la suma cuadra con **Reportes**. Deja una venta sin cobrar y comprueba que sale en "lo que se le debe".
-6. Da de baja al vendedor de prueba y comprueba que ya no puede entrar.
+6. Como vendedor, cancela una venta tuya y comprueba que el inventario vuelve a su día.
+7. Da de baja al vendedor de prueba y comprueba que ya no puede entrar.
 
 **Si algo no cuadra,** la parte 11 tiene los síntomas más comunes de esta función.
 
 ### Cambiar una contraseña olvidada
 
-CloudShell: el mismo comando `admin-set-user-password` de la parte 7.2 con la contraseña nueva.
+CloudShell: el mismo comando `admin-set-user-password` de la parte 7.2 con la contraseña nueva. Sirve también para un **vendedor** (usa su correo): la app no cambia contraseñas por ahora.
 
 ### Si llegó la alerta de presupuesto al 100 %
 
@@ -633,7 +634,7 @@ Agenda el recordatorio en tu calendario ahora (fecha de vencimiento menos 30 dí
 | `/api/health` responde pero `/api/health/ready` da 503 | La base no responde: Neon puede estar pausada (reintenta) o la cadena del parámetro es incorrecta. |
 | Iniciar sesión dice "Correo o contraseña incorrectos" | Lo más probable: la contraseña nunca se fijó. Comprueba con el paso 5 de 7.2: si dice `FORCE_CHANGE_PASSWORD`, repite 7.2 pegando **un comando a la vez**. Si dice `CONFIRMED`: correo distinto al del alta o contraseña mal escrita. |
 | Inicia sesión y pide algo de "tienda" o aparece "tu cuenta aún no tiene una tienda" | Falta ejecutar `provision.sh` para ese correo en ese entorno. Si es un **vendedor** que acabas de crear y falló el alta a medias, bórralo y créalo de nuevo desde Equipo; la cuenta huérfana no entra. |
-| Un vendedor no puede entrar (fase 10) | En Equipo debe estar **Activo** (si dice Dado de baja, reactívalo). Si sigue, restablece su contraseña desde Equipo y vuelve a dársela: el correo debe ser exactamente el del alta. |
+| Un vendedor no puede entrar (fase 10) | En Equipo debe estar **Activo** (si dice Dado de baja, reactívalo). Si sigue, restablece su contraseña en CloudShell (parte 7.2, con el correo del vendedor) y vuelve a dársela: el correo debe ser exactamente el del alta. |
 | Crear o dar de baja a un vendedor falla (fase 10) | Mira CloudWatch → `/aws/lambda/pos-<entorno>-api`. `AccessDenied` sobre `cognito-idp`: la plantilla de esa versión no se aplicó; repite `BUILD=1 ./infra/deploy.sh`. "Ya existe un usuario con ese correo": ese correo ya tiene cuenta. "Alcanzaste el tope de vendedores": son 10 por tienda; da de baja a alguien que no uses o pídelo ampliar. |
 | Un vendedor dice que no tiene permiso, o no ve una pantalla (fase 10) | Es lo esperado para Catálogo, Configuración, Equipo y el reporte del equipo. Si ve algo que no debía, o no ve algo que sí (Hoy, Vender, Pendientes, Día, Reportes propios), avísame con el nombre de la pantalla. |
 | Un vendedor no puede vender y dice que el producto no está disponible hoy (fase 10) | Cada quien vende solo lo que preparó: que abra **Día** y agregue el producto con su cantidad. |
@@ -689,7 +690,7 @@ Los números vienen de las páginas de precios al momento de escribir esto y pue
 | `apps/api/src/lambda.ts` | La API dentro de Lambda |
 | `apps/api/src/modules/auth/cognito-identity-provider.ts` | Inicio de sesión con Cognito (y, desde la fase 10, alta, baja y contraseña de vendedores) |
 | `packages/shared/src/permissions.ts` y `apps/api/src/modules/team/` | Fase 10: permisos por rol y gestión del equipo |
-| `apps/web/e2e/equipo.spec.ts` | Fase 10: flujos E2E 16 a 22 (equipo y vendedores) |
+| `apps/web/e2e/equipo.spec.ts` | Fase 10: flujos E2E 16 a 21 (equipo y vendedores) |
 
 ## Apéndice C. Glosario
 

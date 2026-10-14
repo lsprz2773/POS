@@ -16,4 +16,5 @@ export * from './products';
 export * from './reports';
 export * from './sales';
 export * from './store';
+export * from './team';
 export * from './workdays';

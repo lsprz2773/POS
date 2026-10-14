@@ -176,6 +176,19 @@ const MATRIX: { route: string; permission: Permission | 'any'; url: string; payl
     url: `/api/payments/${randomUUID()}/void`,
     payload: {},
   },
+  { route: 'GET /api/team', permission: 'team:manage', url: '/api/team' },
+  {
+    route: 'POST /api/team/sellers',
+    permission: 'team:manage',
+    url: '/api/team/sellers',
+    payload: {},
+  },
+  {
+    route: 'PATCH /api/team/:userId',
+    permission: 'team:manage',
+    url: `/api/team/${randomUUID()}`,
+    payload: {},
+  },
   { route: 'GET /api/dashboard', permission: 'report:read', url: '/api/dashboard' },
   { route: 'GET /api/reports', permission: 'report:read', url: '/api/reports' },
 ];

@@ -2,7 +2,8 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { createDb, type Database } from '../../src/db/client';
 import { buildApp } from '../../src/app';
-import { createLocalIdentityProvider } from '../../src/modules/auth/local-identity-provider';
+import type { UserDirectory } from '../../src/modules/auth/identity-provider';
+import { createLocalIdentity } from '../../src/modules/auth/local-identity-provider';
 import { provisionTenant } from '../../src/modules/tenancy/provision';
 
 // Valores aleatorios por ejecución: no hay credenciales escritas en el código.
@@ -19,8 +20,8 @@ export const TEST_USERS = [
   { email: 'sofia@tienda-b.test', password: randomUUID() },
 ];
 
-export function makeIdentity(overrides: { accessTtlSeconds?: number } = {}) {
-  return createLocalIdentityProvider({
+export function makeLocalIdentity(overrides: { accessTtlSeconds?: number } = {}) {
+  return createLocalIdentity({
     secret: TEST_SECRET,
     usersJson: JSON.stringify(TEST_USERS),
     accessTtlSeconds: overrides.accessTtlSeconds ?? 900,
@@ -28,18 +29,30 @@ export function makeIdentity(overrides: { accessTtlSeconds?: number } = {}) {
   });
 }
 
+/** Solo el proveedor de identidad, para pruebas que no administran cuentas. */
+export const makeIdentity = (overrides: { accessTtlSeconds?: number } = {}) =>
+  makeLocalIdentity(overrides).provider;
+
 /** Base que no abre conexiones hasta que alguien la consulta (para pruebas sin PostgreSQL). */
 export const lazyDb = (): Database => createDb('postgres://pos@127.0.0.1:1/ninguna');
 
 export function makeApp(
   db: Database,
-  extra: { checkDatabase?: () => Promise<void>; clock?: () => Date } = {},
+  extra: {
+    checkDatabase?: () => Promise<void>;
+    clock?: () => Date;
+    /** Para espiar o fallar las llamadas a la administración de cuentas. */
+    wrapDirectory?: (directory: UserDirectory) => UserDirectory;
+  } = {},
 ): FastifyInstance {
+  const { provider, directory } = makeLocalIdentity();
   return buildApp({
     db,
-    identity: makeIdentity(),
+    identity: provider,
+    directory: extra.wrapDirectory ? extra.wrapDirectory(directory) : directory,
     config: { APP_ORIGIN, NODE_ENV: 'test' },
-    ...extra,
+    ...(extra.checkDatabase ? { checkDatabase: extra.checkDatabase } : {}),
+    ...(extra.clock ? { clock: extra.clock } : {}),
   });
 }
 

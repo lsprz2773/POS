@@ -6,18 +6,21 @@ import type { Config } from './config';
 import type { Database } from './db/client';
 import { AppError } from './errors';
 import { authRoutes } from './modules/auth/auth.routes';
-import type { IdentityProvider } from './modules/auth/identity-provider';
+import type { IdentityProvider, UserDirectory } from './modules/auth/identity-provider';
 import { authPlugin } from './modules/auth/plugin';
 import { productRoutes } from './modules/products/product.routes';
 import { reportRoutes } from './modules/reports/report.routes';
 import { saleRoutes } from './modules/sales/sale.routes';
 import { storeRoutes } from './modules/store/store.routes';
+import { teamRoutes } from './modules/team/team.routes';
 import { workdayRoutes } from './modules/workdays/workday.routes';
 import { healthRoutes } from './routes/health';
 
 export interface AppOptions {
   db: Database;
   identity: IdentityProvider;
+  /** Alta y baja de cuentas en el proveedor de identidad (equipo, fase 10c). */
+  directory: UserDirectory;
   config: Pick<Config, 'APP_ORIGIN' | 'NODE_ENV'>;
   logger?: FastifyServerOptions['logger'];
   /** Reloj del servidor; las pruebas lo fijan para controlar "hoy". */
@@ -30,7 +33,7 @@ const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
 /** Construye la aplicación sin escuchar un puerto, para poder probarla y usarla en Lambda. */
 export function buildApp(options: AppOptions): FastifyInstance {
-  const { db, identity, config } = options;
+  const { db, identity, directory, config } = options;
   const app = Fastify({
     logger: options.logger ?? false,
     requestIdHeader: 'x-request-id',
@@ -96,6 +99,7 @@ export function buildApp(options: AppOptions): FastifyInstance {
         cookies: { secure: config.NODE_ENV === 'production' },
       });
       await api.register(storeRoutes, { db });
+      await api.register(teamRoutes, { db, directory });
       await api.register(productRoutes, { db });
       const clock = options.clock ?? (() => new Date());
       await api.register(workdayRoutes, { db, clock });

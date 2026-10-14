@@ -4,7 +4,7 @@ import { sql } from 'kysely';
 import { buildApp, type AppOptions } from './app';
 import { loadConfig, type Config } from './config';
 import { createDb, type Database } from './db/client';
-import { createIdentityProvider } from './identity';
+import { createIdentity } from './identity';
 
 /** Lee la cadena de conexión de Parameter Store (SecureString); nunca viaja en variables de la plantilla. */
 async function databaseUrlOf(config: Config): Promise<string> {
@@ -24,9 +24,11 @@ export const LAMBDA_POOL_SIZE = 2;
 export async function createHandler(overrides: Partial<AppOptions> & { db?: Database } = {}) {
   const config = loadConfig();
   const db = overrides.db ?? createDb(await databaseUrlOf(config), LAMBDA_POOL_SIZE);
+  const { identity, directory } = createIdentity(config);
   const app = buildApp({
     db,
-    identity: createIdentityProvider(config),
+    identity,
+    directory,
     config,
     logger: { level: process.env.LOG_LEVEL ?? 'info' },
     checkDatabase: async () => {

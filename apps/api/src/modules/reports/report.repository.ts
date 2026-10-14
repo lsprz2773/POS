@@ -1,5 +1,6 @@
 import { sql } from 'kysely';
 import type { Database } from '../../db/client';
+import type { RowScope } from '../tenancy/permissions';
 
 export interface SalesAggregate {
   salesCount: number;
@@ -21,8 +22,10 @@ export interface TopProductRow {
  * Consultas de agregación de reportes y dashboard. Todo se suma en la base (RNF-007) y el tenant se
  * fija al construir el repositorio. Las ventas se ubican por la fecha de negocio de su jornada; los
  * pagos, por el instante en que se recibieron, convertido a la zona horaria de la tienda (RF-095).
+ * Con `scope.sellerId` el reporte es el mismo cálculo acotado a las ventas de esa persona (T104).
  */
-export function createReportRepository(db: Database, tenantId: string) {
+export function createReportRepository(db: Database, tenantId: string, scope: RowScope = {}) {
+  const ownSales = scope.sellerId ? sql`and s.created_by = ${scope.sellerId}` : sql``;
   const inPeriod = (from: string, to: string) =>
     sql`w.tenant_id = s.tenant_id and w.business_date between ${from}::date and ${to}::date`;
 
@@ -43,7 +46,7 @@ export function createReportRepository(db: Database, tenantId: string) {
           select coalesce(sum(pay.amount), 0) as paid from payments pay
           where pay.sale_id = s.id and pay.tenant_id = s.tenant_id and pay.status = 'valid'
         ) p
-        where s.tenant_id = ${tenantId}`.execute(db);
+        where s.tenant_id = ${tenantId} ${ownSales}`.execute(db);
       return rows[0]!;
     },
 
@@ -56,7 +59,7 @@ export function createReportRepository(db: Database, tenantId: string) {
         from sale_items si
         join sales s on s.id = si.sale_id and s.tenant_id = si.tenant_id
         join workdays w on w.id = s.workday_id and ${inPeriod(from, to)}
-        where si.tenant_id = ${tenantId} and s.status = 'active'`.execute(db);
+        where si.tenant_id = ${tenantId} and s.status = 'active' ${ownSales}`.execute(db);
       return rows[0]!;
     },
 
@@ -70,7 +73,7 @@ export function createReportRepository(db: Database, tenantId: string) {
         select p.method, sum(p.amount)::numeric(14, 2)::text as amount
         from payments p
         join sales s on s.id = p.sale_id and s.tenant_id = p.tenant_id
-        where p.tenant_id = ${tenantId} and p.status = 'valid' and s.status = 'active'
+        where p.tenant_id = ${tenantId} and p.status = 'valid' and s.status = 'active' ${ownSales}
           and p.created_at >= (${from}::date)::timestamp at time zone ${timezone}
           and p.created_at < (${to}::date + 1)::timestamp at time zone ${timezone}
         group by p.method`.execute(db);
@@ -90,7 +93,7 @@ export function createReportRepository(db: Database, tenantId: string) {
         from sale_items si
         join sales s on s.id = si.sale_id and s.tenant_id = si.tenant_id
         join workdays w on w.id = s.workday_id and ${inPeriod(from, to)}
-        where si.tenant_id = ${tenantId} and s.status = 'active'
+        where si.tenant_id = ${tenantId} and s.status = 'active' ${ownSales}
         group by si.product_id
         order by sum(si.quantity) desc, sum(si.subtotal) desc, si.product_id
         limit ${limit}`.execute(db);

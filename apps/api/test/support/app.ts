@@ -13,6 +13,10 @@ export const TEST_USERS = [
   { email: 'ana@tienda-a.test', password: randomUUID() },
   { email: 'beto@tienda-b.test', password: randomUUID() },
   { email: 'sin-tienda@test.test', password: randomUUID() },
+  // Vendedores (fase 10): dos de la tienda A y uno de la B.
+  { email: 'vera@tienda-a.test', password: randomUUID() },
+  { email: 'raul@tienda-a.test', password: randomUUID() },
+  { email: 'sofia@tienda-b.test', password: randomUUID() },
 ];
 
 export function makeIdentity(overrides: { accessTtlSeconds?: number } = {}) {
@@ -85,6 +89,27 @@ export async function createTwoTenants(app: FastifyInstance, db: Database) {
       cookie: await loginAs(app, b!.email, b!.password),
     } as Session,
   };
+}
+
+/** Da de alta a un vendedor directo en la base (el alta desde la app llega con la parte 10c) y abre su sesión. */
+export async function addSeller(
+  app: FastifyInstance,
+  db: Database,
+  tenantId: string,
+  email: string,
+  status: 'active' | 'disabled' = 'active',
+): Promise<Session> {
+  const user = await db
+    .insertInto('users')
+    .values({ email, identity_subject: `local:${email}` })
+    .returning('id')
+    .executeTakeFirstOrThrow();
+  await db
+    .insertInto('memberships')
+    .values({ tenant_id: tenantId, user_id: user.id, role: 'seller', status })
+    .execute();
+  const password = TEST_USERS.find((u) => u.email === email)!.password;
+  return { tenantId, userId: user.id, email, cookie: await loginAs(app, email, password) };
 }
 
 /** Limpia los datos de negocio entre pruebas (conserva el control de migraciones). */

@@ -11,6 +11,7 @@ import type { Database } from '../../db/client';
 import { AppError } from '../../errors';
 import { recordAudit } from '../audit/audit';
 import type { AuthContext } from '../tenancy/context';
+import { rowScope } from '../tenancy/permissions';
 import { createSaleRepository } from './sale.repository';
 
 export interface PaymentTarget {
@@ -40,7 +41,7 @@ export async function applyPayments(
   },
 ): Promise<void> {
   const { sale, lines } = params;
-  const sales = createSaleRepository(trx, ctx.tenantId);
+  const sales = createSaleRepository(trx, ctx.tenantId, rowScope(ctx));
 
   const balance = balanceOf(sale.total, await sales.paidAmount(sale.id));
   const requested = sumMoney(lines.map((line) => line.amount));

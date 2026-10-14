@@ -5,6 +5,8 @@ export const errorCodes = [
   'invalid_credentials',
   'store_not_configured',
   'tenant_disabled',
+  'membership_disabled',
+  'forbidden',
   'validation_error',
   'origin_not_allowed',
   'not_found',

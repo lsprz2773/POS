@@ -7,18 +7,24 @@ import { createProduct, getProduct, listProducts, updateProduct } from './produc
 export const productRoutes: FastifyPluginAsync<{ db: Database }> = async (app, { db }) => {
   app.addHook('preHandler', async (request) => app.authenticate(request));
 
-  app.get('/products', async (request) => listProducts(db, authOf(request), request.query));
+  app.get('/products', { config: { permission: 'product:read' } }, async (request) =>
+    listProducts(db, authOf(request), request.query),
+  );
 
-  app.post('/products', async (request, reply) => {
+  app.post('/products', { config: { permission: 'product:write' } }, async (request, reply) => {
     const product = await createProduct(db, authOf(request), request.body);
     return reply.code(201).send(product);
   });
 
-  app.get<{ Params: { id: string } }>('/products/:id', async (request) =>
-    getProduct(db, authOf(request), request.params.id),
+  app.get<{ Params: { id: string } }>(
+    '/products/:id',
+    { config: { permission: 'product:read' } },
+    async (request) => getProduct(db, authOf(request), request.params.id),
   );
 
-  app.patch<{ Params: { id: string } }>('/products/:id', async (request) =>
-    updateProduct(db, authOf(request), request.params.id, request.body),
+  app.patch<{ Params: { id: string } }>(
+    '/products/:id',
+    { config: { permission: 'product:write' } },
+    async (request) => updateProduct(db, authOf(request), request.params.id, request.body),
   );
 };

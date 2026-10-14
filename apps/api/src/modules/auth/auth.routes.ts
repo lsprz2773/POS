@@ -27,7 +27,7 @@ export interface AuthRoutesOptions {
 export const authRoutes: FastifyPluginAsync<AuthRoutesOptions> = async (app, options) => {
   const { db, identity, cookies } = options;
 
-  app.post('/auth/login', async (request, reply) => {
+  app.post('/auth/login', { config: { public: true } }, async (request, reply) => {
     const { email, password } = parseInput(loginRequestSchema, request.body);
     try {
       const result = await identity.login(email, password);
@@ -54,7 +54,7 @@ export const authRoutes: FastifyPluginAsync<AuthRoutesOptions> = async (app, opt
     }
   });
 
-  app.post('/auth/refresh', async (request, reply) => {
+  app.post('/auth/refresh', { config: { public: true } }, async (request, reply) => {
     const refreshToken = request.cookies[REFRESH_COOKIE];
     try {
       if (!refreshToken) throw new InvalidTokenError();
@@ -70,20 +70,27 @@ export const authRoutes: FastifyPluginAsync<AuthRoutesOptions> = async (app, opt
     }
   });
 
-  app.post('/auth/logout', async (request, reply) => {
+  app.post('/auth/logout', { config: { public: true } }, async (request, reply) => {
     const refreshToken = request.cookies[REFRESH_COOKIE];
     if (refreshToken) await identity.revoke?.(refreshToken);
     clearSessionCookies(reply, cookies);
     return reply.code(204).send();
   });
 
-  app.get('/me', { preHandler: async (request) => app.authenticate(request) }, async (request) => {
-    const ctx = authOf(request);
-    const body: MeResponse = {
-      user: { id: ctx.userId, email: ctx.email },
-      tenant: { id: ctx.tenantId, name: ctx.tenantName },
-      role: ctx.role,
-    };
-    return body;
-  });
+  app.get(
+    '/me',
+    {
+      config: { permission: 'any' },
+      preHandler: async (request) => app.authenticate(request),
+    },
+    async (request) => {
+      const ctx = authOf(request);
+      const body: MeResponse = {
+        user: { id: ctx.userId, email: ctx.email },
+        tenant: { id: ctx.tenantId, name: ctx.tenantName },
+        role: ctx.role,
+      };
+      return body;
+    },
+  );
 };

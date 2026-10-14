@@ -98,8 +98,11 @@ export async function getDashboard(
       limit: 1,
       offset: 0,
     });
-    const workday = await createWorkdayRepository(trx, ctx.tenantId).findByDate(today);
-    return { report, pending, dayPrepared: workday !== undefined };
+    // "Día preparado" es que esta persona ya eligió sus productos de hoy (T105).
+    const workdays = createWorkdayRepository(trx, ctx.tenantId, ctx.userId);
+    const workday = await workdays.findByDate(today);
+    const dayPrepared = workday !== undefined && (await workdays.hasOffers(workday.id));
+    return { report, pending, dayPrepared };
   });
 
   return dashboardSchema.parse({

@@ -32,7 +32,7 @@ export const workdayRoutes: FastifyPluginAsync<{ db: Database; clock: Clock }> =
   app.get<{ Params: DateParams }>(
     '/workdays/:date',
     { config: { permission: 'workday:read' } },
-    async (request) => getWorkday(db, authOf(request), request.params.date, clock),
+    async (request) => getWorkday(db, authOf(request), request.params.date, request.query, clock),
   );
 
   app.patch<{ Params: DateParams }>(

@@ -85,6 +85,7 @@ describe('transacción de jornada + auditoría', () => {
       .values({
         tenant_id: ctx.tenantId,
         workday_id: workday.id,
+        user_id: ctx.userId,
         product_id: productId,
         initial_quantity: '40',
       })

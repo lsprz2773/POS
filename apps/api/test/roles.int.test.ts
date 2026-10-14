@@ -81,6 +81,12 @@ const call = (
     ...(payload === undefined ? {} : { payload: payload as object }),
   });
 
+/** Cada persona prepara su propio día con productos del catálogo del propietario (T105). */
+async function prepare(s: Session, productId: string, quantity = '20') {
+  const offer = await call(s, 'POST', '/api/workdays/today/offers', { productId, quantity });
+  expect(offer.statusCode, offer.body).toBe(201);
+}
+
 async function stocked(s: Session, name = 'Tamal', quantity = '20') {
   const product = (
     await call(s, 'POST', '/api/products', { name, price: '25', cost: '14' })
@@ -255,6 +261,8 @@ describe('una ruta sin permiso declarado no arranca', () => {
 describe('el vendedor solo ve y opera lo que él registró', () => {
   it('historial, pendientes y detalle quedan acotados a sus ventas; las ajenas responden 404', async () => {
     const tamal = await stocked(a);
+    await prepare(vera, tamal.id);
+    await prepare(raul, tamal.id);
     const ownerSale = await sell(a, tamal.id, 1);
     const veraSale = await sell(vera, tamal.id, 2);
     const raulSale = await sell(raul, tamal.id, 3);
@@ -283,6 +291,8 @@ describe('el vendedor solo ve y opera lo que él registró', () => {
 
   it('cobra, anula y cancela solo sus ventas; en una ajena todo responde 404 y nada cambia', async () => {
     const tamal = await stocked(a);
+    await prepare(vera, tamal.id);
+    await prepare(raul, tamal.id);
     const raulSale = await sell(raul, tamal.id, 2);
     const veraSale = await sell(vera, tamal.id, 2);
 
@@ -330,6 +340,8 @@ describe('el vendedor solo ve y opera lo que él registró', () => {
 
   it('el dashboard y el reporte del vendedor son los mismos cálculos acotados a sus ventas', async () => {
     const tamal = await stocked(a);
+    await prepare(vera, tamal.id);
+    await prepare(raul, tamal.id);
     await sell(a, tamal.id, 1, [{ method: 'cash', amount: '25.00' }]);
     await sell(vera, tamal.id, 2, [{ method: 'transfer', amount: '50.00' }]);
     await sell(raul, tamal.id, 4);

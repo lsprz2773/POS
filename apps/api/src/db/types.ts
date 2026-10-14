@@ -45,6 +45,7 @@ export interface DailyOffers {
   product_id: string;
   tenant_id: string;
   updated_at: Generated<Timestamp>;
+  user_id: string;
   workday_id: string;
 }
 

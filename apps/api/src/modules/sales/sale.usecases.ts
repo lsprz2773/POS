@@ -152,13 +152,14 @@ export async function createSale(
       const settings = await createStoreRepository(trx, ctx.tenantId).get();
       const now = clock();
       const today = todayIn(settings.timezone, now);
-      const workdays = createWorkdayRepository(trx, ctx.tenantId);
+      const workdays = createWorkdayRepository(trx, ctx.tenantId, ctx.userId);
       const workday = await workdays.findByDate(today);
       if (!workday) throw DAY_NOT_PREPARED;
 
       const sales = createSaleRepository(trx, ctx.tenantId, rowScope(ctx));
       const offers = await sales.lockOffers(
         workday.id,
+        ctx.userId,
         data.items.map((item) => item.productId),
       );
 

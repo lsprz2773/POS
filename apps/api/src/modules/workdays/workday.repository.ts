@@ -55,8 +55,10 @@ const toWorkday = (row: {
 /**
  * Repositorio acotado a una tienda: el tenant se fija al construirlo y ningún método lo recibe.
  * La fecha de negocio viaja como texto AAAA-MM-DD para que la zona horaria del servidor no la mueva.
+ * La jornada es de la tienda, pero la disponibilidad (productos y cantidades) es de `dayOwnerId`: cada
+ * persona prepara y vende lo suyo (T105).
  */
-export function createWorkdayRepository(db: Database, tenantId: string) {
+export function createWorkdayRepository(db: Database, tenantId: string, dayOwnerId: string) {
   const workdayColumns = [
     'id',
     sql<string>`business_date::text`.as('date'),
@@ -83,7 +85,8 @@ export function createWorkdayRepository(db: Database, tenantId: string) {
         sql<string>`(select coalesce(sum(a.increment), 0)::text from stock_adjustments a
           where a.daily_offer_id = o.id and a.tenant_id = o.tenant_id)`.as('adjustedQuantity'),
       ])
-      .where('o.tenant_id', '=', tenantId);
+      .where('o.tenant_id', '=', tenantId)
+      .where('o.user_id', '=', dayOwnerId);
 
   return {
     async findByDate(date: string, options: { forUpdate?: boolean } = {}) {
@@ -143,12 +146,26 @@ export function createWorkdayRepository(db: Database, tenantId: string) {
       return query.executeTakeFirst();
     },
 
+    /** Si la persona ya preparó algo en la jornada. */
+    async hasOffers(workdayId: string): Promise<boolean> {
+      const row = await db
+        .selectFrom('daily_offers')
+        .select('id')
+        .where('tenant_id', '=', tenantId)
+        .where('workday_id', '=', workdayId)
+        .where('user_id', '=', dayOwnerId)
+        .limit(1)
+        .executeTakeFirst();
+      return row !== undefined;
+    },
+
     async hasOfferForProduct(workdayId: string, productId: string): Promise<boolean> {
       const row = await db
         .selectFrom('daily_offers')
         .select('id')
         .where('tenant_id', '=', tenantId)
         .where('workday_id', '=', workdayId)
+        .where('user_id', '=', dayOwnerId)
         .where('product_id', '=', productId)
         .executeTakeFirst();
       return row !== undefined;
@@ -160,6 +177,7 @@ export function createWorkdayRepository(db: Database, tenantId: string) {
         .values({
           tenant_id: tenantId,
           workday_id: workdayId,
+          user_id: dayOwnerId,
           product_id: productId,
           initial_quantity: quantity,
         })
@@ -259,7 +277,14 @@ export function createWorkdayRepository(db: Database, tenantId: string) {
 
     async list(filter: ListWorkdaysQuery) {
       const scoped = () => {
-        let query = db.selectFrom('workdays as w').where('w.tenant_id', '=', tenantId);
+        // Solo los días en que esta persona preparó algo.
+        let query = db
+          .selectFrom('workdays as w')
+          .where('w.tenant_id', '=', tenantId)
+          .where(
+            sql<boolean>`exists (select 1 from daily_offers x where x.workday_id = w.id
+              and x.user_id = ${dayOwnerId})`,
+          );
         if (filter.from) query = query.where(sql<boolean>`w.business_date >= ${filter.from}::date`);
         if (filter.to) query = query.where(sql<boolean>`w.business_date <= ${filter.to}::date`);
         return query;
@@ -272,19 +297,19 @@ export function createWorkdayRepository(db: Database, tenantId: string) {
             sql<string>`w.business_date::text`.as('date'),
             sql<string>`w.start_time::text`.as('start_time'),
             sql<string>`w.end_time::text`.as('end_time'),
-            sql<number>`(select count(*)::int from daily_offers o where o.workday_id = w.id)`.as(
-              'products',
-            ),
+            sql<number>`(select count(*)::int from daily_offers o where o.workday_id = w.id
+              and o.user_id = ${dayOwnerId})`.as('products'),
             sql<string>`(select coalesce(sum(o.initial_quantity), 0)::text from daily_offers o
-              where o.workday_id = w.id)`.as('initialQuantity'),
+              where o.workday_id = w.id and o.user_id = ${dayOwnerId})`.as('initialQuantity'),
             sql<string>`(select coalesce(sum(a.increment), 0)::text from stock_adjustments a
-              join daily_offers o on o.id = a.daily_offer_id where o.workday_id = w.id)`.as(
-              'adjustedQuantity',
-            ),
+              join daily_offers o on o.id = a.daily_offer_id
+              where o.workday_id = w.id and o.user_id = ${dayOwnerId})`.as('adjustedQuantity'),
             sql<string>`(select coalesce(sum(si.quantity), 0)::text from sale_items si
               join sales s on s.id = si.sale_id and s.tenant_id = si.tenant_id
               join daily_offers o on o.id = si.daily_offer_id
-              where o.workday_id = w.id and ${COUNTS_AS_SOLD})`.as('soldQuantity'),
+              where o.workday_id = w.id and o.user_id = ${dayOwnerId} and ${COUNTS_AS_SOLD})`.as(
+              'soldQuantity',
+            ),
           ])
           .orderBy('w.business_date', 'desc')
           .limit(filter.limit)

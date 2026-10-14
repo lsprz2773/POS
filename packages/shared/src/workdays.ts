@@ -72,7 +72,12 @@ export const updateWorkdayHoursSchema = z
   );
 export type UpdateWorkdayHoursInput = z.output<typeof updateWorkdayHoursSchema>;
 
+/** De quién es el día que se consulta; solo el propietario puede pedir el de un vendedor (T105). */
+export const viewDayQuerySchema = z.object({ sellerId: z.uuid().optional() });
+export type ViewDayQuery = z.output<typeof viewDayQuerySchema>;
+
 export const listWorkdaysQuerySchema = z.object({
+  sellerId: z.uuid().optional(),
   from: z.iso.date('Usa el formato AAAA-MM-DD.').optional(),
   to: z.iso.date('Usa el formato AAAA-MM-DD.').optional(),
   limit: z.coerce.number().int().min(1).max(100).default(30),

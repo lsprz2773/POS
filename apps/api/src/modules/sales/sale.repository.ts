@@ -105,12 +105,17 @@ export function createSaleRepository(db: Database, tenantId: string, scope: RowS
      * suma de ventas fueran una sola, una solicitud que esperó el bloqueo usaría un "vendido" anterior
      * a la venta que acaba de confirmarse y vendería de más (RNF-046, T8).
      */
-    async lockOffers(workdayId: string, productIds: string[]): Promise<LockedOffer[]> {
+    async lockOffers(
+      workdayId: string,
+      sellerId: string,
+      productIds: string[],
+    ): Promise<LockedOffer[]> {
       const locked = await db
         .selectFrom('daily_offers')
         .select('id')
         .where('tenant_id', '=', tenantId)
         .where('workday_id', '=', workdayId)
+        .where('user_id', '=', sellerId)
         .where('product_id', 'in', productIds)
         .orderBy('id')
         .forUpdate()
@@ -139,6 +144,7 @@ export function createSaleRepository(db: Database, tenantId: string, scope: RowS
               and ${COUNTS_AS_SOLD})`.as('soldQuantity'),
         ])
         .where('o.tenant_id', '=', tenantId)
+        .where('o.user_id', '=', sellerId)
         .where(
           'o.id',
           'in',

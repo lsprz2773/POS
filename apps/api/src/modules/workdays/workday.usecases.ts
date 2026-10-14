@@ -11,6 +11,7 @@ import {
   sumQuantities,
   todayIn,
   updateWorkdayHoursSchema,
+  viewDayQuerySchema,
   workdayDateParamSchema,
   type DailyOffer,
   type StoreSettings,
@@ -123,16 +124,39 @@ async function context(db: Database, ctx: AuthContext, clock: Clock) {
   return { settings, today: todayIn(settings.timezone, clock()) };
 }
 
+/**
+ * De quién es el día que se consulta. Cada persona ve el suyo; el propietario puede ver el de un vendedor
+ * (`sellerId`), solo para consultar. Una persona ajena a la tienda responde como inexistente.
+ */
+async function dayOwnerFor(db: Database, ctx: AuthContext, sellerId: string | undefined) {
+  if (!sellerId || sellerId === ctx.userId) return ctx.userId;
+  assertCan(ctx, 'team:manage');
+  const member = await db
+    .selectFrom('memberships')
+    .select('user_id')
+    .where('tenant_id', '=', ctx.tenantId)
+    .where('user_id', '=', sellerId)
+    .executeTakeFirst();
+  if (!member) throw notFound('Esa persona ya no está disponible.');
+  return sellerId;
+}
+
 export async function getWorkday(
   db: Database,
   ctx: AuthContext,
   dateParam: string,
+  query: unknown,
   clock: Clock,
 ): Promise<Workday> {
   assertCan(ctx, 'workday:read');
+  const { sellerId } = parseInput(viewDayQuerySchema, query);
   const { settings, today } = await context(db, ctx, clock);
   const date = resolveDate(dateParam, today);
-  const repository = createWorkdayRepository(db, ctx.tenantId);
+  const repository = createWorkdayRepository(
+    db,
+    ctx.tenantId,
+    await dayOwnerFor(db, ctx, sellerId),
+  );
   const workday = await repository.findByDate(date);
   if (!workday) throw notFound(DAY_NOT_PREPARED);
   return loadView(repository, workday, settings, today);
@@ -150,7 +174,8 @@ export async function listWorkdays(
       to: 'La fecha final no puede ser anterior a la inicial.',
     });
   }
-  const { items, total } = await createWorkdayRepository(db, ctx.tenantId).list(filter);
+  const dayOwner = await dayOwnerFor(db, ctx, filter.sellerId);
+  const { items, total } = await createWorkdayRepository(db, ctx.tenantId, dayOwner).list(filter);
   return {
     items: items.map((row) => ({
       id: row.id,
@@ -192,7 +217,7 @@ export async function addOffer(
       const { settings, today } = await context(trx, ctx, clock);
       const date = resolveDate(dateParam, today);
       assertEditable(date, today);
-      const repository = createWorkdayRepository(trx, ctx.tenantId);
+      const repository = createWorkdayRepository(trx, ctx.tenantId, ctx.userId);
 
       const product = await repository.findProduct(data.productId);
       if (!product) {
@@ -273,7 +298,7 @@ export async function removeOffer(
   return db.transaction().execute(async (trx) => {
     const { settings, today } = await context(trx, ctx, clock);
     const date = resolveDate(dateParam, today);
-    const repository = createWorkdayRepository(trx, ctx.tenantId);
+    const repository = createWorkdayRepository(trx, ctx.tenantId, ctx.userId);
     const workday = await repository.findByDate(date, { forUpdate: true });
     if (!workday) throw notFound(DAY_NOT_PREPARED);
     assertEditable(date, today);
@@ -324,7 +349,7 @@ export async function adjustOffer(
   return db.transaction().execute(async (trx) => {
     const { settings, today } = await context(trx, ctx, clock);
     const date = resolveDate(dateParam, today);
-    const repository = createWorkdayRepository(trx, ctx.tenantId);
+    const repository = createWorkdayRepository(trx, ctx.tenantId, ctx.userId);
     const workday = await repository.findByDate(date, { forUpdate: true });
     if (!workday) throw notFound(DAY_NOT_PREPARED);
     assertEditable(date, today);
@@ -372,7 +397,7 @@ export async function updateWorkdayHours(
   return db.transaction().execute(async (trx) => {
     const { settings, today } = await context(trx, ctx, clock);
     const date = resolveDate(dateParam, today);
-    const repository = createWorkdayRepository(trx, ctx.tenantId);
+    const repository = createWorkdayRepository(trx, ctx.tenantId, ctx.userId);
     const workday = await repository.findByDate(date, { forUpdate: true });
     if (!workday) throw notFound(DAY_NOT_PREPARED);
     assertEditable(date, today);

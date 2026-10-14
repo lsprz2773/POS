@@ -73,6 +73,7 @@ async function insertPastWorkday(s: Session, date: string, productId: string, qu
     .values({
       tenant_id: s.tenantId,
       workday_id: workday.id,
+      user_id: s.userId,
       product_id: productId,
       initial_quantity: quantity,
     })
@@ -702,6 +703,7 @@ describe('aislamiento entre tiendas', () => {
         .values({
           tenant_id: b.tenantId,
           workday_id: dayA.id,
+          user_id: b.userId,
           product_id: pb.id,
           initial_quantity: '1',
         })
@@ -715,6 +717,7 @@ describe('aislamiento entre tiendas', () => {
         .values({
           tenant_id: b.tenantId,
           workday_id: dayB.id,
+          user_id: b.userId,
           product_id: pa.id,
           initial_quantity: '1',
         })
@@ -733,6 +736,7 @@ describe('restricciones de la base', () => {
         .values({
           tenant_id: a.tenantId,
           workday_id: day.id,
+          user_id: a.userId,
           product_id: product.id,
           initial_quantity: '-1',
         })

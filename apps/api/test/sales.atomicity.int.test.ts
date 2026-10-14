@@ -62,6 +62,7 @@ async function seed() {
     .values({
       tenant_id: tenant.id,
       workday_id: workday.id,
+      user_id: user.id,
       product_id: product.id,
       initial_quantity: '10',
     })

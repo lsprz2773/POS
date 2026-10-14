@@ -191,6 +191,12 @@ const MATRIX: { route: string; permission: Permission | 'any'; url: string; payl
   },
   { route: 'GET /api/dashboard', permission: 'report:read', url: '/api/dashboard' },
   { route: 'GET /api/reports', permission: 'report:read', url: '/api/reports' },
+  { route: 'GET /api/reports/sellers', permission: 'team:report', url: '/api/reports/sellers' },
+  {
+    route: 'GET /api/reports/sellers/:userId',
+    permission: 'team:report',
+    url: `/api/reports/sellers/${randomUUID()}`,
+  },
 ];
 
 describe('matriz de permisos rol por ruta', () => {

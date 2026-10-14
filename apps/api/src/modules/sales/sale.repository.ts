@@ -39,6 +39,7 @@ export interface SaleRow {
   note: string | null;
   total: string;
   settledAt: Date | null;
+  createdBy: { id: string; name: string };
 }
 
 export interface CancellationRow {
@@ -67,6 +68,7 @@ export interface PendingSaleRow {
   customerReference: string | null;
   total: string;
   paid: string;
+  createdBy: { id: string; name: string };
 }
 
 export interface SaleSummaryRow extends PendingSaleRow {
@@ -80,6 +82,14 @@ export interface SaleItemRow {
   quantity: string;
   unitPrice: string;
   subtotal: string;
+}
+
+/** Reúne al responsable de la venta en un solo campo. */
+function withCreator<T extends { createdById: string; createdByName: string }>(
+  row: T,
+): Omit<T, 'createdById' | 'createdByName'> & { createdBy: { id: string; name: string } } {
+  const { createdById, createdByName, ...rest } = row;
+  return { ...rest, createdBy: { id: createdById, name: createdByName } };
 }
 
 /**
@@ -232,9 +242,12 @@ export function createSaleRepository(db: Database, tenantId: string, scope: RowS
         .innerJoin('workdays as w', (join) =>
           join.onRef('w.id', '=', 's.workday_id').onRef('w.tenant_id', '=', 's.tenant_id'),
         )
+        .innerJoin('users as u', 'u.id', 's.created_by')
         .select([
           's.id',
           's.folio as folioNumber',
+          'u.id as createdById',
+          sql<string>`coalesce(u.display_name, u.email)`.as('createdByName'),
           sql<string>`w.business_date::text`.as('date'),
           sql<string>`to_char(w.start_time, 'HH24:MI')`.as('startTime'),
           sql<string>`to_char(w.end_time, 'HH24:MI')`.as('endTime'),
@@ -275,8 +288,9 @@ export function createSaleRepository(db: Database, tenantId: string, scope: RowS
         .where('tenant_id', '=', tenantId)
         .where('sale_id', '=', id)
         .executeTakeFirst();
+      const { createdById, createdByName, ...saleColumns } = sale;
       return {
-        sale: sale as SaleRow,
+        sale: { ...saleColumns, createdBy: { id: createdById, name: createdByName } } as SaleRow,
         items,
         payments: await this.paymentsOf(id),
         cancellation: cancellation ?? null,
@@ -472,6 +486,7 @@ export function createSaleRepository(db: Database, tenantId: string, scope: RowS
           .innerJoin('workdays as w', (join) =>
             join.onRef('w.id', '=', 's.workday_id').onRef('w.tenant_id', '=', 's.tenant_id'),
           )
+          .innerJoin('users as u', 'u.id', 's.created_by')
           .where('s.tenant_id', '=', tenantId)
           .$if(own !== undefined, (qb) => qb.where('s.created_by', '=', own!));
         if (filter.from) query = query.where(sql<boolean>`w.business_date >= ${filter.from}::date`);
@@ -507,6 +522,8 @@ export function createSaleRepository(db: Database, tenantId: string, scope: RowS
             's.id',
             's.folio as folioNumber',
             sql<string>`w.business_date::text`.as('date'),
+            's.created_by as createdById',
+            sql<string>`coalesce(u.display_name, u.email)`.as('createdByName'),
             's.created_at as createdAt',
             's.customer_reference as customerReference',
             's.status',
@@ -522,7 +539,7 @@ export function createSaleRepository(db: Database, tenantId: string, scope: RowS
           .select((eb) => eb.fn.countAll<string>().as('total'))
           .executeTakeFirstOrThrow(),
       ]);
-      return { items: rows as SaleSummaryRow[], total: Number(count.total) };
+      return { items: rows.map(withCreator) as SaleSummaryRow[], total: Number(count.total) };
     },
 
     /** Ventas activas con saldo mayor que cero, de cualquier día (RF-073, RF-080). */
@@ -540,6 +557,7 @@ export function createSaleRepository(db: Database, tenantId: string, scope: RowS
           .innerJoin('workdays as w', (join) =>
             join.onRef('w.id', '=', 's.workday_id').onRef('w.tenant_id', '=', 's.tenant_id'),
           )
+          .innerJoin('users as u', 'u.id', 's.created_by')
           .where('s.tenant_id', '=', tenantId)
           .where('s.status', '=', 'active')
           .where(sql<boolean>`s.total > ${paid}`)
@@ -555,6 +573,8 @@ export function createSaleRepository(db: Database, tenantId: string, scope: RowS
             's.id',
             's.folio as folioNumber',
             sql<string>`w.business_date::text`.as('date'),
+            's.created_by as createdById',
+            sql<string>`coalesce(u.display_name, u.email)`.as('createdByName'),
             's.created_at as createdAt',
             's.customer_reference as customerReference',
             sql<string>`s.total::text`.as('total'),
@@ -572,7 +592,11 @@ export function createSaleRepository(db: Database, tenantId: string, scope: RowS
           ])
           .executeTakeFirstOrThrow(),
       ]);
-      return { items: rows, total: Number(totals.total), totalBalance: totals.totalBalance };
+      return {
+        items: rows.map(withCreator),
+        total: Number(totals.total),
+        totalBalance: totals.totalBalance,
+      };
     },
   };
 }

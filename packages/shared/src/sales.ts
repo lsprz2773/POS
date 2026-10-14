@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { sellerRefSchema } from './team-owed';
 import { collectionStatuses, paymentLinesSchema, paymentSchema } from './payments';
 import { positiveQuantitySchema } from './workdays';
 import { optionalText } from './text';
@@ -104,6 +105,8 @@ export const saleSchema = z.object({
   paymentStatus: z.enum(collectionStatuses),
   /** Cuándo quedó pagada por completo; nulo si tiene saldo (RF-068). */
   settledAt: z.string().nullable(),
+  /** Quién registró la venta. */
+  createdBy: sellerRefSchema,
   /** Datos de la cancelación; nulo si la venta sigue vigente. */
   cancellation: saleCancellationSchema.nullable(),
   payments: z.array(paymentSchema),

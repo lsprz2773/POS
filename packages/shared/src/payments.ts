@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { moneySchema } from './products';
+import { owedBySellerSchema, sellerRefSchema } from './team-owed';
 
 /** Solo se informa por qué medio pagaron; no hay pasarelas ni validación bancaria (B16, regla 44). */
 export const paymentMethods = ['cash', 'transfer'] as const;
@@ -59,6 +60,8 @@ export type VoidPaymentInput = z.output<typeof voidPaymentSchema>;
 export const listPendingQuerySchema = z.object({
   from: z.iso.date('Usa el formato AAAA-MM-DD.').optional(),
   to: z.iso.date('Usa el formato AAAA-MM-DD.').optional(),
+  /** Solo el propietario: pendientes de una persona (fase 10d). */
+  sellerId: z.uuid('Elige un vendedor válido.').optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 });
@@ -88,6 +91,7 @@ export const pendingSaleSchema = z.object({
   paid: z.string(),
   balance: z.string(),
   paymentStatus: z.enum(collectionStatuses),
+  createdBy: sellerRefSchema,
 });
 export type PendingSale = z.infer<typeof pendingSaleSchema>;
 
@@ -97,6 +101,8 @@ export const pendingListSchema = z.object({
   total: z.number().int(),
   /** Suma de lo que falta por cobrar de todas ellas, no solo de la página. */
   totalBalance: z.string(),
+  /** Solo para el propietario de una tienda con vendedores: lo que se le debe a cada persona (T112). */
+  bySeller: z.array(owedBySellerSchema).optional(),
   limit: z.number().int(),
   offset: z.number().int(),
 });

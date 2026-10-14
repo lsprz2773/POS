@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { todayBySellerSchema } from './team-owed';
 
 export const reportPeriods = ['day', 'week', 'month'] as const;
 
@@ -83,5 +84,7 @@ export const dashboardSchema = z.object({
   estimatedGrossProfit: z.string(),
   isGrossLoss: z.boolean(),
   dayPrepared: z.boolean(),
+  /** Solo para el propietario de una tienda con vendedores: lo de hoy de cada persona (fase 10d). */
+  bySeller: z.array(todayBySellerSchema).optional(),
 });
 export type Dashboard = z.infer<typeof dashboardSchema>;

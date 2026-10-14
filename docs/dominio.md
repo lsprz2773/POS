@@ -151,6 +151,9 @@ Las definiciones de arriba se aplican acotadas a las ventas de una persona (`sal
 | Participación | Ventas del vendedor ÷ ventas de la tienda en el periodo, en porcentaje con 2 decimales, cuando ventas > 0. |
 | Ventas canceladas, por devolver | Número, total y pagos vigentes de las canceladas de ese vendedor en el periodo, aparte. |
 | Antigüedad del pendiente (recomendada) | Pendiente por cobrar agrupado por días desde la fecha de negocio de la venta: 0 a 7, 8 a 30 y más de 30. |
+| Tasa de cancelación | Ventas canceladas ÷ todas las ventas registradas del vendedor en el periodo (vigentes y canceladas), en porcentaje con 2 decimales; nulo si no hubo ventas. |
+| Periodo anterior (comparativo) | El mes anterior si el periodo es un mes, la semana anterior (lunes a domingo) si es una semana y, en otro caso, un periodo de la misma duración inmediatamente antes. |
+| Serie diaria | Ventas vigentes y número de ventas por día del periodo, con ceros en los días sin ventas. |
 | Aprovechamiento del día (recomendada) | Unidades preparadas (inicial más ajustes) contra vendidas en el periodo, porcentaje vendido y productos agotados. |
 
 El reporte de un vendedor es este mismo cálculo acotado a él, de modo que su utilidad coincide con su fila en el reporte del propietario. El corte de efectivo por entregar no existe en el sistema.

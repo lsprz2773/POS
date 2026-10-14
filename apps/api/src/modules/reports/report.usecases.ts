@@ -12,6 +12,7 @@ import type { Database } from '../../db/client';
 import { parseInput } from '../../validation';
 import { createSaleRepository } from '../sales/sale.repository';
 import { createStoreRepository } from '../store/store.repository';
+import { todayBySellerFor } from './team-report.usecases';
 import type { AuthContext } from '../tenancy/context';
 import { assertCan, rowScope } from '../tenancy/permissions';
 import { createWorkdayRepository } from '../workdays/workday.repository';
@@ -102,7 +103,8 @@ export async function getDashboard(
     const workdays = createWorkdayRepository(trx, ctx.tenantId, ctx.userId);
     const workday = await workdays.findByDate(today);
     const dayPrepared = workday !== undefined && (await workdays.hasOffers(workday.id));
-    return { report, pending, dayPrepared };
+    const bySeller = await todayBySellerFor(trx, ctx, today, settings.timezone);
+    return { report, pending, dayPrepared, bySeller };
   });
 
   return dashboardSchema.parse({
@@ -116,5 +118,6 @@ export async function getDashboard(
     estimatedGrossProfit: view.report.grossProfit,
     isGrossLoss: view.report.isGrossLoss,
     dayPrepared: view.dayPrepared,
+    ...(view.bySeller ? { bySeller: view.bySeller } : {}),
   });
 }

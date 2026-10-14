@@ -74,6 +74,7 @@ export async function getSale(db: Database, ctx: AuthContext, id: string): Promi
     // Una venta cancelada ya no se cobra: no le falta nada por pagar.
     balance: sale.status === 'cancelled' ? '0.00' : balanceOf(sale.total, paid),
     paymentStatus: collectionStatus({ status: sale.status, total: sale.total, paid }),
+    createdBy: sale.createdBy,
     settledAt: sale.settledAt?.toISOString() ?? null,
     cancellation: cancellation
       ? {

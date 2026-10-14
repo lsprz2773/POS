@@ -13,7 +13,9 @@ import { StatusBadge } from '../../components/StatusBadge';
 import { copy } from '../../copy/es';
 import { formatShortDate, formatTime } from '../../lib/format';
 import { useDebounced } from '../../lib/useDebounced';
-import { DateRangeSheet } from '../sales/DateRangeSheet';
+import { DateRangeSheet, type RangeFilter } from '../sales/DateRangeSheet';
+import { useRole } from '../session/usePermission';
+import { useSellerOptions } from '../team/useSellerOptions';
 import { useStore, useToday } from '../store/useStore';
 import { useSalesList, type HistoryFilter } from './useSalesList';
 
@@ -28,10 +30,12 @@ function SaleRow({
   sale,
   money,
   timezone,
+  showSeller,
 }: {
   sale: SaleSummary;
   money: (amount: string) => string;
   timezone: string;
+  showSeller: boolean;
 }) {
   return (
     <li>
@@ -45,6 +49,7 @@ function SaleRow({
           </div>
           <div className="cap break-words">
             {sale.customerReference ?? copy.history.noReference}
+            {showSeller ? ` · ${sale.createdBy.name}` : ''}
           </div>
         </div>
         <div className="flex flex-col items-end gap-1">
@@ -65,14 +70,20 @@ export function HistoryPage() {
   const money = (amount: string) => formatMoney(amount, currency);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<HistoryFilter>('all');
-  const [range, setRange] = useState<{ from?: string; to?: string }>({});
+  const [range, setRange] = useState<RangeFilter>({});
+  const seller = useRole() === 'seller';
+  const { options: sellers, showSeller } = useSellerOptions();
   const [choosingRange, setChoosingRange] = useState(false);
   const q = useDebounced(search.trim());
   const query = useSalesList({ q, filter, ...range });
   const sales = query.data?.pages.flatMap((page) => page.items) ?? [];
   const total = query.data?.pages[0]?.total ?? 0;
   const filtering =
-    q !== '' || filter !== 'all' || range.from !== undefined || range.to !== undefined;
+    q !== '' ||
+    filter !== 'all' ||
+    range.from !== undefined ||
+    range.to !== undefined ||
+    range.sellerId !== undefined;
   const rangeLabel =
     range.from || range.to
       ? `${range.from ? formatShortDate(range.from) : '…'} a ${range.to ? formatShortDate(range.to) : '…'}`
@@ -80,7 +91,10 @@ export function HistoryPage() {
 
   return (
     <>
-      <PageHeader title={copy.history.title} back={{ to: '/mas', label: copy.history.back }} />
+      <PageHeader
+        title={seller ? copy.history.myTitle : copy.history.title}
+        back={{ to: '/mas', label: copy.history.back }}
+      />
       {/* El rango va en su propia fila: con fechas elegidas es largo y no cabe junto al título en 360 px. */}
       <div className="flex">
         <button type="button" className="pill" onClick={() => setChoosingRange(true)}>
@@ -137,7 +151,13 @@ export function HistoryPage() {
           </p>
           <ul className="stagger glass2 m-0 list-none overflow-hidden p-0">
             {sales.map((sale) => (
-              <SaleRow key={sale.id} sale={sale} money={money} timezone={timezone} />
+              <SaleRow
+                key={sale.id}
+                sale={sale}
+                money={money}
+                timezone={timezone}
+                showSeller={showSeller}
+              />
             ))}
           </ul>
           {query.hasNextPage ? (
@@ -156,6 +176,7 @@ export function HistoryPage() {
         <DateRangeSheet
           today={today}
           value={range}
+          sellers={sellers}
           onClose={() => setChoosingRange(false)}
           onApply={(next) => {
             setRange(next);

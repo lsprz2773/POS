@@ -6,11 +6,20 @@ import { clearDraft } from '../../lib/draft';
 
 export const ME_KEY = ['me'] as const;
 
+/** Cuenta sin tienda, tienda desactivada o vendedor dado de baja (RF-009, RF-135). */
+export type BlockedReason = 'store_not_configured' | 'tenant_disabled' | 'membership_disabled';
+
+const BLOCKED: readonly string[] = [
+  'store_not_configured',
+  'tenant_disabled',
+  'membership_disabled',
+];
+
 export type SessionState =
   | { status: 'loading' }
   | { status: 'authenticated'; me: MeResponse }
   /** La cuenta existe pero no puede usar la app: sin tienda o tienda desactivada (RF-009). */
-  | { status: 'blocked'; reason: 'store_not_configured' | 'tenant_disabled' }
+  | { status: 'blocked'; reason: BlockedReason }
   | { status: 'anonymous' }
   | { status: 'error'; error: unknown; retry: () => void };
 
@@ -22,15 +31,14 @@ export function useSession(): SessionState {
     staleTime: 60_000,
   });
 
+  const error = query.error;
+  // Una cuenta dada de baja en pleno uso: aunque haya datos de antes, ya no puede seguir (RF-135).
+  if (error instanceof ApiError && BLOCKED.includes(error.code)) {
+    return { status: 'blocked', reason: error.code as BlockedReason };
+  }
   if (query.isPending) return { status: 'loading' };
   if (query.data) return { status: 'authenticated', me: query.data };
-  const error = query.error;
-  if (error instanceof ApiError) {
-    if (error.code === 'unauthenticated') return { status: 'anonymous' };
-    if (error.code === 'store_not_configured' || error.code === 'tenant_disabled') {
-      return { status: 'blocked', reason: error.code };
-    }
-  }
+  if (error instanceof ApiError && error.code === 'unauthenticated') return { status: 'anonymous' };
   return { status: 'error', error, retry: () => void query.refetch() };
 }
 

@@ -20,7 +20,8 @@ function Shell({
   const hintId = `${id}-hint`;
   const describedBy = [error && errorId, hint && hintId].filter(Boolean).join(' ') || undefined;
   return (
-    <div className={className}>
+    // `min-w-0`: en una rejilla o una caja flexible el campo no debe crecer más que su columna.
+    <div className={`min-w-0 ${className}`.trim()}>
       <label className="lbl" htmlFor={id}>
         {label}
       </label>

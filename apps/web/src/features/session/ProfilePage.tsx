@@ -11,7 +11,7 @@ export function ProfilePage({ me }: { me: MeResponse }) {
   const rows = [
     [copy.profile.email, me.user.email],
     [copy.profile.store, me.tenant.name],
-    [copy.profile.role, copy.profile.owner],
+    [copy.profile.role, copy.roles[me.role]],
   ] as const;
   return (
     <>

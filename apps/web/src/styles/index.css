@@ -13,6 +13,8 @@
   --hair: rgba(16, 34, 58, 0.12);
   --glass: rgba(255, 255, 255, 0.58);
   --glass2: rgba(255, 255, 255, 0.88);
+  /* Barra de pestañas: casi opaca, para que su texto cumpla el contraste aunque pase un botón por detrás. */
+  --bar: rgba(255, 255, 255, 0.97);
   --edge: rgba(255, 255, 255, 0.85);
   --hi: rgba(255, 255, 255, 0.95);
   --shadow: 0 10px 30px rgba(31, 50, 90, 0.16);
@@ -58,6 +60,7 @@
     --hair: rgba(255, 255, 255, 0.14);
     --glass: rgba(36, 48, 82, 0.56);
     --glass2: rgba(22, 31, 54, 0.9);
+    --bar: rgba(22, 31, 54, 0.98);
     --edge: rgba(255, 255, 255, 0.2);
     --hi: rgba(255, 255, 255, 0.24);
     --shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
@@ -92,6 +95,7 @@
     --line: #6f7f96;
     --glass: #fff;
     --glass2: #fff;
+    --bar: #fff;
     --edge: #c0cad8;
     --hi: transparent;
     --shadow: 0 1px 2px rgba(16, 34, 58, 0.14);
@@ -104,6 +108,7 @@
     --line: #8696b0;
     --glass: #16203a;
     --glass2: #16203a;
+    --bar: #16203a;
     --edge: #3a4a6a;
     --page: #0a1020;
   }
@@ -112,6 +117,7 @@
   :root {
     --glass: #fff;
     --glass2: #fff;
+    --bar: #fff;
     --blur: 0px;
   }
 }
@@ -365,6 +371,9 @@ body {
   }
   .inp {
     width: 100%;
+    /* Dentro de una rejilla o de una caja, el campo nunca pasa de su contenedor (iOS Safari). */
+    min-width: 0;
+    max-width: 100%;
     min-height: 48px;
     border-radius: 14px;
     border: 1.5px solid var(--line);
@@ -375,6 +384,30 @@ body {
   }
   .inp::placeholder {
     color: var(--ink3);
+  }
+  /*
+   * Fecha y hora: Safari de iOS pinta estos campos con un ancho propio que ignora width: 100% y los hace
+   * crecer sobre el vecino o fuera de la caja. Sin la apariencia nativa obedecen al contenedor; el
+   * selector del sistema sigue abriéndose al tocarlos.
+   */
+  .inp[type='date'],
+  .inp[type='time'] {
+    display: block;
+    -webkit-appearance: none;
+    appearance: none;
+    text-align: left;
+    line-height: 1.2;
+    overflow: hidden;
+  }
+  .inp[type='date']::-webkit-date-and-time-value,
+  .inp[type='time']::-webkit-date-and-time-value {
+    text-align: left;
+    min-width: 0;
+  }
+  .inp[type='date']::-webkit-datetime-edit,
+  .inp[type='time']::-webkit-datetime-edit {
+    padding: 0;
+    min-width: 0;
   }
   .inp:focus {
     border-color: var(--prim);
@@ -779,6 +812,7 @@ body {
     align-items: center;
     padding: 0 6px;
     z-index: 30;
+    background: var(--bar);
   }
   .tab {
     display: flex;

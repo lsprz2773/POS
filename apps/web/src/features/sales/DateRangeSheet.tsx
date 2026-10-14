@@ -1,24 +1,37 @@
 import { addDays, monthOf, weekOf } from '@pos/shared';
 import { useState, type FormEvent } from 'react';
 import { Button } from '../../components/Button';
-import { Field } from '../../components/Field';
+import { Field, SelectField } from '../../components/Field';
 import { Sheet } from '../../components/Sheet';
 import { copy } from '../../copy/es';
+import type { SellerOption } from '../team/useSellerOptions';
 
-/** Filtro por rango de fechas (M8): atajos y fechas exactas. Sin filtro = todas las fechas. */
+export interface RangeFilter {
+  from?: string;
+  to?: string;
+  sellerId?: string;
+}
+
+/**
+ * Filtro por rango de fechas (M8): atajos y fechas exactas. Sin filtro = todas las fechas. Con `sellers` (solo
+ * el propietario de una tienda con vendedores) agrega el filtro por vendedor.
+ */
 export function DateRangeSheet({
   today,
   value,
+  sellers,
   onApply,
   onClose,
 }: {
   today: string;
-  value: { from?: string; to?: string };
-  onApply: (range: { from?: string; to?: string }) => void;
+  value: RangeFilter;
+  sellers?: SellerOption[];
+  onApply: (range: RangeFilter) => void;
   onClose: () => void;
 }) {
   const [from, setFrom] = useState(value.from ?? '');
   const [to, setTo] = useState(value.to ?? '');
+  const [sellerId, setSellerId] = useState(value.sellerId ?? '');
   const [error, setError] = useState<string | null>(null);
 
   const shortcuts = [
@@ -38,7 +51,11 @@ export function DateRangeSheet({
       document.getElementById('range-to')?.focus();
       return;
     }
-    onApply({ ...(from ? { from } : {}), ...(to ? { to } : {}) });
+    onApply({
+      ...(from ? { from } : {}),
+      ...(to ? { to } : {}),
+      ...(sellerId ? { sellerId } : {}),
+    });
   }
 
   return (
@@ -89,6 +106,21 @@ export function DateRangeSheet({
             }}
           />
         </div>
+        {sellers && sellers.length > 0 ? (
+          <SelectField
+            id="range-seller"
+            label={copy.sale.seller}
+            value={sellerId}
+            onChange={(event) => setSellerId(event.target.value)}
+          >
+            <option value="">{copy.sale.allSellers}</option>
+            {sellers.map((seller) => (
+              <option key={seller.id} value={seller.id}>
+                {seller.name}
+              </option>
+            ))}
+          </SelectField>
+        ) : null}
         <div className="flex flex-col gap-2">
           <Button type="submit" variant="primary" large block>
             {copy.sale.apply2}

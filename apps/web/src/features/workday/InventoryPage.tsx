@@ -8,11 +8,13 @@ import { PageHeader } from '../../components/PageHeader';
 import { LoadingRegion, Skeleton } from '../../components/Skeleton';
 import { copy } from '../../copy/es';
 import { useStore, useToday } from '../store/useStore';
+import { useSellerOptions } from '../team/useSellerOptions';
 import { dayTitle } from './DayHeader';
 import { dayQuantity, soldPercent, stockLevel, type StockLevel } from './inventory';
 import { useWorkday } from './useWorkday';
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const LEVEL: Record<StockLevel, { cls: string; text: string }> = {
   available: { cls: 'bdg-ok', text: copy.day.levelAvailable },
@@ -27,7 +29,12 @@ export function InventoryPage() {
   const [params] = useSearchParams();
   const asked = params.get('fecha');
   const date = asked && DATE.test(asked) ? asked : today;
-  const query = useWorkday(date);
+  // El propietario consulta el día de un vendedor ("Ver su día"); solo lectura.
+  const seller = params.get('vendedor');
+  const sellerId = seller && UUID.test(seller) ? seller : undefined;
+  const { options } = useSellerOptions();
+  const sellerName = options.find((option) => option.id === sellerId)?.name;
+  const query = useWorkday(date, sellerId);
   const workday = query.data;
 
   const offers = workday?.offers ?? [];
@@ -41,9 +48,11 @@ export function InventoryPage() {
     <>
       <PageHeader
         title={copy.day.inventoryTitle}
-        back={{ to: '/dia', label: copy.day.back }}
+        back={
+          sellerId ? { to: '/equipo', label: copy.team.back } : { to: '/dia', label: copy.day.back }
+        }
         action={
-          workday?.editable ? (
+          workday?.editable && !sellerId ? (
             <Link to={`/dia${asked ? `?fecha=${asked}` : ''}`} className="btn btn-s">
               {copy.day.prepare}
             </Link>
@@ -53,6 +62,7 @@ export function InventoryPage() {
       {date ? (
         <p className="sub m-0">
           {dayTitle(date)} · {copy.day.readOnly}
+          {sellerId ? ` · ${copy.day.ofSeller(sellerName ?? copy.sale.seller)}` : ''}
         </p>
       ) : null}
 
@@ -81,7 +91,7 @@ export function InventoryPage() {
           title={copy.day.emptyInventory}
           text={copy.day.notPreparedText}
           action={
-            workday?.editable !== false ? (
+            workday?.editable !== false && !sellerId ? (
               <Link to="/dia" className="btn btn-p">
                 {copy.day.prepare}
               </Link>

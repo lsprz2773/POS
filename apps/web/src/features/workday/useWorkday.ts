@@ -4,14 +4,20 @@ import { api, ApiError } from '../../lib/api';
 
 export const workdayKey = (date: string) => ['workday', date] as const;
 
-/** La jornada de una fecha; `null` si ese día todavía no está preparado (no es un error). */
-export function useWorkday(date: string | undefined) {
+/**
+ * La jornada de una fecha; `null` si ese día todavía no está preparado (no es un error). Con `sellerId` (solo el
+ * propietario) es el día de esa persona, para consultar.
+ */
+export function useWorkday(date: string | undefined, sellerId?: string) {
   return useQuery({
-    queryKey: workdayKey(date ?? ''),
+    queryKey: sellerId
+      ? ([...workdayKey(date ?? ''), 'seller', sellerId] as const)
+      : workdayKey(date ?? ''),
     enabled: date !== undefined,
     queryFn: async ({ signal }) => {
       try {
-        return await api.get<Workday>(`/workdays/${date}`, signal);
+        const query = sellerId ? `?sellerId=${sellerId}` : '';
+        return await api.get<Workday>(`/workdays/${date}${query}`, signal);
       } catch (error) {
         if (error instanceof ApiError && error.status === 404) return null;
         throw error;

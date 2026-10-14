@@ -109,6 +109,31 @@ export function TodayPage() {
             />
           </section>
 
+          {data.bySeller && data.bySeller.length > 0 ? (
+            <section className="glass2 card flex flex-col gap-3" aria-label={copy.today.bySeller}>
+              <div>
+                <h2 className="h2" style={{ fontSize: 16 }}>
+                  {copy.today.bySeller}
+                </h2>
+                <p className="cap m-0">{copy.today.bySellerNote}</p>
+              </div>
+              <ul className="m-0 flex list-none flex-col gap-3 p-0">
+                {data.bySeller.map((row) => (
+                  <li key={row.userId} className="flex flex-col gap-1">
+                    <div className="flex items-baseline justify-between gap-3">
+                      <span className="min-w-0 break-words font-bold">{row.name}</span>
+                      <b>{money(row.salesTotal)}</b>
+                    </div>
+                    <div className="cap">
+                      {copy.today.collected} {money(row.collected)} · {copy.today.owedShort}{' '}
+                      {money(row.owed.total)}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+
           <section className="glass2 card flex flex-col gap-2" aria-label={copy.today.grossProfit}>
             <div className="flex items-baseline justify-between gap-3">
               <h2 className="h2" style={{ fontSize: 16 }}>

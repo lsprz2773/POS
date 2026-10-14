@@ -14,6 +14,7 @@ import { copy } from '../../copy/es';
 import { ApiError } from '../../lib/api';
 import { createIntentKeys } from '../../lib/idempotency';
 import { formatDateTime } from '../../lib/format';
+import { useMeId } from '../session/usePermission';
 import { useStore, useToday } from '../store/useStore';
 import { CancelSaleDialog } from './CancelSaleDialog';
 import { PaymentSheet } from './PaymentSheet';
@@ -28,6 +29,7 @@ const methodName = (method: Payment['method']) =>
 export function SaleDetailPage() {
   const { id } = useParams();
   const query = useSale(id);
+  const meId = useMeId();
   const store = useStore();
   const today = useToday();
   const online = useOnline();
@@ -106,6 +108,9 @@ export function SaleDetailPage() {
 
       <dl className="glass2 card m-0 flex flex-col gap-3">
         <Row label={copy.sale.date} value={formatDateTime(sale.createdAt, timezone)} />
+        {sale.createdBy.id !== meId ? (
+          <Row label={copy.sale.seller} value={sale.createdBy.name} />
+        ) : null}
         {sale.customerReference ? (
           <Row label={copy.sale.customerShort} value={sale.customerReference} />
         ) : null}

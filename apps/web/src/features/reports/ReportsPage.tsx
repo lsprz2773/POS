@@ -1,138 +1,28 @@
-import { formatMoney, MAX_REPORT_DAYS, type Report } from '@pos/shared';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useState, type FormEvent } from 'react';
+import { formatMoney, type Report } from '@pos/shared';
 import { Banner } from '../../components/Banner';
-import { Button } from '../../components/Button';
 import { ErrorState } from '../../components/ErrorState';
-import { Field } from '../../components/Field';
 import { MethodBreakdown } from '../../components/MethodBreakdown';
 import { PageHeader } from '../../components/PageHeader';
-import { Segmented } from '../../components/Segmented';
 import { LoadingRegion, MetricSkeleton } from '../../components/Skeleton';
 import { copy } from '../../copy/es';
-import { useCurrency, useToday } from '../store/useStore';
-import { periodAround, periodLabel, periodOnSwitch, shiftPeriod, type PeriodKind } from './periods';
+import { useCurrency } from '../store/useStore';
+import { PeriodPicker, usePeriodControl } from './PeriodPicker';
 import { useReport } from './useReport';
-
-const KINDS = [
-  { value: 'day', label: copy.reports.day },
-  { value: 'week', label: copy.reports.week },
-  { value: 'month', label: copy.reports.month },
-  { value: 'range', label: copy.reports.range },
-] as const;
-
-const daysBetween = (from: string, to: string) =>
-  Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000) + 1;
 
 /** Reportes por día, semana, mes o rango, con las definiciones de dominio.md (RF-081 a RF-105). */
 export function ReportsPage() {
-  const today = useToday();
   const currency = useCurrency();
   const money = (amount: string) => formatMoney(amount, currency);
-  const [kind, setKind] = useState<PeriodKind>('week');
-  const [anchor, setAnchor] = useState<{ from: string; to: string } | null>(null);
-  const [draft, setDraft] = useState({ from: '', to: '' });
-  const [rangeError, setRangeError] = useState<string | null>(null);
-
-  // Periodo mostrado: el elegido o, por omisión, el que contiene hoy.
-  const period = kind === 'range' ? anchor : (anchor ?? (today ? periodAround(kind, today) : null));
-  const query = useReport(kind, kind === 'range' && !anchor ? null : period);
+  const control = usePeriodControl('week');
+  const query = useReport(control.kind, control.waitingForRange ? null : control.period);
   const report = query.data;
-
-  function changeKind(next: PeriodKind) {
-    setKind(next);
-    setRangeError(null);
-    if (next === 'range') {
-      setAnchor(null);
-      return;
-    }
-    setAnchor(today ? periodOnSwitch(next, period, today) : null);
-  }
-
-  function shift(direction: 1 | -1) {
-    if (kind === 'range' || !period) return;
-    setAnchor(shiftPeriod(kind, period, direction));
-  }
-
-  function applyRange(event: FormEvent) {
-    event.preventDefault();
-    if (!draft.from || !draft.to) {
-      setRangeError(copy.reports.required);
-    } else if (draft.to < draft.from) {
-      setRangeError(copy.reports.invalidRange);
-    } else if (daysBetween(draft.from, draft.to) > MAX_REPORT_DAYS) {
-      setRangeError(copy.reports.tooLong);
-    } else {
-      setRangeError(null);
-      setAnchor({ from: draft.from, to: draft.to });
-    }
-  }
-
-  const isFuture = !!period && !!today && period.to >= today;
 
   return (
     <>
       <PageHeader title={copy.reports.title} back={{ to: '/mas', label: copy.reports.back }} />
-      <Segmented<PeriodKind>
-        label={copy.reports.period}
-        value={kind}
-        options={KINDS}
-        onChange={changeKind}
-      />
+      <PeriodPicker control={control} />
 
-      {kind === 'range' ? (
-        <form onSubmit={applyRange} noValidate className="glass2 card flex flex-col gap-3">
-          <div className="grid grid-cols-2 gap-3">
-            <Field
-              id="report-from"
-              type="date"
-              label={copy.reports.from}
-              value={draft.from}
-              onChange={(event) => setDraft({ ...draft, from: event.target.value })}
-            />
-            <Field
-              id="report-to"
-              type="date"
-              label={copy.reports.to}
-              value={draft.to}
-              error={rangeError ?? undefined}
-              onChange={(event) => setDraft({ ...draft, to: event.target.value })}
-            />
-          </div>
-          <Button type="submit" variant="primary">
-            {copy.reports.apply}
-          </Button>
-        </form>
-      ) : period ? (
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            className="iconbtn"
-            aria-label={copy.reports.previous}
-            onClick={() => shift(-1)}
-          >
-            <ChevronLeft className="ic" aria-hidden="true" />
-          </button>
-          <div
-            className="glass2 card flex-1 text-center font-bold"
-            style={{ padding: '10px 12px' }}
-            aria-live="polite"
-          >
-            {periodLabel(kind, period)}
-          </div>
-          <button
-            type="button"
-            className="iconbtn"
-            aria-label={copy.reports.next}
-            disabled={isFuture}
-            onClick={() => shift(1)}
-          >
-            <ChevronRight className="ic" aria-hidden="true" />
-          </button>
-        </div>
-      ) : null}
-
-      {kind === 'range' && !anchor ? null : query.isPending ? (
+      {control.waitingForRange ? null : query.isPending ? (
         <LoadingRegion label={copy.states.loading}>
           <div className="flex flex-col gap-3">
             <MetricSkeleton />
@@ -152,7 +42,7 @@ export function ReportsPage() {
   );
 }
 
-function ReportBody({
+export function ReportBody({
   report,
   money,
   currency,

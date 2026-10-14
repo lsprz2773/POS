@@ -1,20 +1,26 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useState } from 'react';
+import type { Permission } from '@pos/shared';
+import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useState, type ReactNode } from 'react';
 import { createBrowserRouter, Navigate, RouterProvider, type RouteObject } from 'react-router';
 import { AppShell } from './components/AppShell';
 import { ErrorState } from './components/ErrorState';
+import { RequirePermission } from './components/RequirePermission';
 import { LoadingRegion, Skeleton } from './components/Skeleton';
 import { ToastProvider } from './components/Toast';
 import { copy } from './copy/es';
 import { BlockedPage } from './features/session/BlockedPage';
 import { LoginPage } from './features/session/LoginPage';
 import { ProfilePage } from './features/session/ProfilePage';
-import { useSession } from './features/session/useSession';
+import { ME_KEY, useSession } from './features/session/useSession';
+import { ApiError } from './lib/api';
 import { CatalogPage } from './features/catalog/CatalogPage';
 import { ProductFormPage } from './features/catalog/ProductFormPage';
 import { TodayPage } from './features/dashboard/TodayPage';
 import { HistoryPage } from './features/history/HistoryPage';
 import { ReportsPage } from './features/reports/ReportsPage';
+import { SellerDetailPage } from './features/reports/SellerDetailPage';
+import { TeamReportPage } from './features/reports/TeamReportPage';
+import { TeamPage } from './features/team/TeamPage';
 import { NewSalePage } from './features/sales/NewSalePage';
 import { PendingPage } from './features/sales/PendingPage';
 import { SaleDetailPage } from './features/sales/SaleDetailPage';
@@ -55,6 +61,16 @@ function SessionGate() {
   }
 }
 
+/** Pantalla visible solo con el permiso; sin él se vuelve a Hoy con un aviso (el servidor rechaza igual). */
+const guarded = (permission: Permission, element: ReactNode) => (
+  <RequirePermission permission={permission}>{element}</RequirePermission>
+);
+
+function TeamRoute() {
+  const session = useSession();
+  return session.status === 'authenticated' ? <TeamPage meId={session.me.user.id} /> : null;
+}
+
 function ProfileRoute() {
   const session = useSession();
   return session.status === 'authenticated' ? <ProfilePage me={session.me} /> : null;
@@ -69,6 +85,9 @@ export const routes: RouteObject[] = [
       { path: '/', element: <TodayPage /> },
       { path: '/historial', element: <HistoryPage /> },
       { path: '/reportes', element: <ReportsPage /> },
+      { path: '/reportes/equipo', element: guarded('team:report', <TeamReportPage />) },
+      { path: '/reportes/equipo/:id', element: guarded('team:report', <SellerDetailPage />) },
+      { path: '/equipo', element: guarded('team:manage', <TeamRoute />) },
       { path: '/vender', element: <NewSalePage /> },
       { path: '/vender/listo/:id', element: <SaleRegisteredPage /> },
       { path: '/ventas/:id', element: <SaleDetailPage /> },
@@ -76,18 +95,41 @@ export const routes: RouteObject[] = [
       { path: '/dia', element: <PrepareDayPage /> },
       { path: '/dia/inventario', element: <InventoryPage /> },
       { path: '/dia/anteriores', element: <PastDaysPage /> },
-      { path: '/catalogo', element: <CatalogPage /> },
-      { path: '/catalogo/nuevo', element: <ProductFormPage /> },
-      { path: '/catalogo/:id', element: <ProductFormPage /> },
-      { path: '/configuracion', element: <SettingsPage /> },
+      { path: '/catalogo', element: guarded('product:write', <CatalogPage />) },
+      { path: '/catalogo/nuevo', element: guarded('product:write', <ProductFormPage />) },
+      { path: '/catalogo/:id', element: guarded('product:write', <ProductFormPage />) },
+      { path: '/configuracion', element: guarded('store:update', <SettingsPage />) },
       { path: '/perfil', element: <ProfileRoute /> },
       { path: '*', element: <NotFoundPage /> },
     ],
   },
 ];
 
-export const createQueryClient = (retry: number | false = 1) =>
-  new QueryClient({ defaultOptions: { queries: { refetchOnWindowFocus: false, retry } } });
+/**
+ * Si el servidor dice que la cuenta fue dada de baja en pleno uso, se vuelve a pedir la sesión: la puerta de
+ * sesión muestra entonces la pantalla de cuenta dada de baja (RF-135) en lugar de un error suelto.
+ */
+const isMemberDisabled = (error: unknown) =>
+  error instanceof ApiError && error.code === 'membership_disabled';
+
+export function createQueryClient(retry: number | false = 1) {
+  const client: QueryClient = new QueryClient({
+    defaultOptions: { queries: { refetchOnWindowFocus: false, retry } },
+    queryCache: new QueryCache({
+      onError: (error, query) => {
+        if (isMemberDisabled(error) && query.queryKey[0] !== ME_KEY[0]) {
+          void client.invalidateQueries({ queryKey: ME_KEY });
+        }
+      },
+    }),
+    mutationCache: new MutationCache({
+      onError: (error) => {
+        if (isMemberDisabled(error)) void client.invalidateQueries({ queryKey: ME_KEY });
+      },
+    }),
+  });
+  return client;
+}
 
 export function App() {
   const [client] = useState(() => createQueryClient());

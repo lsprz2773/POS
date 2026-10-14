@@ -9,6 +9,7 @@ export interface HistoryQuery {
   filter: HistoryFilter;
   from?: string;
   to?: string;
+  sellerId?: string;
 }
 
 const PAGE = 50;
@@ -34,6 +35,7 @@ export function useSalesList(query: HistoryQuery) {
       if (query.q) params.set('q', query.q);
       if (query.from) params.set('from', query.from);
       if (query.to) params.set('to', query.to);
+      if (query.sellerId) params.set('sellerId', query.sellerId);
       return api.get<SalesList>(`/sales?${params}`, signal);
     },
     getNextPageParam: (last) => {

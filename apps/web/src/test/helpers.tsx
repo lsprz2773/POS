@@ -154,6 +154,7 @@ export function makeSale(overrides: Record<string, unknown> = {}) {
     balance: '135.00',
     paymentStatus: 'pending',
     settledAt: null,
+    createdBy: { id: 'u1', name: 'ana@tienda.test' },
     cancellation: null,
     payments: [] as ReturnType<typeof makePayment>[],
     items: [
@@ -212,6 +213,7 @@ export const pendingItem = (sale: ReturnType<typeof makeSale>) => ({
   paid: sale.paid,
   balance: sale.balance,
   paymentStatus: sale.paymentStatus,
+  createdBy: sale.createdBy,
 });
 
 export function makeDashboard(overrides: Record<string, unknown> = {}) {
@@ -278,6 +280,138 @@ export const saleSummary = (overrides: Record<string, unknown> = {}) => {
     paid: '68.00',
     balance: '0.00',
     paymentStatus: 'paid',
+    createdBy: { id: 'u1', name: 'ana@tienda.test' },
     ...overrides,
   };
 };
+
+/** Sesión de un vendedor. */
+export const SELLER_ME = {
+  user: { id: 'u2', email: 'vera@tienda.test' },
+  tenant: { id: 't1', name: 'Tamales Ana' },
+  role: 'seller',
+};
+
+const MEMBER_BASE = { createdAt: '2026-10-14T15:00:00.000Z' };
+
+export const OWNER_MEMBER = {
+  ...MEMBER_BASE,
+  id: 'u1',
+  email: 'ana@tienda.test',
+  displayName: null,
+  role: 'owner',
+  status: 'active',
+};
+
+export function makeMember(overrides: Record<string, unknown> = {}) {
+  return {
+    ...MEMBER_BASE,
+    id: '90000000-0000-4000-8000-000000000001',
+    email: 'vera@tienda.test',
+    displayName: 'Vera López',
+    role: 'seller',
+    status: 'active',
+    ...overrides,
+  };
+}
+
+export function makeTeam(members: unknown[], activeSellers?: number) {
+  const sellers = (members as { role: string; status: string }[]).filter(
+    (m) => m.role === 'seller' && m.status === 'active',
+  );
+  return {
+    body: {
+      items: [OWNER_MEMBER, ...members],
+      activeSellers: activeSellers ?? sellers.length,
+      sellerLimit: 10,
+    },
+  };
+}
+
+export function makeSellerRow(overrides: Record<string, unknown> = {}) {
+  return {
+    userId: '90000000-0000-4000-8000-000000000001',
+    name: 'Vera López',
+    email: 'vera@tienda.test',
+    role: 'seller',
+    status: 'active',
+    salesTotal: '150.00',
+    salesCount: 2,
+    averageTicket: '75.00',
+    unitsSold: '6',
+    collected: '90.00',
+    collectedByMethod: { cash: '40.00', transfer: '50.00' },
+    pending: '60.00',
+    costOfGoodsSold: '84.00',
+    grossProfit: '66.00',
+    isGrossLoss: false,
+    grossMargin: '44.00',
+    share: '60.00',
+    cancelled: { count: 0, total: '0.00', refundDue: '0.00', rate: null },
+    owed: { total: '60.00', count: 1 },
+    ...overrides,
+  };
+}
+
+export function makeSellersReport(rows: unknown[], overrides: Record<string, unknown> = {}) {
+  return {
+    body: {
+      from: '2026-10-12',
+      to: '2026-10-18',
+      hasSellers: true,
+      items: rows,
+      totals: {
+        salesTotal: '250.00',
+        salesCount: 4,
+        costOfGoodsSold: '140.00',
+        grossProfit: '110.00',
+        collected: '115.00',
+        pending: '135.00',
+        owed: { total: '135.00', count: 2 },
+      },
+      ...overrides,
+    },
+  };
+}
+
+export function makeSellerDetail(overrides: Record<string, unknown> = {}) {
+  return {
+    body: {
+      from: '2026-10-12',
+      to: '2026-10-18',
+      seller: makeSellerRow(),
+      topProducts: [
+        {
+          productId: '20000000-0000-4000-8000-000000000001',
+          name: 'Tamal de rajas',
+          units: '6',
+          amount: '150.00',
+        },
+      ],
+      daily: [
+        { date: '2026-10-14', salesTotal: '0.00', salesCount: 0 },
+        { date: '2026-10-15', salesTotal: '150.00', salesCount: 2 },
+      ],
+      previous: {
+        from: '2026-10-05',
+        to: '2026-10-11',
+        salesTotal: '50.00',
+        salesCount: 2,
+        grossProfit: '22.00',
+      },
+      aging: {
+        upTo7: { total: '85.00', count: 2 },
+        from8To30: { total: '25.00', count: 1 },
+        over30: { total: '50.00', count: 1 },
+      },
+      utilization: {
+        preparedUnits: '50',
+        soldUnits: '6',
+        soldPercent: '12.00',
+        products: 1,
+        soldOutProducts: 0,
+      },
+      ...overrides,
+    },
+  };
+}

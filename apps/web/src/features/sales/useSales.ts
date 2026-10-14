@@ -86,6 +86,8 @@ export function useCancelSale(saleId: string) {
 export interface PendingFilter {
   from?: string;
   to?: string;
+  /** Solo el propietario: pendientes de una persona. */
+  sellerId?: string;
 }
 
 const PAGE = 50;
@@ -99,6 +101,7 @@ export function usePending(filter: PendingFilter) {
       const params = new URLSearchParams({ limit: String(PAGE), offset: String(pageParam) });
       if (filter.from) params.set('from', filter.from);
       if (filter.to) params.set('to', filter.to);
+      if (filter.sellerId) params.set('sellerId', filter.sellerId);
       return api.get<PendingList>(`/sales/pending?${params}`, signal);
     },
     getNextPageParam: (last) => {

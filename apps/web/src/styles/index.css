@@ -365,6 +365,9 @@ body {
   }
   .inp {
     width: 100%;
+    /* Dentro de una rejilla o de una caja, el campo nunca pasa de su contenedor (iOS Safari). */
+    min-width: 0;
+    max-width: 100%;
     min-height: 48px;
     border-radius: 14px;
     border: 1.5px solid var(--line);
@@ -375,6 +378,30 @@ body {
   }
   .inp::placeholder {
     color: var(--ink3);
+  }
+  /*
+   * Fecha y hora: Safari de iOS pinta estos campos con un ancho propio que ignora width: 100% y los hace
+   * crecer sobre el vecino o fuera de la caja. Sin la apariencia nativa obedecen al contenedor; el
+   * selector del sistema sigue abriéndose al tocarlos.
+   */
+  .inp[type='date'],
+  .inp[type='time'] {
+    display: block;
+    -webkit-appearance: none;
+    appearance: none;
+    text-align: left;
+    line-height: 1.2;
+    overflow: hidden;
+  }
+  .inp[type='date']::-webkit-date-and-time-value,
+  .inp[type='time']::-webkit-date-and-time-value {
+    text-align: left;
+    min-width: 0;
+  }
+  .inp[type='date']::-webkit-datetime-edit,
+  .inp[type='time']::-webkit-datetime-edit {
+    padding: 0;
+    min-width: 0;
   }
   .inp:focus {
     border-color: var(--prim);

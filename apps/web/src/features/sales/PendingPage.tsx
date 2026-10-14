@@ -1,4 +1,4 @@
-import { formatMoney, type PendingSale } from '@pos/shared';
+import { formatMoney, type OwedBySeller, type PendingSale } from '@pos/shared';
 import { CalendarDays, PartyPopper, SearchX } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
@@ -12,6 +12,7 @@ import { Stat } from '../../components/Stat';
 import { copy } from '../../copy/es';
 import { formatShortDate } from '../../lib/format';
 import { useCurrency, useToday } from '../store/useStore';
+import { useSellerOptions } from '../team/useSellerOptions';
 import { DateRangeSheet } from './DateRangeSheet';
 import { usePending, type PendingFilter } from './useSales';
 
@@ -21,10 +22,12 @@ function PendingCard({
   sale,
   today,
   money,
+  showSeller,
 }: {
   sale: PendingSale;
   today: string | undefined;
   money: (amount: string) => string;
+  showSeller: boolean;
 }) {
   const previous = today !== undefined && sale.date < today;
   return (
@@ -43,6 +46,7 @@ function PendingCard({
       <div className="cap">
         {shortDate(sale.date)}
         {sale.customerReference ? ` · ${sale.customerReference}` : ''}
+        {showSeller ? ` · ${sale.createdBy.name}` : ''}
       </div>
       <div className="grid grid-cols-3 gap-3">
         <Stat label={copy.sale.totalShort} value={money(sale.total)} />
@@ -60,6 +64,46 @@ function PendingCard({
   );
 }
 
+/** Lo que se le debe a cada persona (T112). Tocar una fila filtra la lista por esa persona. */
+function BySeller({
+  rows,
+  money,
+  onPick,
+}: {
+  rows: OwedBySeller[];
+  money: (amount: string) => string;
+  onPick: (sellerId: string) => void;
+}) {
+  return (
+    <section className="glass2 card flex flex-col gap-3" aria-label={copy.sale.bySellerTitle}>
+      <div>
+        <h2 className="h2" style={{ fontSize: 16 }}>
+          {copy.sale.bySellerTitle}
+        </h2>
+        <p className="cap m-0">{copy.sale.bySellerNote}</p>
+      </div>
+      <ul className="m-0 flex list-none flex-col gap-2 p-0">
+        {rows.map((row) => (
+          <li key={row.userId}>
+            <button
+              type="button"
+              className="btn btn-g btn-block"
+              style={{ justifyContent: 'space-between' }}
+              aria-label={copy.sale.bySellerRow(row.name)}
+              onClick={() => onPick(row.userId)}
+            >
+              <span className="min-w-0 break-words text-left">
+                {row.name} <span className="cap">· {copy.sale.pendingCount(row.count)}</span>
+              </span>
+              <b>{money(row.total)}</b>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 /** Ventas con saldo de cualquier día, con el total que falta por cobrar (RF-073 a RF-080). */
 export function PendingPage() {
   const today = useToday();
@@ -67,17 +111,21 @@ export function PendingPage() {
   const money = (amount: string) => formatMoney(amount, currency);
   const [filter, setFilter] = useState<PendingFilter>({});
   const [filtering, setFiltering] = useState(false);
+  const { options: sellers, showSeller } = useSellerOptions();
   const query = usePending(filter);
   const sales = query.data?.pages.flatMap((page) => page.items) ?? [];
   const first = query.data?.pages[0];
-  const filtered = filter.from !== undefined || filter.to !== undefined;
+  const dated = filter.from !== undefined || filter.to !== undefined;
+  const filtered = dated || filter.sellerId !== undefined;
+  const sellerName = sellers.find((seller) => seller.id === filter.sellerId)?.name;
 
-  const label = filtered
+  const dateLabel = dated
     ? copy.sale.rangeLabel(
         filter.from ? shortDate(filter.from) : '…',
         filter.to ? shortDate(filter.to) : '…',
       )
     : copy.sale.allDates;
+  const label = sellerName ? `${sellerName} · ${dateLabel}` : dateLabel;
 
   return (
     <>
@@ -115,6 +163,14 @@ export function PendingPage() {
             <span className="bdg bdg-pen">{copy.sale.pendingCount(first?.total ?? 0)}</span>
           </section>
 
+          {showSeller && first?.bySeller && first.bySeller.length > 0 ? (
+            <BySeller
+              rows={first.bySeller}
+              money={money}
+              onPick={(sellerId) => setFilter({ ...filter, sellerId })}
+            />
+          ) : null}
+
           {sales.length === 0 ? (
             filtered ? (
               <EmptyState
@@ -134,7 +190,13 @@ export function PendingPage() {
             <>
               <ul className="stagger m-0 flex list-none flex-col gap-3 p-0">
                 {sales.map((sale) => (
-                  <PendingCard key={sale.id} sale={sale} today={today} money={money} />
+                  <PendingCard
+                    key={sale.id}
+                    sale={sale}
+                    today={today}
+                    money={money}
+                    showSeller={showSeller}
+                  />
                 ))}
               </ul>
               {query.hasNextPage ? (
@@ -155,6 +217,7 @@ export function PendingPage() {
         <DateRangeSheet
           today={today}
           value={filter}
+          sellers={sellers}
           onClose={() => setFiltering(false)}
           onApply={(range) => {
             setFilter(range);

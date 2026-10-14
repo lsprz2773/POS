@@ -1,8 +1,18 @@
 import { randomBytes } from 'node:crypto';
 import { SignJWT } from 'jose';
 import { describe, expect, it } from 'vitest';
-import { TEST_SECRET, TEST_USERS, makeIdentity } from '../../../test/support/app';
-import { InvalidCredentialsError, InvalidTokenError } from './identity-provider';
+import {
+  TEST_SECRET,
+  TEST_USERS,
+  makeIdentity,
+  makeLocalIdentity,
+} from '../../../test/support/app';
+import {
+  InvalidCredentialsError,
+  InvalidTokenError,
+  UserExistsError,
+  WeakPasswordError,
+} from './identity-provider';
 
 const [ana] = TEST_USERS;
 
@@ -75,6 +85,55 @@ describe('proveedor de identidad local', () => {
   it('rechaza texto que no es un token', async () => {
     await expect(makeIdentity().verifyAccessToken('basura')).rejects.toBeInstanceOf(
       InvalidTokenError,
+    );
+  });
+});
+
+describe('cuentas del proveedor local (equipo)', () => {
+  const password = 'Contrasena-Larga-1';
+
+  it('una cuenta creada puede iniciar sesión con la contraseña registrada', async () => {
+    const { provider, directory } = makeLocalIdentity();
+    const { subject } = await directory.createUser('Nueva@Tienda.test', password);
+    expect(subject).toBe('local:nueva@tienda.test');
+    const { identity } = await provider.login('nueva@tienda.test', password);
+    expect(identity.subject).toBe(subject);
+  });
+
+  it('rechaza un correo repetido y una contraseña que no cumple la política', async () => {
+    const { directory } = makeLocalIdentity();
+    await expect(directory.createUser(ana!.email, password)).rejects.toBeInstanceOf(
+      UserExistsError,
+    );
+    await expect(directory.createUser('x@tienda.test', 'corta')).rejects.toBeInstanceOf(
+      WeakPasswordError,
+    );
+    await expect(directory.createUser('x@tienda.test', 'sinnumeroslargaaa')).rejects.toBeInstanceOf(
+      WeakPasswordError,
+    );
+  });
+
+  it('una cuenta deshabilitada no inicia sesión ni renueva, y al habilitarla vuelve', async () => {
+    const { provider, directory } = makeLocalIdentity();
+    const { subject } = await directory.createUser('baja@tienda.test', password);
+    const { tokens } = await provider.login('baja@tienda.test', password);
+
+    await directory.disable(subject);
+    await expect(provider.login('baja@tienda.test', password)).rejects.toBeInstanceOf(
+      InvalidCredentialsError,
+    );
+    await expect(provider.refresh(tokens.refreshToken)).rejects.toBeInstanceOf(InvalidTokenError);
+
+    await directory.enable(subject);
+    await expect(provider.login('baja@tienda.test', password)).resolves.toBeDefined();
+  });
+
+  it('una cuenta borrada ya no existe', async () => {
+    const { provider, directory } = makeLocalIdentity();
+    const { subject } = await directory.createUser('borrar@tienda.test', password);
+    await directory.deleteUser(subject);
+    await expect(provider.login('borrar@tienda.test', password)).rejects.toBeInstanceOf(
+      InvalidCredentialsError,
     );
   });
 });

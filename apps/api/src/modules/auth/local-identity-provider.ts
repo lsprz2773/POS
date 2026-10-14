@@ -1,12 +1,16 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { jwtVerify, SignJWT } from 'jose';
 import { z } from 'zod';
+import { sellerPasswordSchema } from '@pos/shared';
 import {
   InvalidCredentialsError,
   InvalidTokenError,
+  UserExistsError,
+  WeakPasswordError,
   type AuthTokens,
   type Identity,
   type IdentityProvider,
+  type UserDirectory,
 } from './identity-provider';
 
 const ISSUER = 'pos-local';
@@ -27,8 +31,17 @@ const digest = (value: string) => createHash('sha256').update(value).digest();
  * Emite JWT firmados con HS256. No se usa en producción (la configuración lo impide).
  */
 export function createLocalIdentityProvider(options: LocalProviderOptions): IdentityProvider {
+  return createLocalIdentity(options).provider;
+}
+
+/** El proveedor y su administración de cuentas comparten las mismas cuentas en memoria (solo desarrollo y pruebas). */
+export function createLocalIdentity(options: LocalProviderOptions): {
+  provider: IdentityProvider;
+  directory: UserDirectory;
+} {
   const key = new TextEncoder().encode(options.secret);
   const users = new Map<string, string>();
+  const disabled = new Set<string>();
   if (options.usersJson) {
     for (const user of usersSchema.parse(JSON.parse(options.usersJson))) {
       users.set(user.email.toLowerCase(), user.password);
@@ -72,10 +85,10 @@ export function createLocalIdentityProvider(options: LocalProviderOptions): Iden
     }
   }
 
-  return {
+  const provider: IdentityProvider = {
     async login(email, password) {
       const normalized = email.trim().toLowerCase();
-      const expected = users.get(normalized);
+      const expected = disabled.has(normalized) ? undefined : users.get(normalized);
       // Se compara siempre, aunque el usuario no exista, para no revelar su existencia por tiempo.
       const matches = timingSafeEqual(digest(password), digest(expected ?? '\u0000no-user'));
       if (!expected || !matches) throw new InvalidCredentialsError();
@@ -87,8 +100,33 @@ export function createLocalIdentityProvider(options: LocalProviderOptions): Iden
 
     async refresh(refreshToken) {
       const identity = await verify(refreshToken, 'refresh');
-      if (!users.has(identity.email)) throw new InvalidTokenError();
+      if (!users.has(identity.email) || disabled.has(identity.email)) throw new InvalidTokenError();
       return { identity, tokens: await issue(identity) };
     },
   };
+
+  const emailOf = (subject: string) => subject.replace(/^local:/, '');
+
+  const directory: UserDirectory = {
+    async createUser(email, password) {
+      const normalized = email.trim().toLowerCase();
+      if (users.has(normalized)) throw new UserExistsError();
+      if (!sellerPasswordSchema.safeParse(password).success) throw new WeakPasswordError();
+      users.set(normalized, password);
+      return { subject: subjectOf(normalized) };
+    },
+    async disable(subject) {
+      disabled.add(emailOf(subject));
+    },
+    async enable(subject) {
+      disabled.delete(emailOf(subject));
+    },
+    async signOutEverywhere() {},
+    async deleteUser(subject) {
+      users.delete(emailOf(subject));
+      disabled.delete(emailOf(subject));
+    },
+  };
+
+  return { provider, directory };
 }

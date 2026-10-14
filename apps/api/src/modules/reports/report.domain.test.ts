@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
   averageTicketCents,
+  datesIn,
   daysIn,
   formatSignedCents,
   grossMargin,
+  previousPeriod,
   resolvePeriod,
 } from './report.domain';
 
@@ -64,5 +66,41 @@ describe('importes con signo', () => {
     expect(grossMargin(2000n, 2000n)).toBe('100.00');
     expect(grossMargin(0n, 2000n)).toBe('0.00');
     expect(grossMargin(0n, 0n)).toBeNull();
+  });
+});
+
+describe('periodo anterior y fechas del periodo', () => {
+  it('un día, una semana, un mes y un rango tienen su anterior', () => {
+    expect(previousPeriod({ from: '2026-10-15', to: '2026-10-15' })).toEqual({
+      from: '2026-10-14',
+      to: '2026-10-14',
+    });
+    expect(previousPeriod({ from: '2026-10-12', to: '2026-10-18' })).toEqual({
+      from: '2026-10-05',
+      to: '2026-10-11',
+    });
+    expect(previousPeriod({ from: '2026-10-01', to: '2026-10-31' })).toEqual({
+      from: '2026-09-01',
+      to: '2026-09-30',
+    });
+    expect(previousPeriod({ from: '2026-10-03', to: '2026-10-09' })).toEqual({
+      from: '2026-09-26',
+      to: '2026-10-02',
+    });
+    // Marzo: el anterior es febrero (28 días en 2027), no 31 días hacia atrás.
+    expect(previousPeriod({ from: '2027-03-01', to: '2027-03-31' })).toEqual({
+      from: '2027-02-01',
+      to: '2027-02-28',
+    });
+  });
+
+  it('lista todas las fechas, de la primera a la última', () => {
+    expect(datesIn({ from: '2026-10-30', to: '2026-11-02' })).toEqual([
+      '2026-10-30',
+      '2026-10-31',
+      '2026-11-01',
+      '2026-11-02',
+    ]);
+    expect(datesIn({ from: '2026-10-15', to: '2026-10-15' })).toEqual(['2026-10-15']);
   });
 });

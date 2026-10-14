@@ -1,5 +1,5 @@
 import { AppError } from '../../errors';
-import { MAX_REPORT_DAYS, monthOf, weekOf, type Period } from '@pos/shared';
+import { addDays, MAX_REPORT_DAYS, monthOf, weekOf, type Period } from '@pos/shared';
 
 const invalid = (field: string, message: string) =>
   new AppError(400, 'validation_error', 'Revisa los datos ingresados.', { [field]: message });
@@ -59,4 +59,24 @@ export function grossMargin(profitCents: bigint, salesCents: bigint): string | n
   const abs = profitCents < 0n ? -profitCents : profitCents;
   const hundredths = (abs * 20000n + salesCents) / (2n * salesCents);
   return formatSignedCents(profitCents < 0n ? -hundredths : hundredths);
+}
+
+/**
+ * El periodo inmediato anterior, para comparar: el mes anterior si el periodo es un mes, la semana anterior
+ * si es una semana (lunes a domingo) y, en cualquier otro caso (un día o un rango), uno de la misma duración.
+ */
+export function previousPeriod(period: Period): Period {
+  const before = addDays(period.from, -1);
+  const month = monthOf(period.from);
+  if (month.from === period.from && month.to === period.to) return monthOf(before);
+  const week = weekOf(period.from);
+  if (week.from === period.from && week.to === period.to) return weekOf(before);
+  const days = daysIn(period);
+  return { from: addDays(before, 1 - days), to: before };
+}
+
+/** Todas las fechas del periodo, de la primera a la última. */
+export function datesIn(period: Period): string[] {
+  const days = daysIn(period);
+  return Array.from({ length: days }, (_, index) => addDays(period.from, index));
 }

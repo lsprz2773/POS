@@ -17,7 +17,8 @@ import { parseInput } from '../../validation';
 import { recordAudit } from '../audit/audit';
 import { createStoreRepository } from '../store/store.repository';
 import type { AuthContext } from '../tenancy/context';
-import { assertCan, rowScope } from '../tenancy/permissions';
+import { assertCan, rowScope, scopeFor } from '../tenancy/permissions';
+import { owedBySellerFor } from '../reports/team-report.usecases';
 import type { Clock } from '../workdays/workday.usecases';
 import { applyPayments } from './payment.apply';
 import { hashPaymentRequest } from './sale.domain';
@@ -189,8 +190,10 @@ export async function listPending(
   const { items, total, totalBalance } = await createSaleRepository(
     db,
     ctx.tenantId,
-    rowScope(ctx),
+    scopeFor(ctx, filter.sellerId),
   ).listPending(filter);
+  // Con vendedores, el propietario ve además lo que se le debe a cada persona (T112).
+  const bySeller = await owedBySellerFor(db, ctx);
   return {
     items: items.map((row) => {
       const balance = balanceOf(row.total, row.paid);
@@ -205,10 +208,12 @@ export async function listPending(
         paid: balanceOf(row.paid, '0'),
         balance,
         paymentStatus: collectionStatus({ status: 'active', total: row.total, paid: row.paid }),
+        createdBy: row.createdBy,
       };
     }),
     total,
     totalBalance: balanceOf(totalBalance, '0'),
+    ...(bySeller ? { bySeller } : {}),
     limit: filter.limit,
     offset: filter.offset,
   };

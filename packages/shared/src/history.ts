@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { collectionStatuses } from './payments';
 import { saleStatuses } from './sales';
+import { sellerRefSchema } from './team-owed';
 
 /** Filtros del historial de ventas (RF-081 y siguientes, RNF-006). */
 export const listSalesQuerySchema = z
@@ -22,6 +23,8 @@ export const listSalesQuerySchema = z
       .max(100, 'Máximo 100 caracteres.')
       .optional()
       .transform((value) => value || undefined),
+    /** Solo el propietario: ventas de una persona (fase 10d). */
+    sellerId: z.uuid('Elige un vendedor válido.').optional(),
     limit: z.coerce.number().int().min(1).max(100).default(50),
     offset: z.coerce.number().int().min(0).default(0),
   })
@@ -49,6 +52,8 @@ export const saleSummarySchema = z.object({
   /** Una venta cancelada ya no se cobra: su falta por pagar es 0. */
   balance: z.string(),
   paymentStatus: z.enum(collectionStatuses),
+  /** Quién registró la venta. */
+  createdBy: sellerRefSchema,
 });
 export type SaleSummary = z.infer<typeof saleSummarySchema>;
 

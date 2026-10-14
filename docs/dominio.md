@@ -20,7 +20,9 @@ erDiagram
   TENANT ||--o{ WORKDAY : tiene
   WORKDAY ||--o{ DAILY_OFFER : incluye
   PRODUCT ||--o{ DAILY_OFFER : "se ofrece en"
+  USER ||--o{ DAILY_OFFER : prepara
   DAILY_OFFER ||--o{ STOCK_ADJUSTMENT : ajusta
+  USER ||--o{ SALE : registra
   WORKDAY ||--o{ SALE : agrupa
   TENANT ||--o{ SALE : tiene
   SALE ||--|{ SALE_ITEM : contiene
@@ -36,11 +38,11 @@ erDiagram
 |---|---|---|
 | Tenant | nombre, estado (activo/desactivado) | Una tienda. |
 | StoreSettings | moneda, zona horaria, horario de jornada (por omisión 08:00 a 16:00), días de operación (por omisión lunes a viernes) | 1 a 1 con Tenant. Editable por el propietario. |
-| User | identificador de identidad externa, correo | La contraseña la gestiona el proveedor de identidad. |
-| Membership | tenant, usuario, rol (`owner`) | Permite agregar cajeros después sin cambiar el modelo. |
+| User | identificador de identidad externa, correo, nombre para mostrar (fase 10, opcional, máximo 80) | La contraseña la gestiona el proveedor de identidad; la app nunca la guarda ni la registra. |
+| Membership | tenant, usuario, rol (`owner` o, desde la fase 10, `seller`), estado (`active`/`disabled`), quién lo dio de alta | Una persona pertenece a una sola tienda. Cada tienda tiene exactamente un `owner` y hasta 10 `seller` (T101, T106). Un usuario dado de baja (`disabled`) no puede operar. |
 | Product | nombre, descripción, categoría, código interno, unidad (por omisión `pieza`), admite fracciones (falso), precio de venta, costo, notas, activo, versión, creado y modificado el | Desactivar no borra historial. El costo es obligatorio (puede ser 0). El código interno es único por tienda. La versión sube en cada cambio y evita ediciones simultáneas (T21). |
 | Workday (jornada) | fecha de negocio, hora de inicio, hora de fin | Única por (tenant, fecha). Se crea al agregar el primer producto y copia el horario de la configuración; el horario se puede ajustar por día. Solo se modifican jornadas de hoy en adelante; las pasadas son de consulta. Sin cierre. |
-| DailyOffer | jornada, producto, cantidad inicial | Único por (jornada, producto). La cantidad inicial no se edita; crece solo con ajustes. Solo productos activos de la misma tienda. |
+| DailyOffer | jornada, usuario (fase 10), producto, cantidad inicial | Único por (jornada, usuario, producto). Cada persona prepara su propia disponibilidad (T105); en una tienda sin vendedores solo existen las del `owner`, como antes. La cantidad inicial no se edita; crece solo con ajustes. Solo productos activos de la misma tienda. |
 | StockAdjustment | disponibilidad diaria, incremento (> 0), motivo, usuario, fecha | Solo incrementos (B9). |
 | Sale | folio consecutivo por tenant, jornada, cliente/referencia, nota, estado (`active`/`cancelled`), total, creada el, creada por, llave de idempotencia, liquidada el | El folio es legible (`V-0043`, RF-049). Nace en la jornada de hoy. Una venta confirmada no se edita ni se borra (la base lo impide); solo puede pasar a cancelada. La fecha de liquidación llega con los pagos (fase 5). |
 | SaleItem | venta, posición, disponibilidad diaria, producto, nombre del producto en ese momento, cantidad, precio unitario, costo unitario, subtotal | Congela precio, costo y nombre (RF-044, RF-045). Un producto aparece una sola vez por venta. Subtotal = cantidad × precio, redondeado a centavos. |
@@ -56,7 +58,7 @@ erDiagram
 - Estado de cobro: `cancelled` si la venta está cancelada; si no, `paid` si `saldo` = 0 (también una venta de total cero), `partial` si 0 < `pagado` < `total`, y `pending` si `pagado` = 0. La interfaz agrupa `pending` y `partial` como "Pendiente".
 - Fecha de liquidación (`settled_at`): cuándo el saldo llegó a 0; se borra si una anulación vuelve a dejar saldo.
 - Vendido de un producto en un día = unidades en ventas vigentes más las de ventas canceladas cuyo inventario no se restituyó (B13).
-- Disponible de un producto en un día = cantidad inicial + ajustes − vendido.
+- Disponible de un producto en un día = cantidad inicial + ajustes − vendido, **por persona** (fase 10): cada `DailyOffer` pertenece a un usuario y solo ese usuario la descuenta al vender.
 - Por devolver fuera del sistema de una venta cancelada = pagos `valid` de esa venta (B14).
 
 ## Invariantes (cada una lleva prueba automatizada)
@@ -70,18 +72,23 @@ erDiagram
 7. Una venta confirmada nunca se borra ni se edita.
 8. Una operación repetida con la misma llave de idempotencia no duplica efectos.
 9. Venta e inventario se confirman o se revierten juntos.
+10. (Fase 10) Toda operación verifica el permiso del rol en el caso de uso; una ruta privada sin permiso declarado no arranca.
+11. (Fase 10) Un `seller` solo ve y opera las ventas y pagos que él registró; un recurso de otro vendedor responde 404.
+12. (Fase 10) Una venta solo descuenta la disponibilidad de quien la registra, y ese vendedor solo vende lo que preparó.
+13. (Fase 10) Un usuario dado de baja no puede operar desde su siguiente petición, aunque su token siga vigente; su historial se conserva.
+14. (Fase 10) La suma de las filas del reporte por vendedor cuadra con el reporte general.
 
 ## Flujos
 
 ### Preparar el día
-1. El propietario elige la fecha (por omisión hoy) y selecciona productos activos con su cantidad inicial (≥ 0).
-2. Si no existe, se crea la `Workday` de esa fecha con el horario de la tienda. Se guarda una `DailyOffer` por producto; un producto ya agregado no se duplica (se dirige al registro existente).
+1. El usuario (el propietario o, desde la fase 10, cada vendedor) elige la fecha (por omisión hoy) y selecciona productos activos con su cantidad inicial (≥ 0).
+2. Si no existe, se crea la `Workday` de esa fecha con el horario de la tienda. Se guarda una `DailyOffer` por producto **a nombre de quien prepara**; un producto ya agregado por esa persona no se duplica (se dirige al registro existente). Otra persona puede preparar el mismo producto el mismo día con su propia cantidad.
 3. Para aumentar la cantidad se crea un `StockAdjustment`; nunca se baja. Quitar un producto del día solo es posible si no tiene ventas (y se vuelve a agregar si hubo un error).
 
 ### Crear venta
 1. Entrada: renglones (producto, cantidad), cliente/referencia y nota opcionales, pago opcional y `Idempotency-Key`.
-2. El backend valida el tenant, que cada producto esté en la disponibilidad de hoy y que la cantidad sea válida.
-3. En una transacción: bloquea los productos del día y comprueba que haya existencias (vendido se calcula con las ventas no canceladas); crea la venta con precio, costo y nombre congelados y el siguiente folio; registra el pago si viene (fase 5); escribe auditoría.
+2. El backend valida el tenant, que cada producto esté en la disponibilidad de hoy **de quien vende** y que la cantidad sea válida.
+3. En una transacción: bloquea los productos del día de quien vende y comprueba que haya existencias (vendido se calcula con las ventas no canceladas); crea la venta con precio, costo y nombre congelados y el siguiente folio; registra el pago si viene (fase 5); escribe auditoría.
 4. Si falta inventario, se rechaza todo e indica el producto afectado. Un reintento con la misma llave devuelve la venta ya creada.
 
 ### Registrar pago
@@ -99,6 +106,17 @@ erDiagram
 3. Si la venta es de hoy, se restituyen las unidades a la disponibilidad. Si es de un día anterior, no se restituye, esas unidades siguen contando como vendidas de su día y se registra (B13).
 4. Los pagos se conservan y se muestran como "por devolver fuera del sistema" (`refundDue`). La interfaz advierte que cualquier devolución de dinero se hace fuera del sistema.
 5. La venta cancelada ya no admite pagos ni anulaciones, y sale de pendientes.
+
+### Alta de vendedor (fase 10)
+1. Solo el `owner`. Entrada: nombre, correo y contraseña inicial.
+2. Se valida el correo (único en todo el sistema), la política de contraseña y el tope de 10 vendedores.
+3. Se crea la cuenta en el proveedor de identidad; luego, en una transacción, `User`, `Membership` (`seller`, `active`) y auditoría. Si la base falla, se borra la cuenta creada.
+4. La contraseña no se guarda ni se registra. El propietario se la entrega al vendedor, que puede cambiarla en su perfil.
+
+### Baja y reactivación (fase 10)
+1. Solo el `owner`. La baja marca la membresía `disabled`, deshabilita la cuenta en el proveedor y cierra sus sesiones.
+2. Desde su siguiente petición el usuario recibe un rechazo; sus ventas, pagos y disponibilidades se conservan.
+3. La reactivación revierte el estado y habilita la cuenta. Restablecer la contraseña la fija de nuevo en el proveedor.
 
 ## Definiciones de métricas
 
@@ -119,6 +137,23 @@ erDiagram
 | Ventas canceladas | Número y total de las ventas canceladas con fecha de negocio dentro del periodo. Se muestran aparte y no entran en ninguna métrica anterior. |
 | Por devolver fuera del sistema | Pagos vigentes de las ventas canceladas del periodo (B14). |
 | Dashboard (hoy) | Ventas, número de ventas, cobrado (por método) y utilidad bruta estimada del día de hoy; pendiente total (número y monto) de todas las ventas vigentes con saldo, de cualquier día. |
+
+### Métricas por vendedor (fase 10)
+
+Las definiciones de arriba se aplican acotadas a las ventas de una persona (`sales.created_by`), con la fecha de negocio de la venta. Las ventas del `owner` forman una fila más.
+
+| Métrica | Definición |
+|---|---|
+| Ventas, número, ticket promedio, unidades, costo, utilidad bruta, margen bruto | Las mismas de la tabla anterior, solo con las ventas no canceladas de ese vendedor en el periodo. |
+| Cobrado y cobrado por método | Pagos `valid` con fecha de pago dentro del periodo sobre ventas no canceladas de ese vendedor (el mismo criterio que el reporte general, para que la suma cuadre). Informativo: no es un corte de caja. |
+| Pendiente del periodo | Saldo actual de las ventas de ese vendedor dentro del periodo. |
+| Pendiente por cobrar (lo que se le debe) | Suma del saldo de todas las ventas vigentes de ese vendedor, **de cualquier día**, y número de ventas con saldo. No depende del periodo. La suma de los vendedores es el pendiente total. |
+| Participación | Ventas del vendedor ÷ ventas de la tienda en el periodo, en porcentaje con 2 decimales, cuando ventas > 0. |
+| Ventas canceladas, por devolver | Número, total y pagos vigentes de las canceladas de ese vendedor en el periodo, aparte. |
+| Antigüedad del pendiente (recomendada) | Pendiente por cobrar agrupado por días desde la fecha de negocio de la venta: 0 a 7, 8 a 30 y más de 30. |
+| Aprovechamiento del día (recomendada) | Unidades preparadas (inicial más ajustes) contra vendidas en el periodo, porcentaje vendido y productos agotados. |
+
+El reporte de un vendedor es este mismo cálculo acotado a él, de modo que su utilidad coincide con su fila en el reporte del propietario. El corte de efectivo por entregar no existe en el sistema.
 
 La utilidad bruta no incluye gastos ni impuestos y no es utilidad neta; así se etiqueta en la interfaz.
 

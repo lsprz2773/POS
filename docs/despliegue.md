@@ -69,6 +69,15 @@ Dos riesgos reales que sí hay que vigilar:
 - Respaldo propio (T99): una función programada (`pos-<entorno>-backup`) exporta cada domingo toda la base a un archivo comprimido y cifrado en un bucket privado de S3 con borrado a los 30 días. Es una exportación lógica (cada fila como JSON, ordenada por llaves foráneas, en una sola transacción de lectura), no un `pg_dump`: así no hace falta un programa externo en Lambda ni credenciales fuera de AWS.
 - Restauración: `npm run restore` carga el archivo en una base ya migrada y vacía, dentro de una transacción; se niega si la base no está vacía o el esquema es distinto. La prueba de restauración en una rama de Neon está en el manual (parte 10) y se hace antes de producción.
 
+## Fase 10: cambios en la nube (equipo y vendedores, T110)
+
+La fase 10 ([plan.md](plan.md)) solo toca la nube en dos puntos, ninguno con costo:
+
+- **Permisos de la Lambda sobre Cognito.** La función de la API gana `cognito-idp:AdminCreateUser`, `AdminSetUserPassword`, `AdminDisableUser`, `AdminEnableUser`, `AdminUserGlobalSignOut` y `AdminDeleteUser`, acotados al ARN del grupo de usuarios del entorno (mínimo privilegio, RNF-061). Es un cambio de la plantilla que `deploy.sh` aplica como cualquier otro.
+- **Migraciones.** Amplían roles y estado de las membresías, agregan el nombre del usuario y asignan la disponibilidad del día a su dueño. `deploy.sh` las corre antes de publicar el código; son compatibles hacia atrás mientras la tienda solo tenga al propietario.
+
+No se crean recursos nuevos, no cambia el tope de costo y la cuenta del propietario no necesita ningún paso de configuración previo: ya es propietaria y verá Equipo al desplegar. Los pasos para el propietario están en [manual-despliegue.md](manual-despliegue.md), sección "Equipo: vendedores".
+
 ## Fases de ejecución
 
 Cada una con su rama y su PR, como hasta ahora.

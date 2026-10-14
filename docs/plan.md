@@ -107,6 +107,29 @@ Infraestructura como código (D5), Cognito, Neon, Lambda, API Gateway, hosting d
 Propuesta detallada, topes de costo y partes 9a a 9c en [despliegue.md](despliegue.md) (T86 a T95 de [decisiones.md](decisiones.md)).
 **Aceptación:** los criterios de finalización del MVP de [requerimientos.md](requerimientos.md), con costos acotados y alertas activas antes de crear recursos.
 
+### Fase 10. Equipo y vendedores (posterior al MVP, T101 a T115 de [decisiones.md](decisiones.md))
+El propietario da de alta vendedores y los gestiona; cada vendedor prepara su propio día con productos del catálogo, vende y ve lo suyo, incluida su utilidad bruta; el propietario ve los reportes del equipo y lo que se le debe a cada vendedor. Un solo rol de dueño (`owner`), sin rol "administrador". Una tienda sin vendedores no cambia. Requisitos en la sección 6.13 de [requerimientos.md](requerimientos.md) (RF-123 a RF-147). Se entrega en seis partes, cada una con su rama desde `dev` y su PR.
+
+| Parte | Contenido | Aceptación |
+|---|---|---|
+| 10a. Permisos (API) | Migración de roles y estado, `permissions.ts` compartido, `assertCan` en todos los casos de uso, `config.permission` que falla cerrado, alcance por fila (ventas, pagos, pendientes, dashboard y reportes acotados al vendedor), catálogo en solo lectura para el vendedor, estado en el contexto de autenticación | Matriz rol por ruta en pruebas de integración; un vendedor no ve ni toca ventas de otro vendedor ni de otra tienda; sin permiso declarado la API no arranca; el flujo del propietario no cambia |
+| 10b. Inventario del día por persona (API) | Migración `daily_offers.user_id` con relleno al propietario, repositorio de disponibilidad por tienda y usuario, venta que descuenta la disponibilidad de quien vende, lectura del día de un vendedor por el propietario | Dos usuarios de la misma tienda preparan el mismo producto el mismo día sin afectarse; dos ventas concurrentes sobre la última unidad de la misma persona: solo una pasa; un vendedor no vende lo que no preparó; cancelar restituye a la disponibilidad correcta; los datos del propietario quedan idénticos tras la migración; aislamiento entre tiendas |
+| 10c. Equipo (API e infraestructura) | `UserDirectory` (Cognito y local), rutas de equipo (sin cambio de contraseña, T108), permisos de Cognito en la plantilla, tope de vendedores, auditoría | Alta, baja inmediata, reactivación; el vendedor inicia sesión con la contraseña registrada; compensación si falla la base; la contraseña no aparece en logs ni auditoría; aislamiento entre tiendas |
+| 10d. Reportes del equipo (API) | `/api/reports/sellers` y su detalle, `bySeller` en pendientes y dashboard, filtro `sellerId`, `createdBy` en las ventas, métricas elegidas | La suma cuadra con el reporte general (ventas, costo, utilidad y pendiente); el pendiente por vendedor no depende del periodo y coincide con Pendientes; canceladas aparte; periodo vacío en ceros; una tienda sin vendedores no cambia; un vendedor recibe 403; sin datos de otra tienda |
+| 10e. Frontend por rol | Navegación y guardas por rol, Equipo, Por vendedor y su detalle, bloque en Hoy, Pendientes e Historial por vendedor, Día por persona | Pruebas de componentes y accesibilidad (axe) en móvil y escritorio, y los flujos E2E 16 a 21 de abajo |
+| 10f. Despliegue | Guía actualizada ([manual-despliegue.md](manual-despliegue.md)), redespliegue de staging y prueba con un vendedor real en el teléfono | Humo y E2E de staging en verde; el flujo del propietario intacto |
+
+**Flujos E2E nuevos** (`apps/web/e2e/equipo.spec.ts`, móvil y escritorio):
+
+| N | Flujo |
+|---|---|
+| 16 | El propietario da de alta un vendedor |
+| 17 | El vendedor prepara su día con productos del propietario y vende |
+| 18 | El vendedor no puede crear productos y las URLs prohibidas lo devuelven a Hoy |
+| 19 | El vendedor no ve ventas ni inventario de otro vendedor |
+| 20 | Reportes del equipo con el pendiente por cobrar de cada vendedor |
+| 21 | La baja de un vendedor le corta el acceso |
+
 ## Trazabilidad
 
 | Fase | Funcionalidades | Requerimientos funcionales |
@@ -119,5 +142,6 @@ Propuesta detallada, topes de costo y partes 9a a 9c en [despliegue.md](desplieg
 | 6 | F-15 | RF-106 a RF-113 |
 | 7 | F-11, F-12, F-13, F-14 | RF-081 a RF-105 |
 | 8 y 9 | Transversales | RNF-001 a RNF-058 |
+| 10 | F-18, F-19 | RF-123 a RF-147, RNF-059 a RNF-062 |
 
 Los RNF se aplican en todas las fases mediante la definición de terminado; las fases 8 y 9 cierran los que dependen del conjunto (rendimiento, accesibilidad, respaldos, monitoreo).

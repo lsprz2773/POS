@@ -29,6 +29,8 @@ Guía paso a paso para poner el POS en internet con servicios gratuitos. Está e
 
 Las partes 1 a 7 las hace la primera vez que despliegas; las partes 6, 8 y 9 se repiten en cada versión nueva.
 
+> **Equipo y vendedores (fase 10).** Cuando se publique la fase 10 ([plan.md](plan.md)), la parte 10 trae la sección **Equipo: vendedores** y la parte 8.1 suma los flujos 16 a 21. Esos pasos aplican **solo después** de esa versión: hoy la app no tiene Equipo y tu cuenta ya es la de propietario, así que no hay nada que configurar de antemano.
+
 ---
 
 ## Parte 0. Lo que necesitas
@@ -403,6 +405,7 @@ Además de tu prueba a mano, GitHub puede recorrer los 15 flujos del documento d
 2. En GitHub → **Settings → Environments → New environment**: `staging`.
    - **Environment variables:** `E2E_BASE_URL` = la dirección de staging, sin `/` al final.
    - **Environment secrets:** `E2E_OWNER_EMAIL` y `E2E_OWNER_PASSWORD` (la primera tienda), `E2E_OTHER_EMAIL` y `E2E_OTHER_PASSWORD` (la segunda).
+   - **Solo desde la fase 10:** los flujos 16 a 21 (equipo y vendedores) los hace la primera tienda de pruebas con su propia cuenta de propietario. Necesitan además un vendedor fijo (hay un tope de 10 por tienda, así que se crea una vez y se reutiliza): agrega los secretos `E2E_SELLER_EMAIL` (por ejemplo `tucorreo+e2evend@gmail.com`) y `E2E_SELLER_PASSWORD` (una contraseña nueva de 12 caracteres o más). La primera ejecución lo da de alta desde Equipo; las siguientes lo reutilizan. Los detalles se confirman al entregar la parte 10e. Como la contraseña no se puede cambiar desde la app, este vendedor se queda con la que le pongas.
 3. GitHub → **Actions → E2E staging → Run workflow**. Tarda unos 8 a 12 minutos.
 4. Debe terminar en verde. Si falla, abre la ejecución: las trazas de los fallos quedan como archivo descargable durante 7 días.
 
@@ -483,17 +486,65 @@ Repite la **parte 7** con `ENVIRONMENT=prod` y `--stack-name pos-prod`:
 2. En CloudShell: `git checkout dev && git pull && ENVIRONMENT=staging BUILD=1 ./infra/deploy.sh`. Probar.
 3. PR de `dev` a `main` → crear etiqueta nueva (`v0.1.1`…) → `git fetch --tags && git checkout v0.1.1 && ENVIRONMENT=prod BUILD=1 ./infra/deploy.sh`.
 
+**La versión con la fase 10 (equipo y vendedores)** cambia dos cosas en la nube, y `deploy.sh` ya las aplica en orden: primero las **migraciones** (nuevo rol de vendedor, estado de las cuentas y la disponibilidad del día por persona; tus datos de hoy pasan a ser tuyos, sin cambios visibles) y después la **plantilla** (la función de la API recibe permiso para crear y deshabilitar usuarios en Cognito, solo en el grupo de ese entorno). No cuesta nada.
+
+- Despliega primero en **staging**, entra con tu cuenta y comprueba que Hoy, Vender, Pendientes y Reportes se ven igual que antes y que ahora aparece **Más → Equipo**.
+- Si al crear un vendedor la app dice que no se pudo y en CloudWatch (`/aws/lambda/pos-<entorno>-api`) aparece `AccessDenied` sobre `cognito-idp`, la plantilla no se aplicó: repite `ENVIRONMENT=<entorno> BUILD=1 ./infra/deploy.sh` y revisa que el despliegue termine sin errores.
+
 ### Volver atrás (reversión)
 
 Vuelve a ejecutar `deploy.sh` con la etiqueta de la versión anterior (`git checkout v0.1.0`) y `ENVIRONMENT=prod`. Las migraciones **no** se revierten: por eso se escriben compatibles hacia atrás y se prueban primero en staging.
 
-### Agregar a otra persona o tienda
+### Agregar a otra tienda
 
-`./infra/provision.sh` con el nombre de su tienda y su correo; luego fija su contraseña (parte 7.2).
+`./infra/provision.sh` con el nombre de su tienda y su correo; luego fija su contraseña (parte 7.2). Eso crea una **tienda nueva con su propietario**. Para sumar vendedores a **tu** tienda no se usa el script: se hace desde la app (siguiente sección).
+
+### Equipo: vendedores (fase 10)
+
+> Disponible cuando se publique la fase 10. No hay nada que configurar en CloudShell ni en AWS: tu cuenta de propietario ya tiene todo, y los permisos de la API sobre Cognito los aplica `deploy.sh` (ver "Publicar una versión nueva").
+
+**Dar de alta un vendedor** (desde la app, con tu cuenta de propietario):
+
+1. **Más → Equipo → Agregar vendedor.**
+2. Escribe su nombre, su **correo** y su **contraseña** de al menos 12 caracteres, con mayúscula, minúscula y número. La app no la guarda ni la vuelve a mostrar, y **no se puede cambiar desde la app** por ahora: con ese correo y esa contraseña el vendedor inicia sesión.
+3. Pulsa **Crear vendedor**. Debe aparecer en la lista como **Activo**.
+4. Entrégale su correo y su contraseña **en persona o por un canal privado**, nunca en un grupo. Elige una contraseña que no uses en ningún otro lado y anótala en un lugar seguro: no hay forma de verla después (si se olvida, ver "Dar de baja, reactivar o restablecer").
+
+**Qué hace y qué no hace un vendedor:**
+
+- Abre **Día** al empezar su jornada y elige qué productos de **tu catálogo** venderá y cuántos. Sin eso no puede vender: cada quien vende solo lo que preparó.
+- Vende, cobra y ve **sus** pendientes, su historial y sus reportes con su utilidad bruta, calculada con los precios y costos que tú fijaste.
+- **Cancela sus propias ventas y anula sus propios pagos**, con motivo, igual que tú; el inventario vuelve a su disponibilidad.
+- No crea ni edita productos, no cambia la configuración ni el horario, no cambia su contraseña y no ve ni toca las ventas de otra persona.
+
+**Lo que ves tú desde que existe el primer vendedor:**
+
+- **Reportes → Por vendedor:** ventas, utilidad bruta y **lo que se le debe a cada vendedor en total**; al tocar uno ves su detalle.
+- **Hoy:** un bloque "Por vendedor" con sus ventas y lo pendiente de hoy.
+- **Pendientes e Historial:** el total que te deben, el desglose por vendedor y un filtro para ver solo uno.
+- **Equipo → Ver su día:** el inventario del día de un vendedor, solo para consultar.
+- En una tienda sin vendedores nada de esto aparece.
+
+**Dar de baja, reactivar o restablecer la contraseña:**
+
+- **Dar de baja** (Equipo → el vendedor → **Dar de baja**): deja de poder entrar en su siguiente toque; sus ventas y reportes se conservan. Puedes **reactivarlo** cuando quieras.
+- **Restablecer una contraseña olvidada:** la app no lo hace (decisión del propietario, T108). En CloudShell usa el comando de la parte 7.2 (pasos 1 a 4) con el **correo del vendedor** y la contraseña nueva, y entrégasela. Lo mismo vale para tu propia contraseña.
+
+**Probar en el teléfono (hazlo en staging antes de producción):**
+
+1. Con tu cuenta, crea un vendedor de prueba con un correo tuyo (por ejemplo `tucorreo+vendedor@gmail.com`).
+2. En otra ventana o navegador (o en modo incógnito), entra como ese vendedor.
+3. Comprueba que ve **Hoy, Vender, Pendientes, Día y Reportes**, y que **no** ve Catálogo, Configuración ni Equipo (si pegas esas direcciones, vuelve a Hoy con un aviso).
+4. Como vendedor: prepara su día con un producto, haz una venta y cóbrala.
+5. Como propietario: abre **Reportes → Por vendedor** y comprueba que la venta aparece a nombre del vendedor y que la suma cuadra con **Reportes**. Deja una venta sin cobrar y comprueba que sale en "lo que se le debe".
+6. Como vendedor, cancela una venta tuya y comprueba que el inventario vuelve a su día.
+7. Da de baja al vendedor de prueba y comprueba que ya no puede entrar.
+
+**Si algo no cuadra,** la parte 11 tiene los síntomas más comunes de esta función.
 
 ### Cambiar una contraseña olvidada
 
-CloudShell: el mismo comando `admin-set-user-password` de la parte 7.2 con la contraseña nueva.
+CloudShell: el mismo comando `admin-set-user-password` de la parte 7.2 con la contraseña nueva. Sirve también para un **vendedor** (usa su correo): la app no cambia contraseñas por ahora.
 
 ### Si llegó la alerta de presupuesto al 100 %
 
@@ -582,7 +633,11 @@ Agenda el recordatorio en tu calendario ahora (fecha de vencimiento menos 30 dí
 | La página carga pero "no se pudo conectar" | Abre `/api/health`. Si no responde: CloudWatch → log group `/aws/lambda/pos-<entorno>-api`. |
 | `/api/health` responde pero `/api/health/ready` da 503 | La base no responde: Neon puede estar pausada (reintenta) o la cadena del parámetro es incorrecta. |
 | Iniciar sesión dice "Correo o contraseña incorrectos" | Lo más probable: la contraseña nunca se fijó. Comprueba con el paso 5 de 7.2: si dice `FORCE_CHANGE_PASSWORD`, repite 7.2 pegando **un comando a la vez**. Si dice `CONFIRMED`: correo distinto al del alta o contraseña mal escrita. |
-| Inicia sesión y pide algo de "tienda" o aparece "tu cuenta aún no tiene una tienda" | Falta ejecutar `provision.sh` para ese correo en ese entorno. |
+| Inicia sesión y pide algo de "tienda" o aparece "tu cuenta aún no tiene una tienda" | Falta ejecutar `provision.sh` para ese correo en ese entorno. Si es un **vendedor** que acabas de crear y falló el alta a medias, bórralo y créalo de nuevo desde Equipo; la cuenta huérfana no entra. |
+| Un vendedor no puede entrar (fase 10) | En Equipo debe estar **Activo** (si dice Dado de baja, reactívalo). Si sigue, restablece su contraseña en CloudShell (parte 7.2, con el correo del vendedor) y vuelve a dársela: el correo debe ser exactamente el del alta. |
+| Crear o dar de baja a un vendedor falla (fase 10) | Mira CloudWatch → `/aws/lambda/pos-<entorno>-api`. `AccessDenied` sobre `cognito-idp`: la plantilla de esa versión no se aplicó; repite `BUILD=1 ./infra/deploy.sh`. "Ya existe un usuario con ese correo": ese correo ya tiene cuenta. "Alcanzaste el tope de vendedores": son 10 por tienda; da de baja a alguien que no uses o pídelo ampliar. |
+| Un vendedor dice que no tiene permiso, o no ve una pantalla (fase 10) | Es lo esperado para Catálogo, Configuración, Equipo y el reporte del equipo. Si ve algo que no debía, o no ve algo que sí (Hoy, Vender, Pendientes, Día, Reportes propios), avísame con el nombre de la pantalla. |
+| Un vendedor no puede vender y dice que el producto no está disponible hoy (fase 10) | Cada quien vende solo lo que preparó: que abra **Día** y agregue el producto con su cantidad. |
 | Cualquier guardado falla con 403 "origen no permitido" | La API no conoce su dirección: vuelve a ejecutar `deploy.sh` (el segundo paso la corrige). |
 | La primera carga del día es lenta | Normal: base pausada y Lambda en frío. |
 | Un despliegue se quedó en `UPDATE_ROLLBACK_FAILED` | No borres nada a ciegas; envía los *Events* del stack. |
@@ -609,7 +664,8 @@ Si quieres borrar un entorno completo (no toca Neon):
 | API Gateway | HTTP API | centavos al mes como máximo (con el Free plan, cubierto por créditos) |
 | CloudFront | 1 distribución por entorno | $0: cuota permanente de 1 TB y 10 millones de solicitudes |
 | S3 | bucket de la web y bucket de artefactos | $0 con los archivos de la web (unos MB) |
-| Cognito | 1 grupo de usuarios por entorno | $0 hasta 10 000 usuarios activos al mes |
+| Cognito | 1 grupo de usuarios por entorno (propietario y vendedores) | $0 hasta 10 000 usuarios activos al mes |
+| IAM | permisos de la Lambda para crear y deshabilitar usuarios del grupo (fase 10) | $0 |
 | CloudWatch | registros a 14 días y 2 alarmas por entorno | $0 dentro de la cuota (5 GB de registros y 10 alarmas) |
 | SNS | correos de alarma | $0 |
 | Systems Manager | 2 parámetros estándar | $0 |
@@ -624,7 +680,7 @@ Los números vienen de las páginas de precios al momento de escribir esto y pue
 | Archivo | Para qué |
 |---|---|
 | `infra/bootstrap.yaml` | Parte 4 (bucket de despliegue y presupuestos) |
-| `infra/template.yaml` | Partes 6 y 9 (todo el entorno) |
+| `infra/template.yaml` | Partes 6 y 9 (todo el entorno, y desde la fase 10 los permisos de la Lambda sobre Cognito) |
 | `infra/deploy.sh` | Partes 6 y 9 (migraciones, despliegue, publicar la web) |
 | `infra/smoke.mjs` | Pruebas de humo |
 | `.github/workflows/e2e-staging.yml` y `apps/web/playwright.staging.config.ts` | Parte 8.1 (los 15 flujos contra staging) |
@@ -632,7 +688,9 @@ Los números vienen de las páginas de precios al momento de escribir esto y pue
 | `infra/provision.sh` | Parte 7 (tienda y usuario) |
 | `.github/workflows/{deploy,provision}.yml` | **No se usan en tu cuenta** (requieren OIDC, prohibido por su política); quedan para una cuenta que lo permita |
 | `apps/api/src/lambda.ts` | La API dentro de Lambda |
-| `apps/api/src/modules/auth/cognito-identity-provider.ts` | Inicio de sesión con Cognito |
+| `apps/api/src/modules/auth/cognito-identity-provider.ts` | Inicio de sesión con Cognito (y, desde la fase 10, alta, baja y contraseña de vendedores) |
+| `packages/shared/src/permissions.ts` y `apps/api/src/modules/team/` | Fase 10: permisos por rol y gestión del equipo |
+| `apps/web/e2e/equipo.spec.ts` | Fase 10: flujos E2E 16 a 21 (equipo y vendedores) |
 
 ## Apéndice C. Glosario
 
@@ -648,6 +706,7 @@ Los números vienen de las páginas de precios al momento de escribir esto y pue
 | **CloudFront** | La red que entrega tu web y reenvía `/api` a la API, con HTTPS. |
 | **S3** | Almacén de archivos (aquí guarda la web compilada). |
 | **Cognito** | El servicio que guarda usuarios y contraseñas. |
+| **Propietario / vendedor** | Los dos roles de una tienda (fase 10): el propietario hace todo y gestiona el equipo; el vendedor prepara su día, vende y ve lo suyo. |
 | **Parameter Store** | Caja fuerte de AWS para datos secretos como la cadena de la base. |
 | **Neon** | PostgreSQL administrado donde viven las ventas. |
 | **Staging** | Copia de ensayo; produce lo mismo que producción, con datos de prueba. |

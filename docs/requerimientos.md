@@ -94,7 +94,7 @@ El sistema deberá priorizar simplicidad operativa, rapidez de captura y buena e
 - Aplicaciones móviles nativas.
 - Marketplace o comercio electrónico.
 - Administración compleja de sucursales.
-- Roles avanzados de empleados durante la primera versión.
+- Roles avanzados de empleados durante la primera versión. El rol de **vendedor** se agrega después del MVP (fase 10, sección 6.13); siguen fuera los permisos configurables por empleado, los turnos y la nómina.
 
 ### 2.2. Beneficios para el área de negocio y la organización
 
@@ -250,6 +250,8 @@ El MVP deberá demostrar que el flujo principal de negocio funciona antes de agr
 | F-15 | Cancelación controlada | Anular una venta con motivo y trazabilidad | Alta |
 | F-16 | Auditoría básica | Registrar fechas y acciones críticas del sistema | Alta |
 | F-17 | Configuración de tienda | Nombre, moneda, zona horaria y preferencias básicas | Media |
+| F-18 | Equipo y vendedores | El propietario da de alta y gestiona vendedores; cada quien prepara su propio día y vende solo lo suyo (fase 10, 6.13) | Posterior al MVP |
+| F-19 | Reportes del equipo | Ventas, utilidad bruta y pendiente por cobrar de cada vendedor (fase 10, 6.13) | Posterior al MVP |
 
 ### Flujo operativo principal
 
@@ -303,9 +305,9 @@ El propietario tendrá acceso a:
 
 ### 4.3. Privilegios de seguridad
 
-Para el MVP existirá un perfil principal denominado **Propietario**.
+Para el MVP existirá un perfil principal denominado **Propietario**. Desde la fase 10 también existe el perfil **Vendedor** (4.5 y 6.13).
 
-El propietario podrá operar únicamente sobre los recursos pertenecientes a su tenant.
+El propietario y el vendedor podrán operar únicamente sobre los recursos pertenecientes a su tenant. Dentro de la tienda, el vendedor solo accede a lo permitido por la matriz de 4.6 y solo a las ventas que él mismo registró.
 
 El backend será responsable de comprobar el tenant asociado a la identidad autenticada. La aplicación cliente no tendrá autoridad para cambiar libremente el identificador de tenant.
 
@@ -341,9 +343,9 @@ La interfaz deberá reducir términos técnicos y priorizar conceptos cotidianos
 
 Usuario incluido en el MVP. Tiene control de la operación de su propia tienda.
 
-#### Cajero / Empleado
+#### Vendedor
 
-Tipo previsto para una fase posterior. No forma parte del alcance funcional obligatorio del MVP, pero la arquitectura de autorización no deberá impedir agregarlo posteriormente.
+Incluido a partir de la fase 10 (sección 6.13), una vez que el propietario apruebe T101 a T115 de [decisiones.md](decisiones.md). Lo da de alta el propietario de la tienda. Prepara su propio día con productos del catálogo del propietario, registra ventas y pagos, cancela sus propias ventas y anula sus propios pagos, y consulta sus ventas, sus pendientes y sus reportes con su utilidad bruta. No crea ni edita productos, no ajusta el horario de la jornada, no configura la tienda ni gestiona a otras personas, y no puede cambiar su contraseña (la fija el propietario al darlo de alta). No existe un rol "administrador" aparte: el propietario es quien gestiona el equipo.
 
 #### Administrador global de plataforma
 
@@ -351,8 +353,26 @@ No se requiere interfaz de administración global durante el MVP. Cualquier nece
 
 ### 4.6. Funcionalidades relevantes por tipo de usuario
 
-| Funcionalidad | Propietario | Cajero futuro | Administrador técnico |
+| Funcionalidad | Propietario | Vendedor (fase 10) | Administrador técnico |
 |---|---:|---:|---:|
+| Iniciar sesión | Sí | Sí | Según necesidad |
+| Crear y editar productos | Sí | No | No como operación normal |
+| Consultar productos (precio y costo) | Sí | Sí, solo lectura | No |
+| Preparar su día (productos y cantidades) | Sí | Sí, el propio | No |
+| Ver el inventario del día | El propio y el de cada vendedor | Solo el propio | No |
+| Ajustar el horario de la jornada | Sí | No | No |
+| Registrar ventas | Sí | Sí | No |
+| Registrar pagos | Sí | Sí, en sus ventas | No |
+| Consultar ventas, detalle y pendientes | Todas | Solo las suyas | No |
+| Cancelar ventas y anular pagos | Sí, de toda la tienda | Sí, solo de sus ventas | No |
+| Consultar reportes y utilidad bruta | De toda la tienda | Solo los suyos | No |
+| Reportes del equipo (por vendedor y lo que se le debe a cada uno) | Sí | No | No |
+| Alta y baja (o reactivación) de vendedores | Sí | No | No |
+| Configurar tienda | Sí | No (solo lee moneda y zona horaria) | Soporte excepcional |
+| Cambiar su propia contraseña desde la app | No por ahora | No por ahora | No |
+| Acceder a otra tienda | No | No | Solo mediante mecanismos técnicos auditados |
+
+---|---:|---:|---:|
 | Iniciar sesión | Sí | Futuro | Según necesidad |
 | Administrar productos | Sí | Configurable en futuro | No como operación normal |
 | Configurar inventario diario | Sí | Futuro | No |
@@ -552,7 +572,7 @@ Al iniciar sesión, el backend identifica la tienda correspondiente. Todas las c
 
 #### Requerimientos funcionales
 
-- RF-009. Cada propietario del MVP deberá estar asociado a una tienda.
+- RF-009. Cada usuario (el propietario y, desde la fase 10, cada vendedor) deberá estar asociado a una sola tienda.
 - RF-010. Cada recurso de negocio deberá pertenecer a un tenant cuando corresponda.
 - RF-011. El backend deberá determinar el tenant autorizado a partir de la identidad autenticada.
 - RF-012. El backend no deberá confiar en un identificador de tenant enviado libremente desde el cliente para conceder acceso.
@@ -653,6 +673,8 @@ Crítica.
 - RF-036. El usuario deberá poder consultar jornadas anteriores en modo histórico.
 - RF-037. Una venta cancelada deberá restituir las unidades correspondientes cuando aplique.
 - RF-038. Las modificaciones manuales de la cantidad inicial después de existir ventas deberán estar restringidas o claramente auditadas para evitar inconsistencias.
+
+Con la fase 10 (6.13) la disponibilidad diaria pasa a ser **por persona**: RF-028 a RF-038 se aplican a la preparación de cada usuario (RF-130 a RF-133). En una tienda sin vendedores no hay diferencia con el MVP.
 
 #### Respuesta ante condiciones de error
 
@@ -1002,7 +1024,7 @@ El sistema registra automáticamente marcas de tiempo y datos técnicos necesari
 - RF-116. Registrar fecha en que una venta queda pagada.
 - RF-117. Registrar fecha de cancelación.
 - RF-118. Registrar fecha de creación y modificación de productos.
-- RF-119. Registrar el usuario responsable cuando exista más de un usuario en un tenant.
+- RF-119. Registrar el usuario responsable cuando exista más de un usuario en un tenant. Desde la fase 10 aplica a cada venta, pago, cancelación, ajuste de disponibilidad y operación de equipo.
 - RF-120. Los timestamps críticos deberán originarse en el backend.
 - RF-121. Los registros de auditoría no deberán exponer secretos o tokens.
 - RF-122. Los logs técnicos y el historial de negocio deberán considerarse conceptos diferentes.
@@ -1014,6 +1036,75 @@ Si no puede registrarse la información necesaria para una operación crítica, 
 #### Manejo de entradas de datos inválidas
 
 El cliente no deberá poder sustituir arbitrariamente las fechas de auditoría generadas por el sistema.
+
+---
+
+### 6.13. Equipo y vendedores (fase 10, posterior al MVP)
+
+#### Descripción
+
+Permitir que el propietario de una tienda dé de alta a vendedores y los gestione. Cada vendedor prepara su propio día con productos del catálogo del propietario, registra ventas y pagos, y ve solo lo suyo, incluida su utilidad bruta. El propietario ve a todo el equipo: ventas, utilidad bruta y lo que le deben a cada vendedor. Una tienda sin vendedores funciona exactamente como en el MVP. No existe un rol "administrador" aparte.
+
+#### Prioridad
+
+Alta, posterior al MVP. Requiere aprobación del propietario (T101 a T115 de [decisiones.md](decisiones.md)).
+
+#### Acciones iniciadoras y comportamiento esperado
+
+- El propietario entra a Equipo, da de alta un vendedor (nombre, correo y contraseña inicial) y se la entrega.
+- El vendedor inicia sesión, prepara su día (elige productos del catálogo y cantidades), vende y cobra.
+- El propietario consulta los reportes del equipo y, cuando hace falta, da de baja o reactiva a un vendedor.
+
+#### Requerimientos funcionales
+
+Roles y autorización
+
+- RF-123. Cada tienda tendrá exactamente un propietario y hasta 10 vendedores. Los roles son `owner` y `seller`.
+- RF-124. Una tienda sin vendedores deberá operar exactamente como en el MVP.
+- RF-125. El backend deberá determinar el rol y el estado de la persona a partir de su identidad autenticada; el cliente no podrá enviarlos. Toda ruta privada deberá declarar el permiso que exige, y una ruta sin permiso declarado no deberá poder ponerse en servicio.
+- RF-126. El permiso deberá verificarse en el caso de uso y no solo en la ruta, y el control de la interfaz será solo una comodidad.
+- RF-127. Un vendedor solo podrá consultar y operar las ventas, pagos, pendientes, historial, dashboard y reportes de las ventas que él registró. Una venta de otro vendedor deberá responderse como no disponible.
+- RF-128. Un vendedor no podrá crear, editar, activar ni desactivar productos, ni modificar la configuración de la tienda ni el horario de una jornada. Sí podrá consultar los productos activos con su precio y su costo.
+- RF-129. Un vendedor podrá cancelar sus propias ventas y anular sus propios pagos, con motivo y con las mismas reglas que el propietario (RF-106 a RF-113). No podrá hacerlo sobre ventas o pagos de otra persona. Cancelar restituye el inventario a la disponibilidad de esa venta cuando aplique.
+
+Inventario del día por persona
+
+- RF-130. Cada usuario deberá preparar su propio día: elige productos activos del catálogo y la cantidad inicial de cada uno, y solo podrá vender lo que preparó.
+- RF-131. La disponibilidad (inicial, ajustes, vendida y disponible) será por persona, producto y fecha. Vender descuenta la disponibilidad de quien vende, y cancelar la restituye a la de esa venta cuando aplique (RF-037).
+- RF-132. El propietario podrá consultar, en solo lectura, el día de cada vendedor.
+- RF-133. Dos personas de la misma tienda podrán preparar el mismo producto en la misma fecha sin afectarse.
+
+Gestión del equipo
+
+- RF-134. El propietario podrá dar de alta un vendedor registrando su correo y una contraseña (y un nombre para mostrar) que cumpla la política de contraseñas; con eso el vendedor podrá iniciar sesión.
+- RF-135. El propietario podrá dar de baja a un vendedor; su acceso deberá bloquearse de inmediato y su historial se conservará. También podrá reactivarlo.
+- RF-136. Por ahora la contraseña que fija el propietario no se podrá cambiar desde la app, ni por el vendedor ni por el propietario. Si se olvida, se restablece desde CloudShell (manual de despliegue). Cambiar y restablecer contraseñas desde la app queda como mejora futura.
+- RF-137. La app no mostrará ninguna pantalla de cambio ni de restablecimiento de contraseña (T108).
+- RF-138. Las contraseñas no deberán guardarse, registrarse en logs ni aparecer en la auditoría.
+- RF-139. El alta, la baja y la reactivación deberán quedar auditadas con usuario y fecha.
+- RF-140. Un correo no podrá pertenecer a más de una tienda.
+
+Reportes del equipo
+
+- RF-141. El propietario deberá ver el nombre del vendedor en cada venta del historial, del detalle y de pendientes, y poder filtrar por vendedor.
+- RF-142. El sistema deberá ofrecer un reporte por vendedor y periodo con ventas, número de ventas, ticket promedio, unidades, cobrado (total y por método), pendiente de las ventas del periodo, costo, utilidad bruta, margen bruto, participación en las ventas de la tienda y ventas canceladas aparte.
+- RF-143. El sistema deberá mostrar, por vendedor, lo que se le debe en total: la suma de los saldos de sus ventas vigentes de cualquier día y el número de ventas con saldo, sin depender del periodo elegido. El propietario lo verá en el reporte, en Hoy y en Pendientes.
+- RF-144. La suma de todas las filas del reporte por vendedor (incluida la del propietario) deberá coincidir con el reporte general en ventas, costo, utilidad bruta y pendiente.
+- RF-145. El sistema deberá ofrecer el detalle de un vendedor: sus cifras del periodo, su pendiente con antigüedad, sus productos más vendidos y su serie diaria.
+- RF-146. Un vendedor deberá ver sus propios reportes y su utilidad bruta, calculada con el precio y el costo congelados en sus ventas, con el mismo cálculo que ve el propietario en su fila.
+- RF-147. Los reportes del equipo solo se mostrarán cuando la tienda tenga al menos un vendedor. Un vendedor dado de baja seguirá apareciendo mientras tenga ventas en el periodo.
+
+#### Respuesta ante condiciones de error
+
+- Acción sin permiso: rechazar con un mensaje comprensible; si el recurso es de otro vendedor, responder como no disponible.
+- Correo ya existente o tope de vendedores alcanzado: rechazar indicando el motivo.
+- Si falla el alta en la base después de crear la cuenta en el proveedor de identidad, deshacer la cuenta creada.
+- Cuenta dada de baja: impedir el acceso e indicar que contacte al propietario.
+
+#### Manejo de entradas de datos inválidas
+
+- Nombre vacío o de más de 80 caracteres, correo inválido o contraseña que no cumpla la política: rechazar con el campo afectado.
+- Identificador de vendedor de otra tienda: rechazar como no disponible.
 
 ---
 
@@ -1088,6 +1179,8 @@ La aplicación tendrá como mínimo las siguientes áreas:
 11. Reportes.
 12. Configuración de tienda.
 13. Perfil y cierre de sesión.
+14. Equipo: lista, alta, baja y reactivación de vendedores (fase 10).
+15. Reportes del equipo: por vendedor y su detalle, y el pendiente por cobrar de cada uno (fase 10).
 
 #### Ejemplos de pantallas
 
@@ -1455,6 +1548,10 @@ Los formularios deberán incluir:
 - RNF-029. Los entornos de desarrollo y producción deberán utilizar credenciales distintas.
 - RNF-030. No se almacenará información completa de tarjetas bancarias.
 - RNF-031. La aplicación deberá minimizar la recolección de datos personales innecesarios.
+- RNF-059. Cada fase deberá probar la matriz completa de rol por ruta, y toda ruta privada deberá tener su permiso declarado.
+- RNF-060. Se deberán probar ataques de acceso horizontal entre vendedores de una misma tienda, además de entre tiendas.
+- RNF-061. Los permisos de la función de la API sobre el proveedor de identidad deberán limitarse a las acciones necesarias y al grupo de usuarios del entorno.
+- RNF-062. La baja de un usuario deberá surtir efecto a más tardar en su siguiente petición.
 
 #### Estrategia multitenant de seguridad
 
@@ -1951,7 +2048,7 @@ Para evitar que el proyecto se convierta prematuramente en un POS o sistema de i
 - La prioridad es registrar rápido y consultar información clara.
 - La primera interfaz se diseña para móvil.
 - La arquitectura sí es multitenant desde el inicio.
-- El propietario es el único rol obligatorio del MVP.
+- El propietario es el único rol obligatorio del MVP. El vendedor es una extensión posterior propuesta (fase 10, sección 6.13; T101 a T115 de [decisiones.md](decisiones.md), pendientes de aprobación), sin rol de administrador aparte.
 - La infraestructura inicial se optimiza para bajo costo y uso reducido.
 - La evolución hacia funciones más avanzadas dependerá de necesidades comprobadas y no de anticipar un POS empresarial completo.
 

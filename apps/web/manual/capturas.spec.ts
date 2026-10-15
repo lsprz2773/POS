@@ -4,10 +4,18 @@
 import { randomUUID } from 'node:crypto';
 import { expect, test, type Page } from '@playwright/test';
 import { orphan, owner, signIn } from '../e2e/helpers';
-import { CATALOG, createProduct, createSeller, mobileSession, offerToday, sell } from './seed';
+import {
+  CATALOG,
+  createProduct,
+  createSeller,
+  mobileSession,
+  offerToday,
+  randomSecret,
+  sell,
+} from './seed';
 import { shot } from './shot';
 
-const SELLER_PASSWORD = `Aa1-${randomUUID().slice(0, 9)}`;
+const sellerSecret = randomSecret();
 const toast = (page: Page, text: string | RegExp) =>
   expect(page.getByText(text).last()).toBeVisible();
 
@@ -402,14 +410,14 @@ test('capturas del manual', async ({ page, browser }, info) => {
   const addSeller = page.getByRole('dialog', { name: 'Agregar vendedor' });
   await addSeller.getByLabel('Nombre').fill('Ana (ejemplo)');
   await addSeller.getByLabel('Correo').fill('ana@ejemplo.test');
-  await addSeller.getByLabel('Contraseña').fill(SELLER_PASSWORD);
+  await addSeller.getByLabel('Contraseña').fill(sellerSecret);
   await shot(page, 'propietario-equipo-agregar', {
     highlight: addSeller.getByRole('button', { name: 'Crear vendedor' }),
   });
   await addSeller.getByRole('button', { name: 'Crear vendedor' }).click();
   await toast(page, 'Ana (ejemplo) ya puede iniciar sesión.');
 
-  await createSeller(page, 'Beto (ejemplo)', 'beto@ejemplo.test', SELLER_PASSWORD);
+  await createSeller(page, 'Beto (ejemplo)', 'beto@ejemplo.test', sellerSecret);
   await page.goto('/equipo');
   await expect(page.getByRole('listitem').filter({ hasText: 'Beto (ejemplo)' })).toBeVisible();
   await shot(page, 'propietario-equipo-lista', { fullPage: true });
@@ -417,7 +425,7 @@ test('capturas del manual', async ({ page, browser }, info) => {
   // ─── Parte 3 · Vendedor (Ana) ───────────────────────────────────────────────────────────────────────
   const ana = await mobileSession(browser, info, {
     email: 'ana@ejemplo.test',
-    password: SELLER_PASSWORD,
+    password: sellerSecret,
   });
   await expect(ana.getByRole('heading', { name: 'Hoy' })).toBeVisible();
   await expect(ana.getByText('Hoy todavía no preparas el día')).toBeVisible();
@@ -514,7 +522,7 @@ test('capturas del manual', async ({ page, browser }, info) => {
   // Baja y reactivación (Beto): el vendedor ve su cuenta dada de baja.
   const beto = await mobileSession(browser, info, {
     email: 'beto@ejemplo.test',
-    password: SELLER_PASSWORD,
+    password: sellerSecret,
   });
   await expect(beto.getByRole('heading', { name: 'Hoy' })).toBeVisible();
   await page.goto('/equipo');

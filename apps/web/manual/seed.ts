@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomInt, randomUUID } from 'node:crypto';
 import { expect, type Browser, type Page, type TestInfo } from '@playwright/test';
 import { ORIGIN, signIn } from '../e2e/helpers';
 
@@ -93,4 +93,11 @@ export async function mobileSession(
   const page = await context.newPage();
   if (user) await signIn(page, user);
   return page;
+}
+
+/** Clave aleatoria que cumple la política (12 o más caracteres, con mayúscula, minúscula y número). Nada fijo en el código. */
+export function randomSecret() {
+  const upper = String.fromCharCode(65 + randomInt(26));
+  const lower = String.fromCharCode(97 + randomInt(26));
+  return `${upper}${lower}${randomInt(10)}${randomBytes(8).toString('hex')}`;
 }

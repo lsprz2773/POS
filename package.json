@@ -15,6 +15,7 @@
     "dev:web": "npm run dev -w @pos/web",
     "build": "npm run build --workspaces --if-present",
     "test:e2e": "npm run test:e2e -w @pos/web",
+    "manual:capturas": "npm run manual:capturas -w @pos/web",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

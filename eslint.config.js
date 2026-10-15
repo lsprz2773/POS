@@ -30,6 +30,7 @@ export default tseslint.config(
       '*.config.{js,ts}',
       'apps/web/*.config.ts',
       'apps/web/e2e/**/*.{ts,mjs}',
+      'apps/web/manual/**/*.{ts,mjs}',
       'apps/api/*.mjs',
       'infra/*.mjs',
     ],

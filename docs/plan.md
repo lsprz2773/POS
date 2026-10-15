@@ -130,6 +130,12 @@ El propietario da de alta vendedores y los gestiona; cada vendedor prepara su pr
 | 20 | Reportes del equipo con el pendiente por cobrar de cada vendedor |
 | 21 | La baja de un vendedor le corta el acceso |
 
+### Entregable transversal: manual de usuario (T116)
+
+Se entrega en tres partes, cada una con su rama y su PR: M1 herramienta de capturas (`npm run manual:capturas`, `apps/web/manual/`, fuera de la CI), M2 capturas completas y texto de `docs/manual-usuario.md` (parte común, guía del propietario y guía del vendedor), M3 `.docx` completo con imágenes (base editable para generar PDF), página web privada y comprobador de imágenes en `npm run check`.
+
+Criterios de aceptación: cada paso del manual coincide con la pantalla y con los textos de `apps/web/src/copy/es.ts`; las capturas se generan de cero con un solo comando y sin datos reales; todas las imágenes referenciadas existen y no sobra ninguna; el `.docx` trae el manual íntegro y se convierte a PDF sin páginas rotas.
+
 ## Trazabilidad
 
 | Fase | Funcionalidades | Requerimientos funcionales |

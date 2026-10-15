@@ -19,7 +19,11 @@ await admin.query('DROP DATABASE IF EXISTS pos_e2e WITH (FORCE)');
 await admin.query('CREATE DATABASE pos_e2e');
 await admin.end();
 
-const owner = { email: 'dueno@e2e.test', password: randomUUID() };
+// Variables opcionales para reutilizar este preparador con otra configuración (el generador de capturas del manual).
+const config = process.env.E2E_CONFIG ?? 'apps/web/playwright.config.ts';
+const storeName = process.env.E2E_STORE_NAME ?? 'Tamales E2E';
+
+const owner = { email: process.env.E2E_OWNER_EMAIL ?? 'dueno@e2e.test', password: randomUUID() };
 const other = { email: 'otra@e2e.test', password: randomUUID() };
 const orphan = { email: 'sin-tienda@e2e.test', password: randomUUID() };
 const env = {
@@ -49,7 +53,7 @@ run('npm', [
   '@pos/api',
   '--',
   '--name',
-  'Tamales E2E',
+  storeName,
   '--email',
   owner.email,
 ]);
@@ -66,10 +70,4 @@ run('npm', [
   other.email,
 ]);
 // El tercer usuario existe en el proveedor de identidad pero no tiene tienda (cuenta bloqueada).
-run('npx', [
-  'playwright',
-  'test',
-  '--config',
-  'apps/web/playwright.config.ts',
-  ...process.argv.slice(2),
-]);
+run('npx', ['playwright', 'test', '--config', config, ...process.argv.slice(2)]);

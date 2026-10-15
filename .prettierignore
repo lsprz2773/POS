@@ -7,3 +7,6 @@ docs/requerimientos.md
 
 # Documentación: se mantiene a mano
 *.md
+
+# Plantilla de la página web del manual: lleva marcas de pandoc ($title$, $body$) que Prettier no entiende
+apps/web/manual/web-plantilla.html

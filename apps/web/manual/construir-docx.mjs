@@ -104,6 +104,7 @@ if (modo === 'docx') {
     `--metadata-file=${join(carpeta, 'metadatos.json')}`,
     '--toc',
     '--toc-depth=2',
+    '--section-divs',
     '--no-highlight',
     `--output=${join(carpeta, 'index.html')}`,
   ]);

@@ -5,9 +5,9 @@
 --  * Da a cada captura el ancho que cabe en la página según su proporción.
 --  * Quita las líneas horizontales (las partes ya empiezan en página nueva).
 
-local ANCHO_MAX_CM = 6.5 -- una captura de teléfono
+local ANCHO_MAX_CM = 7.2 -- una captura de teléfono (con su margen de sombra)
 local ALTO_MAX_CM = 19.5 -- lo que cabe de alto en la página Carta
-local ANCHO_DOBLE_CM = 13.5 -- capturas partidas en dos columnas
+local ANCHO_DOBLE_CM = 14.6 -- capturas partidas en dos columnas
 
 local salto = pandoc.RawBlock('openxml', '<w:p><w:r><w:br w:type="page"/></w:r></w:p>')
 local primer_titulo, primer_parrafo, primer_h2 = false, false, false
@@ -32,7 +32,7 @@ function Image(img)
   if not ancho then return nil end
   local proporcion = alto / ancho
   local cm
-  if ancho > 1200 then -- partida en dos columnas
+  if ancho > 1300 then -- partida en dos columnas
     cm = math.min(ANCHO_DOBLE_CM, ALTO_MAX_CM / proporcion)
   else
     cm = math.min(ANCHO_MAX_CM, ALTO_MAX_CM / proporcion)

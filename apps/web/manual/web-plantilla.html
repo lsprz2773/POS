@@ -2,97 +2,165 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap">
 <style>
-  /* Manual en una sola columna de lectura; en pantallas anchas el índice queda fijo a la izquierda. */
+  /* Vidrio translúcido como la app: fondo con manchas de color, tarjetas que desenfocan lo que tienen detrás.
+     Los tokens son los de apps/web/src/styles/index.css. Distribución: una columna de lectura; en pantallas
+     anchas, el índice queda fijo a la izquierda. */
   :root {
-    --bg: #f3f5fb;
-    --surface: #ffffff;
-    --fg: #1b243b;
-    --muted: #5b6578;
-    --accent: #1e3fd0;
-    --accent-soft: #eef2ff;
-    --line: #d5dbea;
-    --note: #e3e9fb;
-    --shadow: 0 1px 2px rgba(27, 36, 59, 0.08), 0 8px 24px rgba(27, 36, 59, 0.1);
+    --ink: #10223a;
+    --ink2: #34465f;
+    --ink3: #4d5f79;
+    --line: rgba(16, 34, 58, 0.22);
+    --hair: rgba(16, 34, 58, 0.12);
+    --glass: rgba(255, 255, 255, 0.58);
+    --glass2: rgba(255, 255, 255, 0.88);
+    --edge: rgba(255, 255, 255, 0.85);
+    --hi: rgba(255, 255, 255, 0.95);
+    --shadow: 0 10px 30px rgba(31, 50, 90, 0.16);
+    --blur: 18px;
+    --prim: #1d3fd1;
+    --primsoft: rgba(29, 63, 209, 0.12);
+    --info: #1a4fa0;
+    --infobg: rgba(37, 99, 235, 0.14);
+    --page:
+      radial-gradient(55% 38% at 12% 0%, #8fe3d3 0%, transparent 62%),
+      radial-gradient(48% 36% at 100% 18%, #c1b3fb 0%, transparent 62%),
+      radial-gradient(60% 46% at 28% 100%, #ffcfa9 0%, transparent 62%), #e6eff7;
     --font: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #0f1424;
-      --surface: #171e33;
-      --fg: #e6eaf5;
-      --muted: #a2abc2;
-      --accent: #8fa4ff;
-      --accent-soft: #1d2748;
-      --line: #2c3556;
-      --note: #1d2748;
-      --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
+      --ink: #eef3fb;
+      --ink2: #c5d0e4;
+      --ink3: #a3b4ce;
+      --line: rgba(255, 255, 255, 0.3);
+      --hair: rgba(255, 255, 255, 0.14);
+      --glass: rgba(36, 48, 82, 0.56);
+      --glass2: rgba(22, 31, 54, 0.9);
+      --edge: rgba(255, 255, 255, 0.2);
+      --hi: rgba(255, 255, 255, 0.24);
+      --shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+      --prim: #9db4ff;
+      --primsoft: rgba(157, 180, 255, 0.2);
+      --info: #9cc2ff;
+      --infobg: rgba(96, 165, 250, 0.2);
+      --page:
+        radial-gradient(55% 38% at 12% 0%, #1f6f78 0%, transparent 62%),
+        radial-gradient(48% 36% at 100% 18%, #4b3aa8 0%, transparent 62%),
+        radial-gradient(60% 46% at 28% 100%, #8a4a2b 0%, transparent 62%), #0a1020;
       color-scheme: dark;
     }
   }
   :root[data-theme="dark"] {
-    --bg: #0f1424;
-    --surface: #171e33;
-    --fg: #e6eaf5;
-    --muted: #a2abc2;
-    --accent: #8fa4ff;
-    --accent-soft: #1d2748;
-    --line: #2c3556;
-    --note: #1d2748;
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
+    --ink: #eef3fb;
+    --ink2: #c5d0e4;
+    --ink3: #a3b4ce;
+    --line: rgba(255, 255, 255, 0.3);
+    --hair: rgba(255, 255, 255, 0.14);
+    --glass: rgba(36, 48, 82, 0.56);
+    --glass2: rgba(22, 31, 54, 0.9);
+    --edge: rgba(255, 255, 255, 0.2);
+    --hi: rgba(255, 255, 255, 0.24);
+    --shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+    --prim: #9db4ff;
+    --primsoft: rgba(157, 180, 255, 0.2);
+    --info: #9cc2ff;
+    --infobg: rgba(96, 165, 250, 0.2);
+    --page:
+      radial-gradient(55% 38% at 12% 0%, #1f6f78 0%, transparent 62%),
+      radial-gradient(48% 36% at 100% 18%, #4b3aa8 0%, transparent 62%),
+      radial-gradient(60% 46% at 28% 100%, #8a4a2b 0%, transparent 62%), #0a1020;
     color-scheme: dark;
   }
+  /* Sin transparencia (el sistema la pide o el navegador no desenfoca): superficies sólidas, como en la app. */
+  @media (prefers-reduced-transparency: reduce) {
+    :root { --glass: #fff; --glass2: #fff; }
+    :root[data-theme="dark"] { --glass: #16203a; --glass2: #16203a; }
+  }
+  @media (prefers-reduced-transparency: reduce) and (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --glass: #16203a; --glass2: #16203a; }
+  }
+  * { box-sizing: border-box; }
   body {
-    background: var(--bg);
-    color: var(--fg);
+    background: var(--page);
+    background-attachment: fixed;
+    background-color: #e6eff7;
+    color: var(--ink);
     font-family: var(--font);
     font-size: 16px;
     line-height: 1.6;
-    padding-block: 8px 64px;
+    font-variant-numeric: tabular-nums;
+    padding-block: 8px 72px;
     padding-left: max(16px, env(safe-area-inset-left, 0px));
     padding-right: max(16px, env(safe-area-inset-right, 0px));
   }
-  .layout { max-width: 1080px; margin: 0 auto; display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
-  @media (min-width: 960px) {
-    .layout { grid-template-columns: 260px minmax(0, 1fr); gap: 48px; }
-    nav#TOC { position: sticky; top: 16px; align-self: start; max-height: calc(100vh - 32px); overflow-y: auto; }
-    nav#TOC details { border: 0; background: none; padding: 0; }
-    nav#TOC summary { display: none; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body { background-color: #0a1020; } }
+  :root[data-theme="dark"] body { background-color: #0a1020; }
+
+  /* Tarjeta de vidrio: el mismo recipe de .glass de la app. */
+  .glass, nav#TOC details, section.level2, header.portada {
+    background: var(--glass);
+    -webkit-backdrop-filter: blur(var(--blur)) saturate(1.6);
+    backdrop-filter: blur(var(--blur)) saturate(1.6);
+    border: 1px solid var(--edge);
+    box-shadow: var(--shadow), inset 0 1px 0 var(--hi);
+    border-radius: 24px;
   }
-  header.portada { padding: 40px 0 8px; max-width: 760px; margin: 0 auto; grid-column: 1 / -1; width: 100%; }
-  header.portada h1 { font-size: clamp(2rem, 6vw, 3rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.08; margin: 0 0 12px; color: var(--accent); text-wrap: balance; }
-  header.portada p { margin: 0; color: var(--muted); font-size: 1.05rem; max-width: 52ch; }
-  nav#TOC details { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 4px 16px; }
-  nav#TOC summary { cursor: pointer; font-weight: 700; padding: 12px 0; }
+  .layout { max-width: 1120px; margin: 0 auto; display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+  header.portada { grid-column: 1 / -1; padding: 24px 22px 22px; margin-top: 12px; display: grid; gap: 14px; }
+  .marca { display: flex; align-items: center; gap: 12px; }
+  .marca svg { width: 48px; height: 48px; flex: none; border-radius: 14px; box-shadow: 0 6px 16px rgba(29, 63, 209, 0.32); }
+  .marca span { font-weight: 800; font-size: 1.1rem; letter-spacing: -0.01em; }
+  header.portada h1 { font-size: clamp(2rem, 7vw, 2.8rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.08; margin: 0; text-wrap: balance; }
+  header.portada p { margin: 0; color: var(--ink2); font-size: 1.05rem; max-width: 56ch; }
+  @media (min-width: 960px) {
+    .layout { grid-template-columns: 270px minmax(0, 1fr); gap: 20px 28px; align-items: start; }
+    nav#TOC { position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto; border-radius: 24px; }
+    nav#TOC summary { display: none; }
+    header.portada { padding: 32px 36px; }
+  }
+  nav#TOC { min-width: 0; }
+  nav#TOC details { padding: 4px 18px 10px; }
+  nav#TOC summary { cursor: pointer; font-weight: 800; padding: 12px 0; list-style-position: inside; }
   nav#TOC ul { list-style: none; margin: 0; padding: 0; }
-  nav#TOC ul ul { padding-left: 14px; border-left: 1px solid var(--line); margin: 2px 0 8px 4px; }
-  nav#TOC a { display: block; padding: 5px 0; color: var(--fg); text-decoration: none; font-size: 0.94rem; }
-  nav#TOC > details > ul > li > a { font-weight: 700; margin-top: 6px; }
-  nav#TOC a:hover { color: var(--accent); }
-  main { max-width: 760px; width: 100%; min-width: 0; }
-  main section { margin: 0; }
-  main h1 { font-size: 1.9rem; font-weight: 800; letter-spacing: -0.02em; margin: 56px 0 8px; color: var(--accent); text-wrap: balance; scroll-margin-top: 16px; }
-  main h2 { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.015em; margin: 40px 0 8px; text-wrap: balance; scroll-margin-top: 16px; }
-  main h3 { font-size: 1.1rem; font-weight: 700; margin: 28px 0 6px; scroll-margin-top: 16px; }
+  nav#TOC ul ul { padding-left: 12px; margin: 2px 0 8px 2px; border-left: 2px solid var(--hair); }
+  nav#TOC a { display: block; padding: 5px 0; color: var(--ink2); text-decoration: none; font-size: 0.92rem; line-height: 1.35; }
+  nav#TOC > details > ul > li > a { font-weight: 800; color: var(--ink); margin-top: 8px; }
+  nav#TOC a:hover { color: var(--prim); }
+  main { min-width: 0; display: grid; gap: 0; grid-template-columns: minmax(0, 1fr); }
+  /* Las partes (nivel 1) son títulos sobre el fondo; cada sección (nivel 2) es una tarjeta de vidrio. */
+  section.level1 > h1 { font-size: 1.9rem; font-weight: 800; letter-spacing: -0.025em; margin: 40px 4px 14px; color: var(--prim); text-wrap: balance; }
+  section.level1 > p { margin: 0 4px 16px; color: var(--ink2); }
+  section.level2 { padding: 22px 20px 12px; margin: 0 0 18px; }
+  @media (min-width: 640px) { section.level2 { padding: 28px 32px 16px; } }
+  section.level2 > h2 { font-size: 1.45rem; font-weight: 800; letter-spacing: -0.02em; margin: 0 0 10px; text-wrap: balance; }
+  section.level2 h3 { font-size: 1.1rem; font-weight: 800; margin: 26px 0 6px; }
+  section { scroll-margin-top: 16px; }
   main p, main li { max-width: 68ch; }
   main li { margin: 6px 0; }
-  main a { color: var(--accent); }
+  main a { color: var(--prim); }
   strong { font-weight: 700; }
+  ol, ul { padding-left: 1.3em; }
   figure { margin: 16px 0 24px; padding: 0; }
-  li figure { margin-left: 0; }
-  figure img { display: block; width: 100%; max-width: 320px; height: auto; margin: 0 auto; border-radius: 16px; border: 1px solid var(--line); box-shadow: var(--shadow); background: var(--surface); }
-  figcaption { max-width: 320px; margin: 8px auto 0; font-size: 0.82rem; color: var(--muted); text-align: center; line-height: 1.4; }
-  blockquote { margin: 20px 0; padding: 12px 16px; background: var(--note); border-left: 4px solid var(--accent); border-radius: 0 10px 10px 0; }
+  figure img { display: block; width: 100%; max-width: 320px; height: auto; margin: 0 auto; border-radius: 24px; border: 1px solid var(--edge); box-shadow: var(--shadow); background: var(--glass2); }
+  figcaption { max-width: 320px; margin: 10px auto 0; font-size: 0.82rem; color: var(--ink3); text-align: center; line-height: 1.4; }
+  /* Notas: el aviso informativo de la app. */
+  blockquote { margin: 20px 0; padding: 14px 16px; background: var(--infobg); color: var(--ink); border-radius: 16px; display: block; }
   blockquote p { margin: 6px 0; }
-  .tabla { overflow-x: auto; margin: 16px 0; }
-  table { border-collapse: collapse; width: 100%; min-width: 440px; font-size: 0.94rem; background: var(--surface); }
-  th, td { border: 1px solid var(--line); padding: 8px 12px; text-align: left; vertical-align: top; }
-  th { background: var(--accent-soft); }
+  .tabla { overflow-x: auto; margin: 16px 0; border-radius: 16px; border: 1px solid var(--hair); background: var(--glass2); }
+  table { border-collapse: collapse; width: 100%; min-width: 440px; font-size: 0.94rem; }
+  th, td { padding: 10px 14px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--hair); }
+  tr:last-child td { border-bottom: 0; }
+  th { background: var(--primsoft); font-weight: 700; }
   hr { display: none; }
-  a:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+  a:focus-visible, summary:focus-visible { outline: 3px solid var(--prim); outline-offset: 2px; border-radius: 6px; }
   @media print { nav#TOC { display: none; } }
 </style>
 <div class="layout">
   <header class="portada">
+    <div class="marca">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#1d3fd1"/><path d="M18 24h28l-3 20H21z" fill="none" stroke="#fff" stroke-width="4" stroke-linejoin="round"/><path d="M26 24a6 6 0 0 1 12 0" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/></svg>
+      <span>POS</span>
+    </div>
     <h1>$title$</h1>
     <p>$subtitle$</p>
   </header>

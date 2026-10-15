@@ -15,6 +15,11 @@
     "dev:web": "npm run dev -w @pos/web",
     "build": "npm run build --workspaces --if-present",
     "test:e2e": "npm run test:e2e -w @pos/web",
+    "manual:capturas": "npm run manual:capturas -w @pos/web",
+    "manual:imagenes": "node apps/web/manual/comprobar-imagenes.mjs",
+    "manual:docx": "node apps/web/manual/construir-docx.mjs docx",
+    "manual:pdf": "node apps/web/manual/construir-docx.mjs pdf",
+    "manual:web": "node apps/web/manual/construir-docx.mjs web",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -25,7 +30,7 @@
     "db:down": "docker compose down",
     "db:migrate": "npm run migrate -w @pos/api",
     "db:types": "npm run db:types -w @pos/api",
-    "check": "npm run lint && npm run format:check && npm run typecheck && npm run test"
+    "check": "npm run lint && npm run format:check && npm run typecheck && npm run manual:imagenes && npm run test"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

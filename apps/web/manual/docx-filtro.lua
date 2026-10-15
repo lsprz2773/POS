@@ -6,7 +6,7 @@
 --  * Quita las líneas horizontales (las partes ya empiezan en página nueva).
 
 local ANCHO_MAX_CM = 7.2 -- una captura de teléfono (con su margen de sombra)
-local ALTO_MAX_CM = 19.5 -- lo que cabe de alto en la página Carta
+local ALTO_MAX_CM = 18.5 -- lo que cabe de alto en la página Carta
 local ANCHO_DOBLE_CM = 14.6 -- capturas partidas en dos columnas
 
 local salto = pandoc.RawBlock('openxml', '<w:p><w:r><w:br w:type="page"/></w:r></w:p>')

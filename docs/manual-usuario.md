@@ -226,6 +226,8 @@ Toca **Más** → **Reportes** (los vendedores lo ven como **Mis reportes**). El
 
 ![Reportes del día: ventas, cobrado, pendiente del periodo, cobro por método y utilidad bruta](img/manual/comun-reportes-dia.png)
 
+Para cambiar de periodo, toca **Día**, **Semana**, **Mes** o **Rango**. Las flechas de abajo te llevan al periodo anterior o al siguiente.
+
 ![Selector de periodo en Reportes con Semana elegida](img/manual/comun-reportes-periodo.png)
 
 Para ver un rango de fechas elige **Rango**, escribe **Desde** y **Hasta**, y toca **Aplicar rango**. El rango no puede pasar de 366 días.
@@ -299,7 +301,11 @@ El propietario hace todo lo de la parte 1 y, además, administra el catálogo, l
 ### Agregar un producto
 
 1. Toca **+ Producto**.
-2. Llena los datos. Los marcados con asterisco son obligatorios:
+2. Llena los datos del formulario. Los marcados con asterisco son obligatorios.
+
+   ![Formulario Nuevo producto con el botón Guardar producto señalado](img/manual/propietario-producto-nuevo.png)
+
+   Qué va en cada campo:
 
    | Campo | Para qué sirve |
    |---|---|
@@ -310,8 +316,6 @@ El propietario hace todo lo de la parte 1 y, además, administra el catálogo, l
    | **Código interno** | Opcional, para buscarlo rápido. No puede repetirse. |
    | **Categoría**, **Descripción**, **Notas** | Opcionales. |
    | **Producto activo** | Si está apagado, no se puede vender. |
-
-   ![Formulario Nuevo producto con el botón Guardar producto señalado](img/manual/propietario-producto-nuevo.png)
 
 3. Toca **Guardar producto**. Aparece el aviso **Producto guardado.** y el producto ya está en el catálogo.
 
@@ -357,7 +361,7 @@ Toca **Guardar cambios** para aplicarlos. Esta pantalla es solo del propietario.
 3. Toca **Crear vendedor**. Aparece el aviso de que ya puede iniciar sesión.
 4. **Entrégale su correo y su contraseña por un medio privado.** Con eso inicia sesión como vendedor.
 
-> **Importante sobre la contraseña.** La contraseña que escribes **no se puede ver ni cambiar después**, ni tú ni el vendedor desde la aplicación. Por ahora, si un vendedor la pierde, hay que pedir ayuda a quien administra la aplicación.
+Al terminar, tu equipo se ve así:
 
 ![Lista del equipo: tú como propietario y dos vendedores activos](img/manual/propietario-equipo-lista.png)
 
@@ -366,6 +370,8 @@ Cada vendedor aparece con su estado (**Activo** o **Dado de baja**) y estos boto
 - **Ver su día:** el inventario que preparó hoy, en modo de solo lectura.
 - **Ver reporte:** su reporte de ventas y lo que te debe.
 - **Dar de baja** o **Reactivar**.
+
+> **Importante sobre la contraseña.** La contraseña que escribes **no se puede ver ni cambiar después**, ni tú ni el vendedor desde la aplicación. Por ahora, si un vendedor la pierde, hay que pedir ayuda a quien administra la aplicación.
 
 ### Dar de baja y reactivar
 
@@ -407,11 +413,11 @@ Toca una persona para ver su detalle. En **Lo que se le debe** ves el total y cu
 
 ![Detalle del vendedor: lo que se le debe, ventas y cobros del periodo](img/manual/propietario-reporte-vendedor.png)
 
+> **Cómo entender "lo que se le debe".** Es el dinero de las ventas pendientes de esa persona, de cualquier día: lo que sus clientes todavía no han pagado y que ella te debe entregar o cobrar.
+
 **Ver el día de un vendedor.** Desde **Equipo** → **Ver su día** consultas qué productos preparó y cuánto lleva vendido. Es solo de lectura: no puedes modificar su inventario.
 
 ![Inventario de un vendedor, en solo lectura](img/manual/propietario-ver-dia-vendedor.png)
-
-> **Cómo entender "lo que se le debe".** Es el dinero de las ventas pendientes de esa persona, de cualquier día: lo que sus clientes todavía no han pagado y que ella te debe entregar o cobrar.
 
 ---
 

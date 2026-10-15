@@ -77,6 +77,8 @@ if (modo === 'docx') {
       ],
       { cwd: temporal },
     );
+    // Cada captura se queda en la misma página que su descripción y su pie.
+    ejecutar('python3', ['-I', join(aqui, 'docx-juntos.py'), salida]);
     // Pandoc solo deja el campo del índice (Word lo llena al abrir); LibreOffice lo llena aquí con sus páginas.
     ejecutar('python3', ['-I', join(aqui, 'docx-indice.py'), salida]);
     console.log(`Manual generado: ${salida}`);

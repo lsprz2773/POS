@@ -12,13 +12,33 @@ const HIGHLIGHT =
 interface ShotOptions {
   /** Elementos que se rodean con un recuadro para indicar dónde tocar. */
   highlight?: Locator | Locator[];
-  /** Captura toda la pantalla desplazable, no solo lo visible. */
+  /** Captura toda la pantalla desplazable: se alarga la ventana, así la barra inferior queda al final. */
   fullPage?: boolean;
+  /** Conserva los avisos flotantes visibles; por omisión se espera a que desaparezcan. */
+  toast?: boolean;
 }
 
 /** Captura `NN-tema-paso.png` en la carpeta del manual, con el recuadro de resaltado si se pide. */
 export async function shot(page: Page, name: string, options: ShotOptions = {}) {
   mkdirSync(OUT_DIR, { recursive: true });
+  if (!options.toast) {
+    await page
+      .locator('.toast')
+      .first()
+      .waitFor({ state: 'detached', timeout: 12_000 })
+      .catch(() => undefined);
+  }
+  const original = page.viewportSize();
+  if (options.fullPage && original) {
+    const height = await page.evaluate(() => document.documentElement.scrollHeight);
+    await page.setViewportSize({
+      width: original.width,
+      height: Math.min(Math.max(height, original.height), 3200),
+    });
+    await page.evaluate(
+      () => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))),
+    );
+  }
   const targets = [options.highlight ?? []].flat();
   for (const target of targets) {
     await target.evaluate((el, css) => {
@@ -30,9 +50,9 @@ export async function shot(page: Page, name: string, options: ShotOptions = {}) 
   await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
   await page.screenshot({
     path: resolve(OUT_DIR, `${name}.png`),
-    fullPage: options.fullPage ?? false,
     animations: 'disabled',
   });
+  if (options.fullPage && original) await page.setViewportSize(original);
   for (const target of targets) {
     await target.evaluate((el) => {
       const prev = el.getAttribute('data-manual-prev') ?? '';

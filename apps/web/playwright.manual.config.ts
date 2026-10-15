@@ -10,14 +10,23 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   timeout: 300_000,
+  // Si un paso no encuentra su elemento, falla pronto en lugar de esperar minutos.
+  expect: { timeout: 10_000 },
   reporter: [['list']],
   use: {
     baseURL: `http://localhost:${WEB_PORT}`,
+    actionTimeout: 10_000,
     reducedMotion: 'reduce',
     colorScheme: 'light',
-    launchOptions: process.env.PW_CHROMIUM_PATH
-      ? { executablePath: process.env.PW_CHROMIUM_PATH }
-      : {},
+    // La interfaz se ve como la ve el usuario: fechas y horas en formato de México.
+    locale: 'es-MX',
+    timezoneId: 'America/Mexico_City',
+    // Los campos de fecha y hora nativos toman el idioma del navegador: así salen como en México (dd/mm/aaaa).
+    launchOptions: {
+      args: ['--lang=es-MX'],
+      env: { ...process.env, LANGUAGE: 'es_MX:es', LC_ALL: 'es_MX.UTF-8', LANG: 'es_MX.UTF-8' },
+      ...(process.env.PW_CHROMIUM_PATH ? { executablePath: process.env.PW_CHROMIUM_PATH } : {}),
+    },
   },
   projects: [
     {
@@ -39,7 +48,9 @@ export default defineConfig({
       env: { PORT: String(API_PORT), APP_ORIGIN: `http://localhost:${WEB_PORT}` },
     },
     {
-      command: `npx vite --port ${WEB_PORT}`,
+      // Compilación de producción: sin el doble montaje del modo desarrollo (avisos duplicados).
+      command: `npx vite build && npx vite preview --port ${WEB_PORT}`,
+      timeout: 120_000,
       url: `http://localhost:${WEB_PORT}`,
       reuseExistingServer: false,
       env: { API_URL: `http://localhost:${API_PORT}` },

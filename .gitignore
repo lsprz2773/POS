@@ -23,3 +23,6 @@ cdk.out/
 test-results/
 playwright-report/
 dist-lambda/
+# PDF del manual: se genera a partir del .docx cuando se necesita
+docs/manual-usuario/pdf/
+docs/manual-usuario/web/

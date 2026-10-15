@@ -44,6 +44,6 @@ Para iniciar sesión se usa `POST /api/auth/login` con un usuario de `LOCAL_AUTH
 - [`docs/dominio.md`](docs/dominio.md): modelo conceptual, reglas, flujos y definición de métricas.
 - [`docs/plan.md`](docs/plan.md): fases, criterios de aceptación y trazabilidad con los requisitos.
 - [`docs/progreso.md`](docs/progreso.md): registro de tareas realizadas y por hacer.
-- [`docs/manual-usuario.md`](docs/manual-usuario.md): manual de usuario (parte común, propietario y vendedor) con capturas en `docs/img/manual/`, que se regeneran con `npm run manual:capturas` (necesita PostgreSQL, Chromium de Playwright y Pillow).
+- [`docs/manual-usuario.md`](docs/manual-usuario.md): manual de usuario (parte común, propietario y vendedor) con capturas en `docs/img/manual/`, que se regeneran con `npm run manual:capturas` (necesita PostgreSQL, Chromium de Playwright y Pillow). El mismo texto produce el `.docx` completo (`npm run manual:docx`, en `docs/manual-usuario/`), el PDF (`npm run manual:pdf`) y la página web (`npm run manual:web`); necesitan pandoc y LibreOffice.
 
 Las reglas de trabajo para el asistente están en [`CLAUDE.md`](CLAUDE.md).

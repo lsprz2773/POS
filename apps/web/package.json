@@ -18,7 +18,7 @@
     "@radix-ui/react-alert-dialog": "^1.2.0",
     "@radix-ui/react-dialog": "^1.3.0",
     "@tanstack/react-query": "^5.104.2",
-    "lucide-react": "^1.55.0",
+    "lucide-react": "^1.57.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "react-router": "^8.4.0",
